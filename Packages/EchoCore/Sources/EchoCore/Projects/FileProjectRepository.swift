@@ -71,6 +71,15 @@ public actor FileProjectRepository: ProjectRepository {
         try fileManager.removeItem(at: folder.url)
     }
 
+    public func waveformOverview(id: UUID) -> [Float]? {
+        guard let data = try? Data(contentsOf: folder(for: id).waveformOverview) else { return nil }
+        return try? JSONDecoder().decode([Float].self, from: data)
+    }
+
+    public func thumbnail(id: UUID) -> Data? {
+        try? Data(contentsOf: folder(for: id).thumbnail)
+    }
+
     public func diskUsage(id: UUID) throws -> Int64 {
         let folder = folder(for: id)
         guard fileManager.fileExists(atPath: folder.url.path) else { throw ProjectRepositoryError.notFound }

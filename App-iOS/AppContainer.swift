@@ -33,7 +33,7 @@ final class AppContainer {
     }
 
     func makeHomeModel() -> HomeModel {
-        HomeModel(repository: projects)
+        HomeModel(repository: projects, storage: storage)
     }
 
     func makeImportModel() -> ImportModel {

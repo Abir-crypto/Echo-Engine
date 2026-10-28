@@ -37,6 +37,12 @@
     "It can’t be undone.": {
       "comment": "Delete confirmation message when the size is unknown."
     },
+    "Needs %@ to edit": {
+      "comment": "Project card warning. %@ = missing space, e.g. 0.2 GB (SPEC § 14.1, § 15)."
+    },
+    "Needs %@ to export": {
+      "comment": "Project card warning. %@ = missing space, e.g. 0.2 GB (SPEC § 15)."
+    },
     "OK": {
       "comment": "Dismisses an alert."
     },

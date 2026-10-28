@@ -107,7 +107,11 @@ Goal: import audio/video into a project with exact storage messaging.
   > failure/cancel deletes the folder, Photos temp copy always deleted. One `ImportProgressView` sheet shows progress, then the failure
   > (an alert during sheet dismissal was dropped). Home uses a `HomeRoute` path: new project and card taps open placeholder `EditorView` (F04).
   > Debug: `-debugImportPath <file>`. Integration test runs the real stack on iOS.
-- [ ] F03.T05 — Home cards show real thumbnails, durations, readiness warnings.
+- [x] F03.T05 — Home cards show real thumbnails, durations, readiness warnings.
+  > Done: `ProjectRepository.waveformOverview(id:)`/`thumbnail(id:)`; `HomeModel` loads them per card (`.task(id:)`, cached as `ProjectThumbnail`
+  > `.frame`/`.levels`) and computes `readiness` from free space on each load. Video cards show the frame; audio cards draw `WaveformBars`
+  > (Components; 48 levels → 24 peak bars scaled to the loudest, tinted when processed); no files → seeded placeholder bars. Cards show
+  > "Needs X to edit/export" in Warning instead of the date. Verified with a real MOV and AIFF in the simulator.
 
 **Checkpoint test:** import a 4K iPhone video, an MP3 and a WAV; check the folder contents; fill simulator storage (or fake estimator) to see the blocked message with exact numbers.
 

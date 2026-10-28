@@ -19,6 +19,10 @@ public protocol ProjectRepository: Sendable {
     /// Bytes the project folder occupies on disk (manifest, media, takes, thumbnail): what deleting it frees,
     /// apart from its renders.
     func diskUsage(id: UUID) async throws -> Int64
+    /// The saved waveform overview levels (0...1), or `nil` when the project has none.
+    func waveformOverview(id: UUID) async -> [Float]?
+    /// JPEG data of the video frame thumbnail, or `nil` when the project has none.
+    func thumbnail(id: UUID) async -> Data?
     func folder(for id: UUID) -> ProjectFolder
 }
 

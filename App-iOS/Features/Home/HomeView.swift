@@ -121,8 +121,14 @@ struct HomeView: View {
                     ) {
                         ForEach(model.projects, id: \.project.id) { stored in
                             NavigationLink(value: HomeRoute.project(stored.project.id)) {
-                                ProjectCard(project: stored.project, now: .now)
+                                ProjectCard(
+                                    project: stored.project,
+                                    thumbnail: model.thumbnails[stored.project.id],
+                                    readiness: model.readiness[stored.project.id],
+                                    now: .now
+                                )
                             }
+                            .task(id: stored.project.id) { await model.loadThumbnail(for: stored.project) }
                             .buttonStyle(.plain)
                             .contextMenu { menu(for: stored) }
                         }
@@ -214,7 +220,10 @@ private struct HomeFailureMessage: LocalizedError {
 #if DEBUG
 @MainActor
 private func previewModel(_ projects: [Project]) -> HomeModel {
-    HomeModel(repository: FakeProjectRepository(projects: projects))
+    HomeModel(
+        repository: FakeProjectRepository(projects: projects, overviewsByID: PreviewProjects.overviews(for: projects)),
+        storage: FakeStorageEstimator(editBytes: 1_200_000_000, available: 1_000_000_000)
+    )
 }
 
 @MainActor

@@ -14,6 +14,13 @@ public enum PreviewProjects {
         ]
     }
 
+    /// Overview levels shaped like the mockup's bars, for every sample.
+    public static func overviews(for projects: [Project]) -> [UUID: [Float]] {
+        let heights: [Float] = [30, 55, 40, 75, 60, 90, 45, 70, 35, 80, 65, 50, 85, 40, 60, 95, 55, 70, 30, 65, 45, 75, 40, 55]
+        let levels = heights.flatMap { [$0 / 100, $0 / 110] }
+        return Dictionary(uniqueKeysWithValues: projects.map { ($0.id, levels) })
+    }
+
     private static func make(
         _ number: Int,
         _ title: String,

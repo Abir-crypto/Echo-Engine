@@ -1,8 +1,9 @@
 import EchoCore
 import Foundation
 import Observation
+import UIKit
 
-/// Home screen state: the project list with rename and delete (SPEC § 14.1).
+/// Home screen state: the project list with thumbnails, storage readiness, rename and delete (SPEC § 14.1, § 15).
 @MainActor
 @Observable
 final class HomeModel {
@@ -14,12 +15,18 @@ final class HomeModel {
 
     private(set) var projects: [StoredProject] = []
     private(set) var hasLoaded = false
+    /// Per project; missing when free space couldn't be read.
+    private(set) var readiness: [UUID: ProjectReadiness] = [:]
+    /// Loaded per card with `loadThumbnail(for:)`; thumbnails never change after import.
+    private(set) var thumbnails: [UUID: ProjectThumbnail] = [:]
     var failure: Failure?
 
     private let repository: any ProjectRepository
+    private let storage: any StorageEstimating
 
-    init(repository: any ProjectRepository) {
+    init(repository: any ProjectRepository, storage: any StorageEstimating) {
         self.repository = repository
+        self.storage = storage
     }
 
     func load() async {
@@ -28,7 +35,22 @@ final class HomeModel {
         } catch {
             failure = .load
         }
+        if let available = try? storage.availableBytes() {
+            readiness = Dictionary(uniqueKeysWithValues: projects.map {
+                ($0.project.id, storage.readiness(of: $0.project, availableBytes: available))
+            })
+        }
         hasLoaded = true
+    }
+
+    /// Video projects show their frame; projects without one fall back to their waveform overview.
+    func loadThumbnail(for project: Project) async {
+        guard thumbnails[project.id] == nil else { return }
+        if project.mediaType == .video, let data = await repository.thumbnail(id: project.id), let image = UIImage(data: data) {
+            thumbnails[project.id] = .frame(image)
+        } else if let levels = await repository.waveformOverview(id: project.id) {
+            thumbnails[project.id] = .levels(levels)
+        }
     }
 
     /// Ignores titles that are empty after trimming whitespace.
@@ -49,6 +71,8 @@ final class HomeModel {
         do {
             try await repository.delete(id: id)
             projects.removeAll { $0.project.id == id }
+            thumbnails[id] = nil
+            readiness[id] = nil
         } catch {
             failure = .delete
         }

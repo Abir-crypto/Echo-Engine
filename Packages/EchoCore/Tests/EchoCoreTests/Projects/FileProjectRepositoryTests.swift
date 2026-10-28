@@ -132,6 +132,19 @@ final class FileProjectRepositoryTests {
         await #expect(throws: ProjectRepositoryError.notFound) { try await repository.diskUsage(id: UUID()) }
     }
 
+    @Test func overviewAndThumbnailAreReadWhenPresent() async throws {
+        let project = project()
+        let folder = try await repository.createFolder(for: project.id)
+        #expect(await repository.waveformOverview(id: project.id) == nil)
+        #expect(await repository.thumbnail(id: project.id) == nil)
+
+        try JSONEncoder().encode([Float(0.25), 0.5]).write(to: folder.waveformOverview)
+        try Data([0xFF, 0xD8, 0xFF]).write(to: folder.thumbnail)
+
+        #expect(await repository.waveformOverview(id: project.id) == [0.25, 0.5])
+        #expect(await repository.thumbnail(id: project.id) == Data([0xFF, 0xD8, 0xFF]))
+    }
+
     @Test func newerSchemaProjectIsReadOnly() async throws {
         let project = project()
         try writeManifest(project) { $0["schemaVersion"] = Project.currentSchemaVersion + 1 }
