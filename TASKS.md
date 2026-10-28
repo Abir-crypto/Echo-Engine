@@ -36,7 +36,11 @@ Goal: buildable empty app with module structure, DI root, tokens, localization a
   > `ColorToken` enum + `ShapeStyle` statics (`.foregroundStyle(.textPrimary)`), `AppTint` (`assetName(_:)`, fill/text/wave/on), `Appearance`.
   > `ContrastTests` checks 28 pairings × light/dark ≥ 4.5:1 (mutation-verified). TextTertiary light → #66717E (SPEC § 20).
   > AppIcon name blanked in project.yml until F16.T01 (actool errors on a missing set).
-- [ ] F01.T06 — String Catalog with 11 languages enabled (English content only for now); localization conventions helper; RTL pseudolanguage scheme option (§ 17).
+- [x] F01.T06 — String Catalog with 11 languages enabled (English content only for now); localization conventions helper; RTL pseudolanguage scheme option (§ 17).
+  > Done: `Localizable.xcstrings` (en source) + `InfoPlist.xcstrings` (`CFBundleDisplayName` "Echo Engine" in all 11 locales —
+  > this is what makes XcodeGen emit `knownRegions`; empty entries would compile to "" so never add them). es + pt-BR per user
+  > (SPEC § 17/§ 20). `DisplayFormat` (`fileSize`, `duration`) carries the conventions doc; tests pin en/de output. Scheme
+  > `EchoEngine-RTL` launches with RTL pseudolanguage args. Missing en.lproj is fine: iOS counts the dev region as available.
 - [ ] F01.T07 — App shell: floating tab bar (Projects, Record), placeholder screens, appearance + tint applied at root, Info.plist keys (microphone usage, photo add usage, background audio).
 
 **Checkpoint test:** app launches on iPhone and iPad simulators; tabs switch; Dark/Light/System and tint changes apply (temporary debug toggle OK); Arabic RTL pseudolanguage mirrors layout.

@@ -17,6 +17,8 @@ settings:
     # EchoCore modules are built with C++ interop; every Swift module importing them must enable it too.
     SWIFT_OBJC_INTEROP_MODE: objcxx
     ENABLE_USER_SCRIPT_SANDBOXING: YES
+    LOCALIZATION_PREFERS_STRING_CATALOGS: YES
+    SWIFT_EMIT_LOC_STRINGS: YES
 
 targets:
   EchoEngine:
@@ -64,3 +66,15 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: akumatech.Echo-Engine.tests
         GENERATE_INFOPLIST_FILE: YES
+
+schemes:
+  # Runs the app in Xcode's right-to-left pseudolanguage (SPEC § 17).
+  EchoEngine-RTL:
+    build:
+      targets:
+        EchoEngine: all
+    run:
+      config: Debug
+      commandLineArguments:
+        "-AppleTextDirection YES": true
+        "-NSForceRightToLeftWritingDirection YES": true

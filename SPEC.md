@@ -686,6 +686,11 @@ enum AnalyticsEvent {
 ## 17. Localization & accessibility
 
 - Languages: English (base), Spanish, French, German, Italian, Portuguese, Dutch, Polish, Arabic, Turkish, Russian.
+  Locale codes: `en`, `es` (one generic Spanish), `fr`, `de`, `it`, `pt-BR` (Brazilian Portuguese only), `nl`, `pl`,
+  `ar`, `tr`, `ru`. All are enabled through `InfoPlist.xcstrings` (`CFBundleDisplayName` = "Echo Engine" in every
+  language), because XcodeGen derives `knownRegions` from catalog localizations. Never add empty or placeholder
+  translations: an empty entry compiles to an empty string instead of falling back to English.
+- EchoCore produces no user-facing text; the app maps domain values and errors to localized strings.
 - String Catalog (`Localizable.xcstrings`); `String(localized:)`/SwiftUI literal keys; plural variations
   (Russian/Polish/Arabic plural rules) via the catalog; never concatenate strings.
 - Formatters for numbers, sizes (`.byteCount(style: .file)`), durations, dates.
@@ -824,3 +829,4 @@ Record new user decisions here (date, decision, section updated).
   repo layout updated to match.
 - 2026-10-28: Per the § 18.2 contrast rule, `TextTertiary` light changed #6B7684 → #66717E (4.23 → 4.55:1 on
   Ground; same hue, still lighter than `TextSecondary`). All other text pairings pass as specified (§ 18.2).
+- 2026-10-28: Spanish ships as generic `es`; Portuguese ships as `pt-BR` only (§ 17).
