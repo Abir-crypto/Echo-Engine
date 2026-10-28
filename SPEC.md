@@ -804,6 +804,10 @@ enum Appearance: String, CaseIterable { case system, dark, light }
 - Detail screens not on canvas (EQ, Gain and dynamics, Effects, Loudness, strength slider, Add enhancement,
   device/channel picker, auto-tune, backing track, presets): follow § 18.1–18.4; grouped rows, segmented controls,
   sliders with value labels; present as sheets with detents where short. If layout is unclear, ask the user.
+  These screens may be designed in Sleek through the `design-mobile-apps` project skill (paid external service,
+  user's account and API key): offer it when such a screen comes up and run it only after the user approves.
+  Implement any Sleek design natively in SwiftUI with § 18 tokens; never use the skill's React Native/HTML
+  implementation guidance. Send Sleek only screen descriptions and style direction, never user content.
 
 ---
 
@@ -838,3 +842,5 @@ Record new user decisions here (date, decision, section updated).
   (§ 13) and Photos add (§ 11.1) approved.
 - 2026-10-28: Approved mockups added to the repo as `Design/screens/*.dc.html`; read `Design/README.md` and the
   matching mockup before building a screen; SPEC wins where they disagree (§ 18, CLAUDE.md).
+- 2026-10-28: Project skills committed: `code-review` (mattpocock/skills) and `design-mobile-apps` (Sleek). Sleek is
+  kept only for detail screens without a mockup, with user approval per use (§ 18.5).

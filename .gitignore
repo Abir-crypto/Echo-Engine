@@ -5,6 +5,9 @@
 *.xcodeproj/
 *.xcworkspace/
 App-iOS/Info.plist
+
+# Claude Code per-user settings
+.claude/settings.local.json
 xcuserdata/
 *.xcuserstate
 DerivedData/
