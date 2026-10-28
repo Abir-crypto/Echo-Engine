@@ -23,5 +23,8 @@ public struct ProjectFolder: Equatable, Sendable {
     public var working: URL { url.appending(path: "working.caf") }
     /// Recording takes: `raw.caf`, `processed.caf`, `ch1.caf`…
     public var takes: URL { url.appending(path: "takes", directoryHint: .isDirectory) }
+    /// Video frame at 10% of the source; video projects only.
     public var thumbnail: URL { url.appending(path: "thumbnail.jpg") }
+    /// JSON array of peak levels (0...1) across the source, drawn as tinted bars on Home cards.
+    public var waveformOverview: URL { url.appending(path: "waveform-overview.json") }
 }
