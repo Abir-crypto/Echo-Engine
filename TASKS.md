@@ -51,7 +51,7 @@ Goal: buildable empty app with module structure, DI root, tokens, localization a
 
 ---
 
-## F02 — Projects & storage model  [IN PROGRESS]
+## F02 — Projects & storage model  [DONE]
 Goal: persistent projects with schema versioning and the Home screen.
 
 - [x] F02.T01 — Models: `Project`, `Clip`, `AIOperation`, `AIFeature` (+`.unknown`), `ManualSettings`, `LoudnessTarget`, `EditState`, `SourceInfo`, `RecordingMetadata`, `TimeRangeCodable` with lenient decoding (§ 5.2–5.3). Tests.
@@ -84,7 +84,7 @@ Goal: persistent projects with schema versioning and the Home screen.
 
 ---
 
-## F03 — Import & storage checks  [TODO]
+## F03 — Import & storage checks  [IN PROGRESS]
 Goal: import audio/video into a project with exact storage messaging.
 
 - [ ] F03.T01 — `MediaInspector`: duration, tracks, container, codecs, size; supported-format validation; no-audio rejection (§ 10).
