@@ -463,7 +463,8 @@ One `EditorView` for both media types; only the header differs.
   Custom: format AAC/WAV/FLAC/ALAC, sample rate 44.1/48 kHz, bit depth 16/24 (lossless/PCM), bitrate 128/192/256/320 (AAC).
   For video output, the audio track inside the video is AAC; quality preset picks its bitrate (default 256).
   Caption under the picker explains the choice, e.g. "AAC 320 kbps. The video is kept exactly as it is."
-- **Save to**: Photos (video only) · Files · Share (share sheet).
+- **Save to**: Photos (video only) · Files · Share (share sheet). `NSPhotoLibraryAddUsageDescription`: "Echo Engine
+  saves exported videos to your photo library."
 - **After export**: Keep project (default) · Keep, clear cache ("Frees X") · Delete project ("Frees X").
 - Storage line: "Needs about X. Y available." Primary button: "Export video" / "Export audio" / "Export".
 - Remember last choices per media type (`AppSettingsStore`).
@@ -520,7 +521,8 @@ struct Preset: Codable, Identifiable, Equatable {
 
 ## 13. Record
 
-Audio only. Microphone permission only.
+Audio only. Microphone permission only. `NSMicrophoneUsageDescription`: "Echo Engine uses the microphone to record
+audio. Your recordings stay on your device."
 
 ### 13.1 Screen
 
@@ -609,7 +611,7 @@ Show a "Use wired headphones for monitoring" tip when auto-tune or a backing tra
   title (1 line, truncated), subtitle (relative date, or readiness warning e.g. "Needs 0.2 GB to edit" in warning color).
 - Card context menu: Rename, Delete (confirmation with size freed). No duplicate/folders in v1.
 - Empty state: "Import a video or audio file, or record something new." with Import and Record actions.
-- Tab bar (floating, native iOS 26 style): Projects, Record.
+- Tab bar (floating, native iOS 26 style): Projects (`square.grid.2x2`), Record (`mic`).
 
 ### 14.2 Settings
 
@@ -707,8 +709,10 @@ enum AnalyticsEvent {
 
 ## 18. Design system & screens
 
-Approved mockups: Design canvas "Echo Engine" (screens: Home, Editor video, Editor audio, Record, Export,
-Settings, Home light, Editor light). This section is the authoritative translation of that canvas.
+Approved mockups: `Design/screens/*.dc.html` in the repo (Home, Home light, Editor video, Editor light,
+Editor audio, Record, Export, Settings). Read `Design/README.md` first. Before building or changing any screen,
+open its mockup file and match its layout, spacing, sizes and hierarchy. This section is the authoritative
+translation of those mockups; if a mockup and this section disagree, this section wins.
 
 ### 18.1 Principles
 
@@ -830,3 +834,7 @@ Record new user decisions here (date, decision, section updated).
 - 2026-10-28: Per the § 18.2 contrast rule, `TextTertiary` light changed #6B7684 → #66717E (4.23 → 4.55:1 on
   Ground; same hue, still lighter than `TextSecondary`). All other text pairings pass as specified (§ 18.2).
 - 2026-10-28: Spanish ships as generic `es`; Portuguese ships as `pt-BR` only (§ 17).
+- 2026-10-28: Tab icons `square.grid.2x2` (Projects) and `mic` (Record) (§ 14.1). Permission strings for microphone
+  (§ 13) and Photos add (§ 11.1) approved.
+- 2026-10-28: Approved mockups added to the repo as `Design/screens/*.dc.html`; read `Design/README.md` and the
+  matching mockup before building a screen; SPEC wins where they disagree (§ 18, CLAUDE.md).

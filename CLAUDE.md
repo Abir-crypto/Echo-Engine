@@ -1,11 +1,13 @@
 # CLAUDE.md — Echo Engine
 
 You are implementing **Echo Engine**, an iOS/iPadOS audio processing app (AppLab Ltd.).
-These three files are your source of truth. Read them at the start of EVERY session:
+These files are your source of truth. Read them at the start of EVERY session:
 
 1. `CLAUDE.md` (this file) — how to work.
 2. `SPEC.md` — what to build and how. Authoritative for product, architecture, models, UI.
 3. `TASKS.md` — progress tracker. Authoritative for what is done and what is next.
+4. `Design/` — approved screen mockups (reference markup). Read `Design/README.md`; open the matching
+   mockup before building or changing any screen.
 
 Never rely on memory of a previous session. If it is not in these files or the repo, it did not happen.
 
@@ -81,6 +83,7 @@ Never rely on memory of a previous session. If it is not in these files or the r
 
 ```
 /CLAUDE.md  /SPEC.md  /TASKS.md
+/Design/                    # approved mockups (reference only, never shipped)
 /project.yml                 # XcodeGen project definition (source of truth for the Xcode project)
 /App-iOS/                    # iOS/iPadOS app target (SwiftUI)
 /App-iOS/Resources/          # asset catalog, String Catalog, built-in presets, privacy manifest

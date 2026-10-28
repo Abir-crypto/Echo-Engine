@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Echo Engine editor, audio project</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#F0B24A}a:hover{color:#F6C978}
+</style>
+</helmet>
+<div style="width: 390px; height: 1000px; box-sizing: border-box; position: relative; overflow: hidden; background: #161B22; color: #ECEFF3; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; gap: 18px; padding: 56px 20px 32px 20px">
+
+  <div style="display: flex; align-items: center; justify-content: space-between; gap: 12px">
+    <a href="Home.dc.html" aria-label="Back to projects" style="width: 44px; height: 44px; border-radius: 22px; background: #1F2630; color: #C9D1DB; display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <span style="font-size: 17px; font-weight: 600">Episode 12 with Maya</span>
+    <a href="Export.dc.html" style="height: 40px; padding: 0 16px; border-radius: 20px; background: {{accent}}; color: #1E1505; text-decoration: none; font-size: 15px; font-weight: 600; display: flex; align-items: center">Export</a>
+  </div>
+
+  <div style="position: relative; height: 197px; border-radius: 16px; background: #1F2630; overflow: hidden; display: flex; align-items: center; gap: 3px; padding: 0 10px">
+    <sc-for list="{{detail}}" as="d" hint-placeholder-count="40">
+      <div style="flex: 1; height: {{d.orig}}; border-radius: 3px; background: #3A4452; display: flex; align-items: center">
+        <div style="width: 100%; height: {{d.proc}}; border-radius: 3px; background: {{accent}}"></div>
+      </div>
+    </sc-for>
+    <div style="position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; background: #FFFFFF"></div>
+    <div style="position: absolute; left: 50%; top: 10px; transform: translateX(-50%); padding: 3px 8px; border-radius: 8px; background: #ECEFF3; color: #161B22; font-size: 12px; font-weight: 700; font-variant-numeric: tabular-nums">21:36</div>
+    <div style="position: absolute; left: 12px; bottom: 10px; font-size: 12px; color: #A3ADBA">Pinch to zoom</div>
+  </div>
+
+  <div style="display: flex; align-items: center; justify-content: space-between">
+    <button style="height: 40px; padding: 0 14px; border-radius: 20px; border: 1px solid #333C49; background: transparent; color: #C9D1DB; font-family: inherit; font-size: 13px; font-weight: 600">Hold for original</button>
+    <button aria-label="Play" style="width: 56px; height: 56px; border-radius: 28px; border: none; background: #ECEFF3; color: #161B22; display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M7 4.5v15l13-7.5z"></path></svg>
+    </button>
+    <div style="display: flex; gap: 6px">
+      <button aria-label="Undo" style="width: 40px; height: 40px; border-radius: 20px; border: none; background: #1F2630; color: #C9D1DB; display: flex; align-items: center; justify-content: center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 14L4 9l5-5"></path><path d="M4 9h11a5 5 0 0 1 0 10h-3"></path></svg>
+      </button>
+      <button aria-label="Redo" style="width: 40px; height: 40px; border-radius: 20px; border: none; background: #1F2630; color: #6B7684; display: flex; align-items: center; justify-content: center">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 14l5-5-5-5"></path><path d="M20 9H9a5 5 0 0 0 0 10h3"></path></svg>
+      </button>
+    </div>
+  </div>
+
+  <div style="display: flex; flex-direction: column; gap: 6px">
+    <div style="position: relative; height: 52px; border-radius: 12px; background: #1F2630; overflow: hidden; display: flex; align-items: center; gap: 2px; padding: 0 6px">
+      <sc-for list="{{bars}}" as="b" hint-placeholder-count="56">
+        <div style="flex: 1; border-radius: 2px; height: {{b}}; background: {{accent}}"></div>
+      </sc-for>
+      <div style="position: absolute; left: 0; top: 0; bottom: 0; width: 8px; border-radius: 4px; background: {{accent}}"></div>
+      <div style="position: absolute; right: 0; top: 0; bottom: 0; width: 8px; border-radius: 4px; background: {{accent}}"></div>
+      <div style="position: absolute; left: 157px; top: -2px; bottom: -2px; width: 2px; background: #FFFFFF"></div>
+    </div>
+    <div style="display: flex; justify-content: space-between; font-size: 12px; color: #A3ADBA; font-variant-numeric: tabular-nums">
+      <span>21:36</span>
+      <span>48:05</span>
+    </div>
+  </div>
+
+  <section style="display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <h2 style="margin: 0; font-size: 20px; font-weight: 700">Enhance</h2>
+      <span style="font-size: 13px; color: #A3ADBA">Applied top to bottom</span>
+    </div>
+    <div style="display: flex; flex-direction: column; border-radius: 14px; background: #1F2630; overflow: hidden">
+      <sc-for list="{{stack}}" as="s" hint-placeholder-count="2">
+        <div style="display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 14px; border-bottom: 1px solid #29313D">
+          <span style="width: 24px; height: 24px; border-radius: 12px; background: rgba(240,178,74,0.16); color: {{accent}}; font-size: 12px; font-weight: 700; display: flex; align-items: center; justify-content: center; font-variant-numeric: tabular-nums">{{s.n}}</span>
+          <span style="flex: 1; font-size: 16px; font-weight: 600">{{s.name}}</span>
+          <span style="font-size: 15px; color: #C9D1DB; font-variant-numeric: tabular-nums">{{s.strength}}</span>
+          <button aria-label="Reorder {{s.name}}" style="width: 32px; height: 44px; border: none; background: transparent; color: #6B7684; display: flex; align-items: center; justify-content: center">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M5 9h14M5 15h14"></path></svg>
+          </button>
+        </div>
+      </sc-for>
+      <button style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 14px; border: none; background: transparent; color: {{accent}}; font-family: inherit; font-size: 16px; font-weight: 600">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="10"></circle><path d="M12 8v8M8 12h8"></path></svg>
+        Add enhancement
+      </button>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 10px">
+    <h2 style="margin: 0; font-size: 20px; font-weight: 700">Adjust</h2>
+    <div style="display: flex; flex-direction: column; border-radius: 14px; background: #1F2630; overflow: hidden">
+      <button style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 0 14px; border: none; border-bottom: 1px solid #29313D; background: transparent; color: inherit; font-family: inherit; text-align: left">
+        <span style="flex: 1; font-size: 16px; font-weight: 600">Equalizer</span>
+        <svg width="88" height="28" viewBox="0 0 88 28" fill="none" stroke="{{accent}}" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M2 20 C 12 20, 18 10, 30 12 S 52 18, 62 10 S 80 8, 86 12"></path></svg>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7684" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+      </button>
+      <button style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 0 14px; border: none; border-bottom: 1px solid #29313D; background: transparent; color: inherit; font-family: inherit; text-align: left">
+        <span style="flex: 1; font-size: 16px; font-weight: 600">Gain and dynamics</span>
+        <span style="font-size: 15px; color: #C9D1DB; font-variant-numeric: tabular-nums">0 dB</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7684" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+      </button>
+      <button style="display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 0 14px; border: none; background: transparent; color: inherit; font-family: inherit; text-align: left">
+        <span style="flex: 1; font-size: 16px; font-weight: 600">Loudness</span>
+        <span style="font-size: 15px; color: #C9D1DB">Podcast</span>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7684" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+      </button>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F0B24A","options":["#F0B24A","#5CC8D8","#9B8CFF","#7FD18B"]},"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#F0B24A';
+    const orig = [40,62,55,80,72,90,58,76,48,86,70,62,94,56,68,98,64,82,50,74,60,88,52,70,46,78,66,92,58,80,44,72,60,84,54,76,42,66,58,70];
+    const proc = [55,70,65,78,74,82,68,76,60,80,72,70,84,66,72,86,70,78,62,74,68,80,64,72,58,76,70,82,66,76,56,72,66,78,64,74,56,70,66,72];
+    const detail = orig.map((o, i) => ({ orig: o + '%', proc: proc[i] + '%' }));
+    const hs = [40,52,46,60,58,64,50,62,48,66,60,56,70,52,58,72,56,64,50,60,54,66,52,58,48,62,56,68,54,62,50,60,56,66,52,60,46,56,52,62,48,58,54,66,50,58,44,56,50,62,48,56,42,52,46,50];
+    const bars = hs.map((h) => h + '%');
+    const stack = [
+      { n: '1', name: 'Noise Suppression', strength: '60%' },
+      { n: '2', name: 'Voice Leveler', strength: '100%' }
+    ];
+    return { accent, detail, bars, stack };
+  }
+}
+</script>
+</body>
+</html>

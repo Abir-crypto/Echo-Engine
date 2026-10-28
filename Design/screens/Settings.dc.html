@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Echo Engine settings</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#F0B24A}a:hover{color:#F6C978}
+</style>
+</helmet>
+<div style="width: 390px; height: 1000px; box-sizing: border-box; position: relative; overflow: hidden; background: #161B22; color: #ECEFF3; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; gap: 22px; padding: 56px 20px 32px 20px">
+
+  <div style="display: flex; align-items: center; gap: 12px">
+    <a href="Home.dc.html" aria-label="Back to projects" style="width: 44px; height: 44px; border-radius: 22px; background: #1F2630; color: #C9D1DB; display: flex; align-items: center; justify-content: center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"></path></svg>
+    </a>
+    <h1 style="margin: 0; font-size: 28px; font-weight: 700">Settings</h1>
+  </div>
+
+  <section style="display: flex; flex-direction: column; gap: 8px">
+    <h2 style="margin: 0; font-size: 14px; font-weight: 600; color: #A3ADBA">Appearance</h2>
+    <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 4px; padding: 4px; border-radius: 12px; background: #11161D">
+      <sc-for list="{{modes}}" as="m" hint-placeholder-count="3">
+        <button style="height: 40px; border: none; border-radius: 9px; background: {{m.bg}}; color: {{m.fg}}; font-family: inherit; font-size: 14px; font-weight: 600">{{m.label}}</button>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 10px">
+    <h2 style="margin: 0; font-size: 14px; font-weight: 600; color: #A3ADBA">Tint</h2>
+    <div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; padding: 14px 10px; border-radius: 14px; background: #1F2630">
+      <sc-for list="{{tints}}" as="t" hint-placeholder-count="6">
+        <button aria-label="{{t.name}}" style="display: flex; flex-direction: column; align-items: center; gap: 6px; border: none; background: transparent; color: {{t.labelColor}}; font-family: inherit; font-size: 11px; font-weight: 600; padding: 0">
+          <span style="width: 40px; height: 40px; box-sizing: border-box; border-radius: 20px; background: {{t.color}}; border: {{t.ring}}"></span>
+          {{t.name}}
+        </button>
+      </sc-for>
+    </div>
+    <span style="font-size: 13px; color: #A3ADBA">Used for buttons and processed audio.</span>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 8px">
+    <h2 style="margin: 0; font-size: 14px; font-weight: 600; color: #A3ADBA">Privacy</h2>
+    <div style="display: flex; flex-direction: column; border-radius: 14px; background: #1F2630; overflow: hidden">
+      <sc-for list="{{toggles}}" as="g" hint-placeholder-count="2">
+        <div style="display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 14px; border-bottom: 1px solid #29313D">
+          <span style="flex: 1; font-size: 16px; font-weight: 600">{{g.label}}</span>
+          <button aria-label="{{g.label}}" aria-pressed="true" style="width: 51px; height: 31px; border-radius: 16px; border: none; background: #4CAF6E; padding: 2px; display: flex; justify-content: flex-end">
+            <span style="width: 27px; height: 27px; border-radius: 14px; background: #FFFFFF"></span>
+          </button>
+        </div>
+      </sc-for>
+    </div>
+    <span style="font-size: 13px; color: #A3ADBA">Your audio never leaves your device.</span>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 8px">
+    <h2 style="margin: 0; font-size: 14px; font-weight: 600; color: #A3ADBA">Storage</h2>
+    <div style="display: flex; flex-direction: column; border-radius: 14px; background: #1F2630; overflow: hidden">
+      <div style="display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 14px; border-bottom: 1px solid #29313D">
+        <span style="flex: 1; font-size: 16px; font-weight: 600">Projects</span>
+        <span style="font-size: 15px; color: #C9D1DB; font-variant-numeric: tabular-nums">4.9 GB</span>
+      </div>
+      <div style="display: flex; align-items: center; gap: 12px; min-height: 56px; padding: 0 14px">
+        <span style="flex: 1; font-size: 16px; font-weight: 600">Render cache</span>
+        <span style="font-size: 15px; color: #C9D1DB; font-variant-numeric: tabular-nums">1.9 GB</span>
+        <button style="height: 34px; padding: 0 12px; border-radius: 17px; border: 1px solid #333C49; background: transparent; color: #ECEFF3; font-family: inherit; font-size: 14px; font-weight: 600">Clear</button>
+      </div>
+    </div>
+    <span style="font-size: 13px; line-height: 1.4; color: #A3ADBA">Projects aren’t included in iCloud backup. Export anything you want to keep.</span>
+  </section>
+
+  <section style="display: flex; flex-direction: column; border-radius: 14px; background: #1F2630; overflow: hidden">
+    <button style="display: flex; align-items: center; gap: 12px; min-height: 52px; padding: 0 14px; border: none; border-bottom: 1px solid #29313D; background: transparent; color: inherit; font-family: inherit; text-align: left">
+      <span style="flex: 1; font-size: 16px; font-weight: 600">Acknowledgements</span>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#6B7684" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M9 6l6 6-6 6"></path></svg>
+    </button>
+    <div style="display: flex; align-items: center; min-height: 52px; padding: 0 14px">
+      <span style="flex: 1; font-size: 16px; font-weight: 600">Version</span>
+      <span style="font-size: 15px; color: #A3ADBA; font-variant-numeric: tabular-nums">1.0 (1)</span>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F0B24A","options":["#F0B24A","#5CC8D8","#9B8CFF","#7FD18B"]},"$preview":{"width":390,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#F0B24A';
+    const modes = ['System', 'Dark', 'Light'].map((label) => ({
+      label,
+      bg: label === 'System' ? '#323B48' : 'transparent',
+      fg: label === 'System' ? '#ECEFF3' : '#A3ADBA'
+    }));
+    const palette = [
+      { name: 'Amber', color: '#F0B24A' },
+      { name: 'Teal', color: '#5CC8D8' },
+      { name: 'Violet', color: '#9B8CFF' },
+      { name: 'Green', color: '#7FD18B' },
+      { name: 'Rose', color: '#F28BA8' },
+      { name: 'Blue', color: '#6FA8FF' }
+    ];
+    const tints = palette.map((t) => {
+      const on = t.color.toLowerCase() === accent.toLowerCase();
+      return { ...t, ring: on ? '3px solid #ECEFF3' : '0 solid transparent', labelColor: on ? '#ECEFF3' : '#A3ADBA' };
+    });
+    const toggles = [{ label: 'Share usage analytics' }, { label: 'Share crash reports' }];
+    return { accent, modes, tints, toggles };
+  }
+}
+</script>
+</body>
+</html>

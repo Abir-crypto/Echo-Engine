@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Echo Engine home</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<style>
+body{margin:0}
+a{color:#F0B24A}a:hover{color:#F6C978}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; position: relative; overflow: hidden; background: #161B22; color: #ECEFF3; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; display: flex; flex-direction: column; gap: 20px; padding: 64px 20px 0 20px">
+  <div style="display: flex; align-items: center; justify-content: space-between">
+    <h1 style="margin: 0; font-size: 34px; font-weight: 700; letter-spacing: -0.5px">Projects</h1>
+    <button aria-label="Settings" style="width: 44px; height: 44px; border-radius: 22px; border: none; background: #1F2630; color: #A3ADBA; display: flex; align-items: center; justify-content: center">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"></path></svg>
+    </button>
+  </div>
+
+  <button style="height: 54px; border: none; border-radius: 16px; background: {{accent}}; color: #1E1505; font-size: 17px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 8px; font-family: inherit">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"></path></svg>
+    Import audio or video
+  </button>
+
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px 12px; padding-bottom: 120px">
+    <sc-for list="{{projects}}" as="p" hint-placeholder-count="6">
+      <a href="Editor.dc.html" style="display: flex; flex-direction: column; gap: 8px; text-decoration: none; color: inherit">
+        <div style="position: relative; height: 104px; border-radius: 14px; background: #1F2630; overflow: hidden; display: flex; align-items: center; justify-content: center; padding: 0 14px">
+          <div style="display: flex; align-items: center; gap: 3px; height: 44px; width: 100%">
+            <sc-for list="{{bars}}" as="b" hint-placeholder-count="24">
+              <div style="flex: 1; border-radius: 2px; height: {{b}}; background: {{p.wave}}"></div>
+            </sc-for>
+          </div>
+          <div style="position: absolute; left: 10px; top: 10px; width: 26px; height: 26px; border-radius: 8px; background: rgba(22,27,34,0.78); display: flex; align-items: center; justify-content: center; color: #C9D1DB">
+            <sc-if value="{{p.isVideo}}" hint-placeholder-val="{{ true }}">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Video"><rect x="2" y="6" width="14" height="12" rx="2"></rect><path d="M16 10l6-3v10l-6-3z"></path></svg>
+            </sc-if>
+            <sc-if value="{{p.isAudio}}" hint-placeholder-val="{{ false }}">
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" role="img" aria-label="Recording"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>
+            </sc-if>
+          </div>
+          <div style="position: absolute; right: 10px; bottom: 10px; padding: 3px 7px; border-radius: 7px; background: rgba(22,27,34,0.78); font-size: 12px; font-weight: 600; font-variant-numeric: tabular-nums; color: #DCE2E9">{{p.duration}}</div>
+        </div>
+        <div style="display: flex; flex-direction: column; gap: 2px; padding: 0 2px">
+          <span style="font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">{{p.title}}</span>
+          <span style="font-size: 13px; color: {{p.metaColor}}">{{p.meta}}</span>
+        </div>
+      </a>
+    </sc-for>
+  </div>
+
+  <nav aria-label="Main" style="position: absolute; left: 50%; bottom: 30px; transform: translateX(-50%); display: flex; gap: 4px; padding: 6px; border-radius: 32px; background: rgba(41,49,61,0.88); border: 1px solid rgba(255,255,255,0.08)">
+    <a href="Home.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; width: 96px; padding: 8px 0; border-radius: 26px; background: rgba(240,178,74,0.14); color: {{accent}}; text-decoration: none; font-size: 11px; font-weight: 600">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="14" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="14" width="7" height="7" rx="1.5"></rect><rect x="14" y="14" width="7" height="7" rx="1.5"></rect></svg>
+      Projects
+    </a>
+    <a href="Record.dc.html" style="display: flex; flex-direction: column; align-items: center; gap: 2px; width: 96px; padding: 8px 0; border-radius: 26px; color: #A3ADBA; text-decoration: none; font-size: 11px; font-weight: 600">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"></rect><path d="M5 11a7 7 0 0 0 14 0M12 18v3"></path></svg>
+      Record
+    </a>
+  </nav>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"accent":{"editor":"color","default":"#F0B24A","options":["#F0B24A","#5CC8D8","#9B8CFF","#7FD18B"]},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const accent = this.props.accent ?? '#F0B24A';
+    const idle = '#4A5563';
+    const heights = [30, 55, 40, 75, 60, 90, 45, 70, 35, 80, 65, 50, 85, 40, 60, 95, 55, 70, 30, 65, 45, 75, 40, 55];
+    const bars = heights.map((h) => h + '%');
+    const projects = [
+      { title: 'Beach vlog', duration: '3:18', meta: 'Edited today', isVideo: true, processed: true },
+      { title: 'Episode 12 with Maya', duration: '48:05', meta: 'Yesterday', isVideo: false, processed: true },
+      { title: 'Coffee shop interview', duration: '12:40', meta: 'Needs 0.2 GB to edit', isVideo: true, processed: false, warn: true },
+      { title: 'Acoustic cover, take 3', duration: '4:02', meta: '21 Oct', isVideo: false, processed: true },
+      { title: 'Lecture recording', duration: '1:12:30', meta: '18 Oct', isVideo: false, processed: false },
+      { title: 'Product demo', duration: '0:58', meta: '12 Oct', isVideo: true, processed: false }
+    ].map((p) => ({ ...p, isAudio: !p.isVideo, wave: p.processed ? accent : idle, metaColor: p.warn ? '#F3A39C' : '#A3ADBA' }));
+    return { accent, bars, projects };
+  }
+}
+</script>
+</body>
+</html>
