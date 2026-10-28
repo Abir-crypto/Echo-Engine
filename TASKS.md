@@ -69,7 +69,11 @@ Goal: persistent projects with schema versioning and the Home screen.
   > `FileManager()` instance). `list()` skips folders without a readable manifest; `load` migrates in place; save/rename refuse read-only.
   > `createFolder(for:)` excludes the whole folder from backup (user decision, § 5.1); importers must call it first. `ProjectFolder` = § 5.1 layout, `URL.projectsDirectory`,
   > `DateProviding`/`SystemClock`; fakes `FakeProjectRepository`, `FakeClock`. Delete doesn't touch renders yet (render cache is F06).
-- [ ] F02.T04 — Autosave helper (1 s debounce + flush on scene phase change) (§ 5.3).
+- [x] F02.T04 — Autosave helper (1 s debounce + flush on scene phase change) (§ 5.3).
+  > Done: `ProjectAutosaving` + `ProjectAutosaver` actor (restartable 1 s debounce via injected `Clock`, latest wins, stamps `updatedAt`
+  > at schedule time, chained saves so `flush()` returns only once everything is on disk, failures → `onError`). App modifier
+  > `.flushesAutosave(_:)` flushes on scene phase ≠ active and on disappear (Editor wires it in F04). Fakes: `ManualClock` (test clock,
+  > `advance(by:)`), `FakeProjectAutosaver`; `FakeProjectRepository.saveCount`. Autosaver tests passed 20/20 repeated runs.
 - [ ] F02.T05 — Home screen UI per canvas: title, gear, Import button (non-functional yet), grid cards with thumbnail/waveform placeholder, badges, empty state, rename/delete context menu (§ 14.1, § 18.5). Previews dark/light/RTL.
 
 **Checkpoint test:** seed debug projects; they persist across launches; rename and delete work; empty state shows when none.

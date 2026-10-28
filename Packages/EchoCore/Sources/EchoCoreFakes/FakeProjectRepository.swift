@@ -4,6 +4,8 @@ import Foundation
 /// In-memory projects for previews and model tests.
 public actor FakeProjectRepository: ProjectRepository {
     public private(set) var stored: [UUID: StoredProject]
+    /// Successful `save` calls, including those made by `rename`.
+    public private(set) var saveCount = 0
     private let clock: any DateProviding
 
     public init(projects: [Project] = [], readOnlyIDs: Set<UUID> = [], clock: any DateProviding = FakeClock()) {
@@ -29,6 +31,7 @@ public actor FakeProjectRepository: ProjectRepository {
     public func save(_ project: Project) throws {
         guard stored[project.id]?.isReadOnly != true else { throw ProjectRepositoryError.readOnly }
         stored[project.id] = StoredProject(project: project, isReadOnly: false)
+        saveCount += 1
     }
 
     public func createFolder(for id: UUID) throws -> ProjectFolder {
