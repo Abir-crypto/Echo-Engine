@@ -7,7 +7,7 @@ Section references (§) point to SPEC.md.
 
 ---
 
-## F01 — Project foundation  [IN PROGRESS]
+## F01 — Project foundation  [DONE]
 Goal: buildable empty app with module structure, DI root, tokens, localization and tab shell.
 
 - [x] F01.T01 — Ask user for bundle ID, Apple team ID, display name confirmation. Record in § 3 and § 20.
@@ -51,7 +51,7 @@ Goal: buildable empty app with module structure, DI root, tokens, localization a
 
 ---
 
-## F02 — Projects & storage model  [TODO]
+## F02 — Projects & storage model  [IN PROGRESS]
 Goal: persistent projects with schema versioning and the Home screen.
 
 - [ ] F02.T01 — Models: `Project`, `Clip`, `AIOperation`, `AIFeature` (+`.unknown`), `ManualSettings`, `LoudnessTarget`, `EditState`, `SourceInfo`, `RecordingMetadata`, `TimeRangeCodable` with lenient decoding (§ 5.2–5.3). Tests.
