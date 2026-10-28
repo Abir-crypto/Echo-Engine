@@ -1,7 +1,8 @@
 import EchoCore
 import Foundation
 
-/// In-memory projects for previews and model tests.
+/// In-memory manifests for previews and model tests. `createFolder` makes a real temporary folder so importers
+/// have somewhere to write.
 public actor FakeProjectRepository: ProjectRepository {
     public private(set) var stored: [UUID: StoredProject]
     /// Successful `save` calls, including those made by `rename`.
@@ -37,7 +38,9 @@ public actor FakeProjectRepository: ProjectRepository {
     }
 
     public func save(_ project: Project) throws {
-        guard stored[project.id]?.isReadOnly != true else { throw ProjectRepositoryError.readOnly }
+        guard stored[project.id]?.isReadOnly != true, !project.containsUnknownValues else {
+            throw ProjectRepositoryError.readOnly
+        }
         stored[project.id] = StoredProject(project: project, isReadOnly: false)
         saveCount += 1
     }

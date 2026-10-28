@@ -48,6 +48,8 @@ public actor ProjectAutosaver: ProjectAutosaving {
             } catch {
                 return
             }
+            // A newer schedule may have cancelled this timer after its sleep ended.
+            guard !Task.isCancelled else { return }
             await self.flush()
         }
     }

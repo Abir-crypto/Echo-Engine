@@ -27,9 +27,13 @@ public final class ProjectMigrator: ProjectMigrating {
         guard var json = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any] else {
             throw ProjectMigrationError.invalidJSON
         }
-        let fromVersion = json[Self.versionKey] as? Int ?? 1
+        let storedVersion = json[Self.versionKey] as? Int
+        let fromVersion = storedVersion ?? 1
         guard fromVersion < targetVersion else {
-            return (data, false, fromVersion)
+            guard storedVersion == nil else { return (data, false, fromVersion) }
+            // Every manifest carries `schemaVersion` (SPEC § 5.3); supply it so the data decodes.
+            json[Self.versionKey] = fromVersion
+            return (try JSONSerialization.data(withJSONObject: json, options: [.sortedKeys]), false, fromVersion)
         }
         for version in fromVersion..<targetVersion {
             guard let migration = migrations.first(where: { $0.from == version }) else {

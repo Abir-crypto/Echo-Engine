@@ -1,14 +1,10 @@
 import EchoCore
+import EchoCoreFakes
 import Foundation
 import Testing
 
 /// v1 → v2: renames `name` to `title`.
-private struct RenameNameToTitle: ProjectMigration {
-    let from = 1
-    func migrate(_ json: inout [String: Any]) throws {
-        json["title"] = json.removeValue(forKey: "name")
-    }
-}
+private let renameNameToTitle = RenameKeyMigration(from: 1, oldKey: "name", newKey: "title")
 
 /// v2 → v3: adds `tags`.
 private struct AddTags: ProjectMigration {
@@ -28,7 +24,7 @@ private struct FailingMigration: ProjectMigration {
 
 struct ProjectMigratorTests {
     /// Migrations deliberately registered out of order.
-    private let migrator = ProjectMigrator(targetVersion: 3, migrations: [AddTags(), RenameNameToTitle()])
+    private let migrator = ProjectMigrator(targetVersion: 3, migrations: [AddTags(), renameNameToTitle])
 
     private func object(_ data: Data) throws -> [String: Any] {
         try #require(try JSONSerialization.jsonObject(with: data) as? [String: Any])
@@ -59,6 +55,12 @@ struct ProjectMigratorTests {
         #expect(try object(result.data)["title"] as? String == "Old")
     }
 
+    @Test func missingVersionAtTheTargetIsFilledInWithoutMigrating() throws {
+        let result = try ProjectMigrator(targetVersion: 1, migrations: []).migrateIfNeeded(Data(#"{"title":"Old"}"#.utf8))
+        #expect(!result.didMigrate)
+        #expect(try object(result.data)["schemaVersion"] as? Int == 1)
+    }
+
     @Test func currentDataIsReturnedUnchanged() throws {
         let data = Data(#"{"schemaVersion":3,"title":"Beach vlog"}"#.utf8)
         let result = try migrator.migrateIfNeeded(data)
@@ -77,7 +79,7 @@ struct ProjectMigratorTests {
     }
 
     @Test func gapInTheChainThrows() {
-        let incomplete = ProjectMigrator(targetVersion: 3, migrations: [RenameNameToTitle()])
+        let incomplete = ProjectMigrator(targetVersion: 3, migrations: [renameNameToTitle])
         #expect(throws: ProjectMigrationError.missingMigration(from: 2)) {
             try incomplete.migrateIfNeeded(Data(#"{"schemaVersion":1}"#.utf8))
         }
@@ -106,7 +108,7 @@ struct ProjectMigratorTests {
 }
 
 struct ProjectFileMigrationTests {
-    private let migrator = ProjectMigrator(targetVersion: 3, migrations: [RenameNameToTitle(), AddTags()])
+    private let migrator = ProjectMigrator(targetVersion: 3, migrations: [renameNameToTitle, AddTags()])
 
     private func makeFolder() throws -> URL {
         let folder = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)

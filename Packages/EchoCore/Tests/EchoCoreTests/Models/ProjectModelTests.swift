@@ -109,6 +109,26 @@ struct ProjectModelTests {
         #expect(withLoudness.isProcessed)
     }
 
+    @Test func valuesThisVersionCantWriteBackAreDetected() {
+        #expect(!newProject().containsUnknownValues)
+
+        var withUnknownOp = newProject()
+        withUnknownOp.clips[0].aiStack = [AIOperation(kind: .unknown, strength: 1)]
+        #expect(!withUnknownOp.containsUnknownValues, "unknown AI ops keep their raw kind and stay editable")
+
+        var unknownMedia = newProject()
+        unknownMedia.mediaType = .unknown
+        var unknownBand = newProject()
+        unknownBand.clips[0].manual.eq[0].kind = .unknown
+        var unknownLoudness = newProject()
+        unknownLoudness.outputLoudness = .unknown(kind: "netflix", lufs: -27)
+        var unknownMarker = newProject()
+        unknownMarker.recording = RecordingMetadata(channelNames: ["Mic"], markers: [.init(time: 1, kind: .unknown)])
+        for project in [unknownMedia, unknownBand, unknownLoudness, unknownMarker] {
+            #expect(project.containsUnknownValues)
+        }
+    }
+
     @Test func manualSettingsDefaultToNeutral() {
         let manual = ManualSettings()
         #expect(manual.inputGainDB == 0)
@@ -133,14 +153,21 @@ struct LoudnessTargetTests {
 
     @Test(arguments: [
         LoudnessTarget.youtube, .instagram, .tiktok, .spotify, .podcast, .appleMusic, .custom(lufs: -23),
+        .unknown(kind: "netflix", lufs: -27),
     ])
     func roundTripsThroughJSON(_ target: LoudnessTarget) throws {
         #expect(try JSONDecoder().decode(LoudnessTarget.self, from: JSONEncoder().encode(target)) == target)
     }
 
-    @Test func unknownPlatformFallsBackToCustomAtStoredLoudness() throws {
+    @Test func unknownPlatformKeepsItsKindAndLoudness() throws {
         let json = Data(#"{"kind":"netflix","lufs":-27}"#.utf8)
-        #expect(try JSONDecoder().decode(LoudnessTarget.self, from: json) == .custom(lufs: -27))
+        let target = try JSONDecoder().decode(LoudnessTarget.self, from: json)
+        #expect(target == .unknown(kind: "netflix", lufs: -27))
+        #expect(target.lufs == -27)
+        #expect(target.isUnknown)
+
+        let reencoded = try JSONSerialization.jsonObject(with: JSONEncoder().encode(target)) as? [String: Any]
+        #expect(reencoded?["kind"] as? String == "netflix")
     }
 
     @Test func unknownPlatformWithoutLoudnessFailsToDecode() {

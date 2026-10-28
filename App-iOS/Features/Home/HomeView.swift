@@ -27,8 +27,8 @@ struct HomeView: View {
                         } label: {
                             Label("Settings", systemImage: "gearshape")
                         }
-                        // The mockup's gear is grey, not tinted.
-                        .tint(.token(.textSecondary))
+                        // Circle-button glyphs use TextValue, not the tint (SPEC § 18.4).
+                        .tint(.token(.textValue))
                     }
                 }
                 .task { await model.load() }
@@ -155,7 +155,7 @@ private struct HomeFailureMessage: LocalizedError {
         case .load: String(localized: "Projects couldn’t be loaded. Restart Echo Engine to try again.")
         case .rename: String(localized: "The project couldn’t be renamed. Try again.")
         case .delete: String(localized: "The project couldn’t be deleted. Try again.")
-        case .readOnly: String(localized: "This project was made with a newer version of Echo Engine. Update the app to change it.")
+        case .readOnly: String(localized: "Update Echo Engine to edit this project.")
         }
     }
 }

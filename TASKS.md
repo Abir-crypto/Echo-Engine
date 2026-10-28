@@ -255,6 +255,7 @@ Goal: ready for TestFlight.
 - [ ] F16.T01 — App icon placeholder slot + launch screen; acknowledgements content (RNNoise, Firebase). Set `ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon` in project.yml (blank since F01.T05).
 - [ ] F16.T02 — Performance pass: import/render/export timing on iPhone 11-class device, memory on 2-hour audio, battery during 1-hour recording; fix regressions.
 - [ ] F16.T03 — Edge cases: no audio track, HDR/ProRes, 2-hour podcast, low storage at each stage, newer-schema project, airplane mode, iCloud signed out.
+- [ ] F16.T03a — Unreadable manifests (corrupt, or a newer schema that no longer decodes) are skipped by `ProjectRepository.list()`, so Home hides them and their storage. Show them (title from raw JSON if present) with "Update Echo Engine to open this project" and Delete. From the F02 code review; unreachable in v1 (no sync, backup or downgrade path).
 - [ ] F16.T04 — Checkpoint summary: list everything the user must do in App Store Connect (privacy label, age rating, descriptions in 11 languages, keywords incl. "video to audio", screenshots).
 
 **Checkpoint test:** full TestFlight build installs and passes the edge-case list.

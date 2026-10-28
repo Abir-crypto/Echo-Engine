@@ -8,7 +8,7 @@ public protocol ProjectRepository: Sendable {
     /// Migrates the manifest if needed, then decodes it.
     func load(id: UUID) async throws -> StoredProject
     /// Writes the manifest atomically, creating the folder if needed.
-    /// Throws `ProjectRepositoryError.readOnly` for projects written by a newer app version.
+    /// Throws `ProjectRepositoryError.readOnly` for projects from a newer app version.
     func save(_ project: Project) async throws
     /// Creates the project folder and excludes it, with everything later written into it, from backup
     /// (SPEC § 5.1). Call before writing any file into a new project. Idempotent.
@@ -25,7 +25,8 @@ public protocol ProjectRepository: Sendable {
 /// A project as read from disk.
 public struct StoredProject: Equatable, Sendable {
     public var project: Project
-    /// Written by a newer app version: show "Update Echo Engine to edit this project", never save (SPEC § 5.3).
+    /// From a newer app version (newer schema, or values this version can't write back): show "Update Echo Engine
+    /// to edit this project" and never save (SPEC § 5.3).
     public var isReadOnly: Bool
 
     public init(project: Project, isReadOnly: Bool) {
@@ -36,6 +37,6 @@ public struct StoredProject: Equatable, Sendable {
 
 public enum ProjectRepositoryError: Error, Equatable {
     case notFound
-    /// The project was written by a newer app version.
+    /// The project is from a newer app version (see `StoredProject.isReadOnly`).
     case readOnly
 }

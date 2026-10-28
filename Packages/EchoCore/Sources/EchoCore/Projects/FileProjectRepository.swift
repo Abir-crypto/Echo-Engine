@@ -34,11 +34,14 @@ public actor FileProjectRepository: ProjectRepository {
         guard fileManager.fileExists(atPath: manifest.path) else { throw ProjectRepositoryError.notFound }
         let migration = try migrator.migrateFileIfNeeded(at: manifest)
         let project = try JSONDecoder().decode(Project.self, from: migration.data)
-        return StoredProject(project: project, isReadOnly: migrator.isReadOnly(schemaVersion: migration.fromVersion))
+        let isReadOnly = migrator.isReadOnly(schemaVersion: migration.fromVersion) || project.containsUnknownValues
+        return StoredProject(project: project, isReadOnly: isReadOnly)
     }
 
     public func save(_ project: Project) throws {
-        guard !migrator.isReadOnly(schemaVersion: project.schemaVersion) else { throw ProjectRepositoryError.readOnly }
+        guard !migrator.isReadOnly(schemaVersion: project.schemaVersion), !project.containsUnknownValues else {
+            throw ProjectRepositoryError.readOnly
+        }
         let folder = try createFolder(for: project.id)
         try encoder.encode(project).write(to: folder.manifest, options: .atomic)
     }

@@ -9,14 +9,9 @@ enum AppTab: Hashable {
 
 /// Tab shell (SPEC § 14.1). Appearance and tint are applied by `EchoEngineApp`.
 struct RootView: View {
-    private let container: AppContainer
+    let container: AppContainer
+    let homeModel: HomeModel
     @State private var selectedTab = AppTab.projects
-    @State private var homeModel: HomeModel
-
-    init(container: AppContainer) {
-        self.container = container
-        _homeModel = State(initialValue: container.makeHomeModel())
-    }
 
     var body: some View {
         TabView(selection: $selectedTab) {
@@ -41,24 +36,25 @@ struct RootView: View {
 
 #if DEBUG
 @MainActor
-private func previewContainer() -> AppContainer {
-    AppContainer(projects: FakeProjectRepository(projects: PreviewProjects.all()))
+private func previewRoot() -> RootView {
+    let container = AppContainer(projects: FakeProjectRepository(projects: PreviewProjects.all()))
+    return RootView(container: container, homeModel: container.makeHomeModel())
 }
 
 #Preview("Dark") {
-    RootView(container: previewContainer())
+    previewRoot()
         .tint(AppTint.default.text)
         .preferredColorScheme(.dark)
 }
 
 #Preview("Light") {
-    RootView(container: previewContainer())
+    previewRoot()
         .tint(AppTint.default.text)
         .preferredColorScheme(.light)
 }
 
 #Preview("Arabic RTL, XXL") {
-    RootView(container: previewContainer())
+    previewRoot()
         .tint(AppTint.default.text)
         .environment(\.locale, Locale(identifier: "ar"))
         .environment(\.layoutDirection, .rightToLeft)

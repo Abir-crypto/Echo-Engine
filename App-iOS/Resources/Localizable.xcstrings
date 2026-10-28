@@ -58,11 +58,11 @@
     "This frees %@. It can’t be undone.": {
       "comment": "Delete confirmation message. %@ = size, e.g. 1.4 GB."
     },
-    "This project was made with a newer version of Echo Engine. Update the app to change it.": {
-      "comment": "Error alert."
-    },
     "Title": {
       "comment": "Placeholder of the project title field."
+    },
+    "Update Echo Engine to edit this project.": {
+      "comment": "Shown for projects made with a newer app version (SPEC § 5.3)."
     },
     "Video": {
       "comment": "Accessibility label of the video badge on a project card."

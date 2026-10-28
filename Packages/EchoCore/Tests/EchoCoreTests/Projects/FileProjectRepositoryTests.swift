@@ -3,13 +3,6 @@ import EchoCoreFakes
 import Foundation
 import Testing
 
-/// v1 → v2: renames `name` to `title`.
-private struct RenameNameToTitle: ProjectMigration {
-    let from = 1
-    func migrate(_ json: inout [String: Any]) throws {
-        json["title"] = json.removeValue(forKey: "name")
-    }
-}
 
 final class FileProjectRepositoryTests {
     private let root = FileManager.default.temporaryDirectory.appending(path: "Projects-\(UUID().uuidString)")
@@ -152,10 +145,31 @@ final class FileProjectRepositoryTests {
         #expect(try Data(contentsOf: repository.folder(for: project.id).manifest) == original)
     }
 
+    @Test func valuesFromANewerAppMakeTheProjectReadOnly() async throws {
+        let project = project()
+        try writeManifest(project) { $0["mediaType"] = "hologram" }
+
+        let stored = try await repository.load(id: project.id)
+
+        #expect(stored.project.mediaType == .unknown)
+        #expect(stored.isReadOnly)
+        await #expect(throws: ProjectRepositoryError.readOnly) { try await repository.save(stored.project) }
+    }
+
+    @Test func manifestWithoutSchemaVersionLoadsAsVersionOne() async throws {
+        let project = project()
+        try writeManifest(project) { $0.removeValue(forKey: "schemaVersion") }
+
+        let stored = try await repository.load(id: project.id)
+
+        #expect(stored.project.schemaVersion == 1)
+        #expect(!stored.isReadOnly)
+    }
+
     @Test func olderSchemaIsMigratedAndBackedUpOnLoad() async throws {
         let project = project()
         let migrating = FileProjectRepository(
-            root: root, migrator: ProjectMigrator(targetVersion: 2, migrations: [RenameNameToTitle()]), clock: clock
+            root: root, migrator: ProjectMigrator(targetVersion: 2, migrations: [RenameKeyMigration(from: 1, oldKey: "name", newKey: "title")]), clock: clock
         )
         try writeManifest(project) { json in
             json["schemaVersion"] = 1

@@ -258,7 +258,10 @@ true-peak ceiling −1 dBTP.
   leaving the editor. Writes are `.atomic`. No Save button.
 - **Lenient decoding**: every property added after v1 schema uses `decodeIfPresent ?? default`. Enums decode
   unknown raw values to `.unknown` (ops with `.unknown` are kept, skipped in processing, shown as
-  "Needs a newer version").
+  "Needs a newer version"). Unknown AI ops keep their raw kind and are written back unchanged. Any other unknown
+  value (media type, origin, EQ band kind, loudness kind, recording take or marker kind) can't be written back,
+  so such a project opens read-only like a newer schema. `LoudnessTarget` decodes an unknown kind as
+  `.unknown(kind:lufs:)`: its stored loudness still applies.
 - **Schema versioning**: `schemaVersion` in every `project.json` and preset. `ProjectMigrator` runs chained
   migrations `vN → vN+1` on raw JSON before decoding; writes `project.v<old>.backup.json` first, then writes
   back the migrated file immediately. Additive changes do not bump the version.
@@ -793,7 +796,8 @@ enum Appearance: String, CaseIterable { case system, dark, light }
 - Primary button: height 54, Tint fill, `Tint-on` text, semibold 17.
 - Secondary: outlined `Stroke`, or `Surface` fill circle for icon buttons (44 pt).
 - Grouped lists: `Surface` container, rows separated by `Separator`, chevron in `IconMuted`.
-- Tint roles: the app-wide `.tint()` is `Tint/<name>-text` (links, toolbar icons, tab bar: tinted text on Ground).
+- Tint roles: the app-wide `.tint()` is `Tint/<name>-text` (links, tab bar, text buttons: tinted text on Ground).
+  Icon glyphs on circle buttons (toolbar gear, back, undo/redo, close) use `TextValue`, not the tint.
   Toggles set `.tint(.token(.success))`. Primary buttons use a custom style (Tint fill, `Tint-on` text); never rely
   on system-tinted fills.
 
@@ -860,3 +864,8 @@ Record new user decisions here (date, decision, section updated).
 - 2026-10-28: New tokens from the mockups: `TextValue` (values, icon glyphs, secondary button text, badge icons) and
   `BadgeFill`; values use `TextValue`, not `TextSecondary` (§ 18.2, § 18.3). Home uses the native `.inlineLarge`
   title so the title and gear share one row as in the mockup (§ 14.1).
+- 2026-10-28: Icon glyphs on circle buttons (toolbar gear, back, undo/redo, close) use `TextValue`, not the tint (§ 18.4).
+- 2026-10-28: F02 code review: projects with unknown non-AI-op values open read-only; `LoudnessTarget.unknown`
+  keeps a newer kind (§ 5.3). The app links `EchoCoreFakes` in every configuration (previews and debug samples;
+  approved with the `EchoCoreFakes` decision), and the app test target links no EchoCore products: a second
+  copy duplicates EchoCore's types and breaks `catch`/`as?` across them (§ 4.1).
