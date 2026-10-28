@@ -15,7 +15,11 @@ Goal: buildable empty app with module structure, DI root, tokens, localization a
   > in project.yml; ask before device testing). Recorded in SPEC § 3 + § 20. F01.T02 must also delete the Xcode
   > template (`Echo Engine/`, `Echo Engine.xcodeproj`, tracked `xcuserdata`). Toolchain: Xcode 27.1; if
   > `xcode-select -p` shows CommandLineTools, prefix commands with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`.
-- [ ] F01.T02 — `.gitignore` (Xcode, SPM `.build`, DerivedData, `.DS_Store`, `xcuserdata`, render caches); `project.yml` (XcodeGen) with App-iOS target (iOS 26, iPhone + iPad), test target; generate project.
+- [x] F01.T02 — `.gitignore` (Xcode, SPM `.build`, DerivedData, `.DS_Store`, `xcuserdata`, render caches); `project.yml` (XcodeGen) with App-iOS target (iOS 26, iPhone + iPad), test target; generate project.
+  > Done: Deleted Xcode template. `project.yml`: target/scheme `EchoEngine` (sources `App-iOS/`, Swift 6, generated
+  > Info.plist, iPhone portrait / iPad all orientations) + hosted Swift Testing target `EchoEngineTests` (`App-iOSTests/`).
+  > Generated `EchoEngine.xcodeproj` is gitignored — run `xcodegen generate` after pulling or editing project.yml.
+  > iPhone 17 exists on iOS 26.5 and 27.0: use destination `...,name=iPhone 17,OS=26.5`.
 - [ ] F01.T03 — `Packages/EchoCore` SPM package with targets `EchoCore`, `CEchoDSP` (C/C++), `EchoAudioUnits`, `EchoCoreTests`; Swift↔C++ interop enabled; trivial C++ function called from a Swift test.
 - [ ] F01.T04 — `AppContainer` composition root skeleton + environment injection; fakes folder; `FreeV1Entitlements`, `DefaultCapabilities` (§ 4.3–4.8).
 - [ ] F01.T05 — Asset catalog with all color tokens and six tints, light/dark variants (§ 18.2); `AppTint`, `Appearance`; `ContrastTests`.

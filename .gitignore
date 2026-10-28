@@ -1,0 +1,19 @@
+# macOS
+.DS_Store
+
+# Xcode — the project is generated from project.yml by XcodeGen (run `xcodegen generate`)
+*.xcodeproj/
+*.xcworkspace/
+xcuserdata/
+*.xcuserstate
+DerivedData/
+build/
+*.xcresult
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# Render caches and other local test output
+Renders/
+*.render-cache/
