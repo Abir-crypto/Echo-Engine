@@ -31,7 +31,11 @@ Goal: buildable empty app with module structure, DI root, tokens, localization a
   > is `@MainActor @Observable`, init params default to live types (tests/previews inject fakes); app does `.environment(container)`.
   > Xcode now builds EchoCore as a dynamic framework (app + tests link it). Custom CEchoDSP modulemap caused a
   > DEFINES_MODULE warning → replaced by umbrella header. After package graph changes, stale DerivedData can give bogus errors.
-- [ ] F01.T05 — Asset catalog with all color tokens and six tints, light/dark variants (§ 18.2); `AppTint`, `Appearance`; `ContrastTests`.
+- [x] F01.T05 — Asset catalog with all color tokens and six tints, light/dark variants (§ 18.2); `AppTint`, `Appearance`; `ContrastTests`.
+  > Done: `App-iOS/Resources/Assets.xcassets` (18 tokens + `Tint/` namespace, 6 tints × fill/text/wave/on). `App-iOS/DesignSystem/`:
+  > `ColorToken` enum + `ShapeStyle` statics (`.foregroundStyle(.textPrimary)`), `AppTint` (`assetName(_:)`, fill/text/wave/on), `Appearance`.
+  > `ContrastTests` checks 28 pairings × light/dark ≥ 4.5:1 (mutation-verified). TextTertiary light → #66717E (SPEC § 20).
+  > AppIcon name blanked in project.yml until F16.T01 (actool errors on a missing set).
 - [ ] F01.T06 — String Catalog with 11 languages enabled (English content only for now); localization conventions helper; RTL pseudolanguage scheme option (§ 17).
 - [ ] F01.T07 — App shell: floating tab bar (Projects, Record), placeholder screens, appearance + tint applied at root, Info.plist keys (microphone usage, photo add usage, background audio).
 
@@ -219,7 +223,7 @@ Goal: 11 languages, RTL and accessibility quality.
 ## F16 — Release readiness  [TODO]
 Goal: ready for TestFlight.
 
-- [ ] F16.T01 — App icon placeholder slot + launch screen; acknowledgements content (RNNoise, Firebase).
+- [ ] F16.T01 — App icon placeholder slot + launch screen; acknowledgements content (RNNoise, Firebase). Set `ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon` in project.yml (blank since F01.T05).
 - [ ] F16.T02 — Performance pass: import/render/export timing on iPhone 11-class device, memory on 2-hour audio, battery during 1-hour recording; fix regressions.
 - [ ] F16.T03 — Edge cases: no audio track, HDR/ProRes, 2-hour podcast, low storage at each stage, newer-schema project, airplane mode, iCloud signed out.
 - [ ] F16.T04 — Checkpoint summary: list everything the user must do in App Store Connect (privacy label, age rating, descriptions in 11 languages, keywords incl. "video to audio", screenshots).

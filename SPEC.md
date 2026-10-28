@@ -725,7 +725,7 @@ Settings, Home light, Editor light). This section is the authoritative translati
 | `Stroke` | #333C49 | #C6CDD6 | outlined buttons |
 | `TextPrimary` | #ECEFF3 | #141A22 | |
 | `TextSecondary` | #A3ADBA | #5B6573 | captions, values |
-| `TextTertiary` | #8591A0 | #6B7684 | placeholders |
+| `TextTertiary` | #8591A0 | #66717E | placeholders (light was #6B7684: 4.23:1 on Ground) |
 | `IconMuted` | #6B7684 | #8A94A1 | chevrons, disabled |
 | `WaveformIdle` | #4A5563 | #BCC4CF | unprocessed audio |
 | `WaveformOriginal` | #3A4452 | #D3D9E1 | original behind processed (detail waveform) |
@@ -822,3 +822,5 @@ Record new user decisions here (date, decision, section updated).
 - 2026-10-28: Shared fakes live in a new `EchoCoreFakes` package target (§ 4.1, § 4.2). App resources live in
   `App-iOS/Resources/` per § 4.2; golden test audio lives in the package test target (§ 4.2, § 19); CLAUDE.md
   repo layout updated to match.
+- 2026-10-28: Per the § 18.2 contrast rule, `TextTertiary` light changed #6B7684 → #66717E (4.23 → 4.55:1 on
+  Ground; same hue, still lighter than `TextSecondary`). All other text pairings pass as specified (§ 18.2).
