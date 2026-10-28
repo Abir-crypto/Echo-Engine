@@ -92,7 +92,10 @@ Goal: import audio/video into a project with exact storage messaging.
   > (`.unsupportedFormat`/`.noAudio`/`.unreadable`). `AVMediaInspector`: extension → UTType checked against the § 10 list (DRM-protected
   > video excluded), then AVURLAsset duration/tracks/format (FourCC codecs, channels, rate, file size); video = has a video track.
   > Tests generate real WAV/M4A/CAF/AIFF/MOV files (`Tests/EchoCoreTests/Support/TestMedia.swift`). `FakeMediaInspector`.
-- [ ] F03.T02 — `StorageEstimator` + `ProjectReadiness` (§ 15). Tests with fixed numbers.
+- [x] F03.T02 — `StorageEstimator` + `ProjectReadiness` (§ 15). Tests with fixed numbers.
+  > Done: `EchoCore/Storage/`: `StorageEstimating` + `StorageEstimator` (§ 15 constants; KB = 1,000 bytes; export assumes the default
+  > output: video kept + AAC 256), `availableBytes()` = `volumeAvailableCapacityForImportantUsage`. `ProjectReadiness` carries the
+  > shortfall in bytes; `readiness(of:availableBytes:)` checks edit before export. `FakeStorageEstimator`. Exact-number tests.
 - [ ] F03.T03 — `AVMediaImporter`: copy to `source.<ext>`, extract `working.caf` (48 kHz float, channel rules § 6.2), thumbnail, cancellation + cleanup.
 - [ ] F03.T04 — Import UI: PhotosPicker + fileImporter, progress, errors, storage-blocked message, open created project.
 - [ ] F03.T05 — Home cards show real thumbnails, durations, readiness warnings.
