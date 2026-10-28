@@ -64,7 +64,11 @@ Goal: persistent projects with schema versioning and the Home screen.
   > JSON chain; runner sets `schemaVersion` per step; missing version = 1; register steps in `registeredMigrations`). `migrateFileIfNeeded(at:)`
   > writes `project.v<N>.backup.json` then the migrated file (atomic); `isReadOnly(schemaVersion:)` for newer schemas. `FakeProjectMigrator`.
   > Also recorded user decisions (SPEC § 4.2 folders, § 18.4 tint roles). Xcode misses new package files incrementally → clean DerivedData.
-- [ ] F02.T03 — `FileProjectRepository`: folder layout, atomic writes, list sorted by `updatedAt`, rename, delete, backup exclusion flags (§ 5.1). Tests.
+- [x] F02.T03 — `FileProjectRepository`: folder layout, atomic writes, list sorted by `updatedAt`, rename, delete, backup exclusion flags (§ 5.1). Tests.
+  > Done: `ProjectRepository` (async) → `StoredProject {project, isReadOnly}`; `FileProjectRepository` actor (`root`, migrator, clock; own
+  > `FileManager()` instance). `list()` skips folders without a readable manifest; `load` migrates in place; save/rename refuse read-only.
+  > Save marks existing `source.*`/`working.caf`/`takes/` excluded from backup. `ProjectFolder` = § 5.1 layout, `URL.projectsDirectory`,
+  > `DateProviding`/`SystemClock`; fakes `FakeProjectRepository`, `FakeClock`. Delete doesn't touch renders yet (render cache is F06).
 - [ ] F02.T04 — Autosave helper (1 s debounce + flush on scene phase change) (§ 5.3).
 - [ ] F02.T05 — Home screen UI per canvas: title, gear, Import button (non-functional yet), grid cards with thumbnail/waveform placeholder, badges, empty state, rename/delete context menu (§ 14.1, § 18.5). Previews dark/light/RTL.
 
