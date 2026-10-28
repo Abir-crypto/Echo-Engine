@@ -103,22 +103,25 @@ final class FileProjectRepositoryTests {
         await #expect(throws: ProjectRepositoryError.notFound) { try await repository.delete(id: project.id) }
     }
 
-    @Test func saveExcludesMediaButNotTheManifestFromBackup() async throws {
-        let project = project()
-        let folder = repository.folder(for: project.id)
-        try FileManager.default.createDirectory(at: folder.takes, withIntermediateDirectories: true)
-        try Data("video".utf8).write(to: folder.source(fileName: project.sourceFileName))
-        try Data("audio".utf8).write(to: folder.working)
+    private func isExcludedFromBackup(_ url: URL) throws -> Bool {
+        try url.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup == true
+    }
 
+    @Test func saveExcludesTheWholeProjectFolderFromBackup() async throws {
+        let project = project()
         try await repository.save(project)
 
-        func isExcluded(_ url: URL) throws -> Bool {
-            try url.resourceValues(forKeys: [.isExcludedFromBackupKey]).isExcludedFromBackup == true
-        }
-        #expect(try isExcluded(folder.source(fileName: project.sourceFileName)))
-        #expect(try isExcluded(folder.working))
-        #expect(try isExcluded(folder.takes))
-        #expect(try !isExcluded(folder.manifest))
+        #expect(try isExcludedFromBackup(repository.folder(for: project.id).url))
+    }
+
+    @Test func createFolderMakesAnExcludedFolderAndIsIdempotent() async throws {
+        let id = UUID()
+        let folder = try await repository.createFolder(for: id)
+        try Data("video".utf8).write(to: folder.source(fileName: "source.mov"))
+
+        #expect(try await repository.createFolder(for: id) == folder)
+        #expect(try isExcludedFromBackup(folder.url))
+        #expect(FileManager.default.fileExists(atPath: folder.source(fileName: "source.mov").path))
     }
 
     @Test func newerSchemaProjectIsReadOnly() async throws {

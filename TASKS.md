@@ -67,7 +67,7 @@ Goal: persistent projects with schema versioning and the Home screen.
 - [x] F02.T03 — `FileProjectRepository`: folder layout, atomic writes, list sorted by `updatedAt`, rename, delete, backup exclusion flags (§ 5.1). Tests.
   > Done: `ProjectRepository` (async) → `StoredProject {project, isReadOnly}`; `FileProjectRepository` actor (`root`, migrator, clock; own
   > `FileManager()` instance). `list()` skips folders without a readable manifest; `load` migrates in place; save/rename refuse read-only.
-  > Save marks existing `source.*`/`working.caf`/`takes/` excluded from backup. `ProjectFolder` = § 5.1 layout, `URL.projectsDirectory`,
+  > `createFolder(for:)` excludes the whole folder from backup (user decision, § 5.1); importers must call it first. `ProjectFolder` = § 5.1 layout, `URL.projectsDirectory`,
   > `DateProviding`/`SystemClock`; fakes `FakeProjectRepository`, `FakeClock`. Delete doesn't touch renders yet (render cache is F06).
 - [ ] F02.T04 — Autosave helper (1 s debounce + flush on scene phase change) (§ 5.3).
 - [ ] F02.T05 — Home screen UI per canvas: title, gear, Import button (non-functional yet), grid cards with thumbnail/waveform placeholder, badges, empty state, rename/delete context menu (§ 14.1, § 18.5). Previews dark/light/RTL.

@@ -39,10 +39,18 @@ public actor FileProjectRepository: ProjectRepository {
 
     public func save(_ project: Project) throws {
         guard !migrator.isReadOnly(schemaVersion: project.schemaVersion) else { throw ProjectRepositoryError.readOnly }
-        let folder = folder(for: project.id)
-        try fileManager.createDirectory(at: folder.url, withIntermediateDirectories: true)
+        let folder = try createFolder(for: project.id)
         try encoder.encode(project).write(to: folder.manifest, options: .atomic)
-        try excludeMediaFromBackup(in: folder, sourceFileName: project.sourceFileName)
+    }
+
+    public func createFolder(for id: UUID) throws -> ProjectFolder {
+        let folder = folder(for: id)
+        try fileManager.createDirectory(at: folder.url, withIntermediateDirectories: true)
+        var url = folder.url
+        var values = URLResourceValues()
+        values.isExcludedFromBackup = true
+        try url.setResourceValues(values)
+        return folder
     }
 
     public func rename(id: UUID, to title: String) throws {
@@ -58,15 +66,5 @@ public actor FileProjectRepository: ProjectRepository {
         let folder = folder(for: id)
         guard fileManager.fileExists(atPath: folder.url.path) else { throw ProjectRepositoryError.notFound }
         try fileManager.removeItem(at: folder.url)
-    }
-
-    /// `source.*`, `working.caf` and `takes/` are never backed up (SPEC § 5.1). Items not created yet are skipped.
-    private func excludeMediaFromBackup(in folder: ProjectFolder, sourceFileName: String) throws {
-        for var item in [folder.source(fileName: sourceFileName), folder.working, folder.takes]
-        where fileManager.fileExists(atPath: item.path) {
-            var values = URLResourceValues()
-            values.isExcludedFromBackup = true
-            try item.setResourceValues(values)
-        }
     }
 }

@@ -7,9 +7,12 @@ public protocol ProjectRepository: Sendable {
     func list() async throws -> [StoredProject]
     /// Migrates the manifest if needed, then decodes it.
     func load(id: UUID) async throws -> StoredProject
-    /// Writes the manifest atomically, creating the folder if needed, and excludes media from backup.
+    /// Writes the manifest atomically, creating the folder if needed.
     /// Throws `ProjectRepositoryError.readOnly` for projects written by a newer app version.
     func save(_ project: Project) async throws
+    /// Creates the project folder and excludes it, with everything later written into it, from backup
+    /// (SPEC § 5.1). Call before writing any file into a new project. Idempotent.
+    func createFolder(for id: UUID) async throws -> ProjectFolder
     /// Changes the title only; the folder keeps its UUID name. Updates `updatedAt`.
     func rename(id: UUID, to title: String) async throws
     func delete(id: UUID) async throws

@@ -31,6 +31,12 @@ public actor FakeProjectRepository: ProjectRepository {
         stored[project.id] = StoredProject(project: project, isReadOnly: false)
     }
 
+    public func createFolder(for id: UUID) throws -> ProjectFolder {
+        let folder = folder(for: id)
+        try FileManager.default.createDirectory(at: folder.url, withIntermediateDirectories: true)
+        return folder
+    }
+
     public func rename(id: UUID, to title: String) throws {
         var project = try load(id: id).project
         project.title = title

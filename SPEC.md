@@ -195,7 +195,9 @@ Library/Caches/Renders/<projectUUID>/<chainHash>.m4a   # ALAC renders (never bac
 Library/Application Support/Presets/<presetUUID>.json  # user presets
 ```
 
-- Mark `source.*`, `working.caf`, `takes/` with `isExcludedFromBackup = true`. Settings states projects are not in iCloud backup.
+- Mark each whole project folder with `isExcludedFromBackup = true` when it is created (`ProjectRepository.createFolder`),
+  before any file is written into it. Nothing of a project is backed up (manifest, media, takes, thumbnail), so a
+  restored device never shows projects whose media is missing. Settings states projects are not in iCloud backup.
 - Folders are named by UUID; renaming only changes `title`.
 
 ### 5.2 Models (EchoCore)
@@ -851,3 +853,5 @@ Record new user decisions here (date, decision, section updated).
   kept only for detail screens without a mockup, with user approval per use (§ 18.5).
 - 2026-10-28: After the F01 code review: `App-iOS/DesignSystem/` and `App-iOS/Localization/` added to the module tree
   (§ 4.2); tint roles fixed: app-wide `.tint()` = tint text color, toggles `Success`, primary buttons custom style (§ 18.4).
+- 2026-10-28: Whole project folders are excluded from iCloud backup, not just media, so a restore never shows
+  projects whose media is missing (§ 5.1).
