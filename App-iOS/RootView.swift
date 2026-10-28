@@ -11,12 +11,13 @@ enum AppTab: Hashable {
 struct RootView: View {
     let container: AppContainer
     let homeModel: HomeModel
+    let importModel: ImportModel
     @State private var selectedTab = AppTab.projects
 
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("Projects", systemImage: "square.grid.2x2", value: AppTab.projects) {
-                HomeView(model: homeModel, onImport: {}, onRecord: { selectedTab = .record })
+                HomeView(model: homeModel, importModel: importModel, onRecord: { selectedTab = .record })
             }
             Tab("Record", systemImage: "mic", value: AppTab.record) {
                 RecordView()
@@ -29,6 +30,9 @@ struct RootView: View {
                 await DebugSampleProjects.add(to: container.projects)
                 await homeModel.load()
             }
+            if let path = UserDefaults.standard.string(forKey: DebugImport.launchArgument) {
+                importModel.importFile(at: URL(filePath: path))
+            }
         }
         #endif
     }
@@ -38,7 +42,7 @@ struct RootView: View {
 @MainActor
 private func previewRoot() -> RootView {
     let container = AppContainer(projects: FakeProjectRepository(projects: PreviewProjects.all()))
-    return RootView(container: container, homeModel: container.makeHomeModel())
+    return RootView(container: container, homeModel: container.makeHomeModel(), importModel: container.makeImportModel())
 }
 
 #Preview("Dark") {

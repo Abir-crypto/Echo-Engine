@@ -101,7 +101,12 @@ Goal: import audio/video into a project with exact storage messaging.
   > access, cancellation per chunk), `AVAssetReaderAudioMixOutput` → interleaved float CAF at 48 kHz, mono stays mono, >2 ch → stereo (user
   > decision); 48-bucket peak overview → `waveform-overview.json` (user decision: drawn live, not an image); video → `thumbnail.jpg` at 10%.
   > Any error/cancel removes the files it wrote; the caller (F03.T04) deletes the folder. Progress: copy 0–0.5, extract 0.5–1. `FakeMediaImporter`.
-- [ ] F03.T04 — Import UI: PhotosPicker + fileImporter, progress, errors, storage-blocked message, open created project.
+- [x] F03.T04 — Import UI: PhotosPicker + fileImporter, progress, errors, storage-blocked message, open created project.
+  > Done: Import button = menu (Photos: `PhotosPicker` videos, `.current` encoding → `PickedMovie` temp copy; Files: `fileImporter` movie/audio).
+  > `ImportModel` (protocols only): inspect → storage check (exact-number message) → `createFolder` → import → save (title = file name, § 5.4);
+  > failure/cancel deletes the folder, Photos temp copy always deleted. One `ImportProgressView` sheet shows progress, then the failure
+  > (an alert during sheet dismissal was dropped). Home uses a `HomeRoute` path: new project and card taps open placeholder `EditorView` (F04).
+  > Debug: `-debugImportPath <file>`. Integration test runs the real stack on iOS.
 - [ ] F03.T05 — Home cards show real thumbnails, durations, readiness warnings.
 
 **Checkpoint test:** import a 4K iPhone video, an MP3 and a WAV; check the folder contents; fill simulator storage (or fake estimator) to see the blocked message with exact numbers.

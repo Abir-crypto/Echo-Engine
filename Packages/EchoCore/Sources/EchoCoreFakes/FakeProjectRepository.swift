@@ -7,6 +7,8 @@ public actor FakeProjectRepository: ProjectRepository {
     public private(set) var stored: [UUID: StoredProject]
     /// Successful `save` calls, including those made by `rename`.
     public private(set) var saveCount = 0
+    /// Folders made by `createFolder`, in order.
+    public private(set) var createdFolderIDs: [UUID] = []
     /// Reported by `diskUsage(id:)`; 0 when missing.
     public var diskUsageByID: [UUID: Int64]
     private let clock: any DateProviding
@@ -48,6 +50,7 @@ public actor FakeProjectRepository: ProjectRepository {
     public func createFolder(for id: UUID) throws -> ProjectFolder {
         let folder = folder(for: id)
         try FileManager.default.createDirectory(at: folder.url, withIntermediateDirectories: true)
+        createdFolderIDs.append(id)
         return folder
     }
 
@@ -58,8 +61,15 @@ public actor FakeProjectRepository: ProjectRepository {
         try save(project)
     }
 
+    /// Removes the manifest and the folder; a folder without a manifest (an import in progress) counts too.
     public func delete(id: UUID) throws {
-        guard stored.removeValue(forKey: id) != nil else { throw ProjectRepositoryError.notFound }
+        let hadManifest = stored.removeValue(forKey: id) != nil
+        let folder = folder(for: id).url
+        let hadFolder = FileManager.default.fileExists(atPath: folder.path)
+        if hadFolder {
+            try FileManager.default.removeItem(at: folder)
+        }
+        guard hadManifest || hadFolder else { throw ProjectRepositoryError.notFound }
     }
 
     public func diskUsage(id: UUID) throws -> Int64 {

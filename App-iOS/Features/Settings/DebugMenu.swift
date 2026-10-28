@@ -34,6 +34,11 @@ struct DebugMenu: View {
     }
 }
 
+/// `-debugImportPath <file>` imports that file at launch, as if chosen in Files.
+enum DebugImport {
+    static let launchArgument = "debugImportPath"
+}
+
 /// The Home mockup's projects, saved as real (media-less) projects for manual testing.
 enum DebugSampleProjects {
     /// `-seedSampleProjects YES` adds them at launch.

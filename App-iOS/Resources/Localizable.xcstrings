@@ -7,6 +7,9 @@
     "Cancel": {
       "comment": "Cancel button."
     },
+    "Can’t import": {
+      "comment": "Title of the import sheet when an import fails."
+    },
     "Delete": {
       "comment": "Delete action for a project."
     },
@@ -19,17 +22,29 @@
     "Edited today": {
       "comment": "Project card date when the project changed today."
     },
+    "Files": {
+      "comment": "Import source: the Files app."
+    },
     "Import a video or audio file, or record something new.": {
       "comment": "Empty projects screen."
     },
     "Import audio or video": {
       "comment": "Primary button on the projects screen."
     },
+    "Importing": {
+      "comment": "Title of the import progress sheet."
+    },
     "It can’t be undone.": {
       "comment": "Delete confirmation message when the size is unknown."
     },
     "OK": {
       "comment": "Dismisses an alert."
+    },
+    "Photos": {
+      "comment": "Import source: the Photos library."
+    },
+    "Preparing…": {
+      "comment": "Import progress before copying starts."
     },
     "Projects": {
       "comment": "Tab bar item and title of the projects screen."
@@ -49,14 +64,32 @@
     "Settings": {
       "comment": "Settings button and screen title."
     },
+    "The import couldn’t finish. Try again.": {
+      "comment": "Import error."
+    },
     "The project couldn’t be deleted. Try again.": {
       "comment": "Error alert."
     },
     "The project couldn’t be renamed. Try again.": {
       "comment": "Error alert."
     },
+    "The video couldn’t be loaded from Photos. Make sure it’s downloaded from iCloud, then try again.": {
+      "comment": "Import error."
+    },
+    "This file can’t be read. Export it again from the app that made it, then import the new file.": {
+      "comment": "Import error."
+    },
+    "This file type isn’t supported. Import MOV, MP4 or M4V video, or M4A, AAC, MP3, WAV, AIFF, CAF or FLAC audio.": {
+      "comment": "Import error."
+    },
     "This frees %@. It can’t be undone.": {
       "comment": "Delete confirmation message. %@ = size, e.g. 1.4 GB."
+    },
+    "This project needs about %@. You have %@ free. Free up space, then import again.": {
+      "comment": "Import blocked by storage. %1$@ = needed size, %2$@ = free space (SPEC § 15)."
+    },
+    "This video has no audio. Choose a video with sound.": {
+      "comment": "Import error (SPEC § 10)."
     },
     "Title": {
       "comment": "Placeholder of the project title field."

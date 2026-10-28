@@ -1,21 +1,30 @@
 import EchoCore
+import PhotosUI
 import SwiftUI
 #if DEBUG
 import EchoCoreFakes
 #endif
 
-/// Projects tab (SPEC § 14.1, mockups `Design/screens/Home*.dc.html`).
+enum HomeRoute: Hashable {
+    case project(UUID)
+}
+
+/// Projects tab (SPEC § 14.1, mockups `Design/screens/Home*.dc.html`). Import flow: SPEC § 10.
 struct HomeView: View {
     let model: HomeModel
-    let onImport: () -> Void
+    let importModel: ImportModel
     let onRecord: () -> Void
 
+    @State private var path: [HomeRoute] = []
     @State private var renaming: Project?
     @State private var newTitle = ""
     @State private var deleting: PendingDeletion?
+    @State private var choosesPhotos = false
+    @State private var choosesFiles = false
+    @State private var photoItem: PhotosPickerItem?
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             content
                 .background(Color.token(.ground).ignoresSafeArea())
                 .navigationTitle("Projects")
@@ -32,6 +41,14 @@ struct HomeView: View {
                     }
                 }
                 .task { await model.load() }
+                .navigationDestination(for: HomeRoute.self) { route in
+                    switch route {
+                    case .project(let id):
+                        if let stored = model.projects.first(where: { $0.project.id == id }) {
+                            EditorView(project: stored.project)
+                        }
+                    }
+                }
                 .alert("Rename project", isPresented: isPresented($renaming), presenting: renaming) { project in
                     TextField("Title", text: $newTitle)
                     Button("Cancel", role: .cancel) {}
@@ -60,6 +77,33 @@ struct HomeView: View {
                     Button("OK") {}
                 }
         }
+        .photosPicker(isPresented: $choosesPhotos, selection: $photoItem, matching: .videos, preferredItemEncoding: .current)
+        .onChange(of: photoItem) { _, item in
+            guard let item else { return }
+            photoItem = nil
+            importModel.importFromPhotos { try await item.loadTransferable(type: PickedMovie.self)?.url }
+        }
+        .fileImporter(isPresented: $choosesFiles, allowedContentTypes: [.movie, .audio]) { result in
+            if case .success(let url) = result {
+                importModel.importFile(at: url)
+            }
+        }
+        .sheet(isPresented: .constant(importModel.phase != .idle || importModel.failure != nil)) {
+            ImportProgressView(
+                phase: importModel.phase,
+                failure: importModel.failure,
+                onCancel: importModel.cancel,
+                onDismissFailure: { importModel.failure = nil }
+            )
+        }
+        .onChange(of: importModel.importedProject?.id) { _, id in
+            guard let id else { return }
+            Task {
+                await model.load()
+                path.append(.project(id))
+                importModel.didOpenImportedProject()
+            }
+        }
     }
 
     @ViewBuilder
@@ -76,8 +120,11 @@ struct HomeView: View {
                         spacing: 18
                     ) {
                         ForEach(model.projects, id: \.project.id) { stored in
-                            ProjectCard(project: stored.project, now: .now)
-                                .contextMenu { menu(for: stored) }
+                            NavigationLink(value: HomeRoute.project(stored.project.id)) {
+                                ProjectCard(project: stored.project, now: .now)
+                            }
+                            .buttonStyle(.plain)
+                            .contextMenu { menu(for: stored) }
                         }
                     }
                 }
@@ -88,9 +135,13 @@ struct HomeView: View {
     }
 
     private var importButton: some View {
-        Button(action: onImport) {
+        Menu {
+            Button("Photos", systemImage: "photo.on.rectangle") { choosesPhotos = true }
+            Button("Files", systemImage: "folder") { choosesFiles = true }
+        } label: {
             Label("Import audio or video", systemImage: "plus")
         }
+        .menuStyle(.button)
         .buttonStyle(.primary)
     }
 
@@ -166,6 +217,18 @@ private func previewModel(_ projects: [Project]) -> HomeModel {
     HomeModel(repository: FakeProjectRepository(projects: projects))
 }
 
+@MainActor
+private func previewImportModel() -> ImportModel {
+    let sample = PreviewProjects.all()[0]
+    return ImportModel(
+        inspector: FakeMediaInspector(result: MediaInspection(mediaType: .video, sourceInfo: sample.sourceInfo, fileExtension: "mov")),
+        importer: FakeMediaImporter(),
+        storage: FakeStorageEstimator(),
+        repository: FakeProjectRepository(),
+        dateProvider: FakeClock()
+    )
+}
+
 private extension View {
     /// The gear opens Settings, whose debug menu reads the container.
     func previewContainer() -> some View {
@@ -174,13 +237,13 @@ private extension View {
 }
 
 #Preview("Dark") {
-    HomeView(model: previewModel(PreviewProjects.all()), onImport: {}, onRecord: {})
+    HomeView(model: previewModel(PreviewProjects.all()), importModel: previewImportModel(), onRecord: {})
         .previewContainer()
         .preferredColorScheme(.dark)
 }
 
 #Preview("Light, teal") {
-    HomeView(model: previewModel(PreviewProjects.all()), onImport: {}, onRecord: {})
+    HomeView(model: previewModel(PreviewProjects.all()), importModel: previewImportModel(), onRecord: {})
         .previewContainer()
         .environment(\.appTint, .teal)
         .tint(AppTint.teal.text)
@@ -188,7 +251,7 @@ private extension View {
 }
 
 #Preview("Arabic RTL, XXL") {
-    HomeView(model: previewModel(PreviewProjects.all()), onImport: {}, onRecord: {})
+    HomeView(model: previewModel(PreviewProjects.all()), importModel: previewImportModel(), onRecord: {})
         .previewContainer()
         .environment(\.locale, Locale(identifier: "ar"))
         .environment(\.layoutDirection, .rightToLeft)
@@ -196,7 +259,7 @@ private extension View {
 }
 
 #Preview("Empty") {
-    HomeView(model: previewModel([]), onImport: {}, onRecord: {})
+    HomeView(model: previewModel([]), importModel: previewImportModel(), onRecord: {})
         .previewContainer()
 }
 #endif
