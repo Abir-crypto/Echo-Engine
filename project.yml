@@ -7,9 +7,15 @@ options:
   createIntermediateGroups: true
   xcodeVersion: "27.1"
 
+packages:
+  EchoCore:
+    path: Packages/EchoCore
+
 settings:
   base:
     SWIFT_VERSION: "6.0"
+    # EchoCore modules are built with C++ interop; every Swift module importing them must enable it too.
+    SWIFT_OBJC_INTEROP_MODE: objcxx
     ENABLE_USER_SCRIPT_SANDBOXING: YES
 
 targets:
@@ -18,6 +24,11 @@ targets:
     platform: iOS
     sources:
       - path: App-iOS
+    dependencies:
+      - package: EchoCore
+        product: EchoCore
+      - package: EchoCore
+        product: EchoAudioUnits
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: akumatech.Echo-Engine

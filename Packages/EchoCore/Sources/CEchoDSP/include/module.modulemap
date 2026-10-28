@@ -1,0 +1,5 @@
+module CEchoDSP {
+    header "DSPMath.hpp"
+    requires cplusplus
+    export *
+}
