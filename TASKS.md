@@ -84,7 +84,7 @@ Goal: persistent projects with schema versioning and the Home screen.
 
 ---
 
-## F03 — Import & storage checks  [IN PROGRESS]
+## F03 — Import & storage checks  [DONE]
 Goal: import audio/video into a project with exact storage messaging.
 
 - [x] F03.T01 — `MediaInspector`: duration, tracks, container, codecs, size; supported-format validation; no-audio rejection (§ 10).
@@ -117,7 +117,7 @@ Goal: import audio/video into a project with exact storage messaging.
 
 ---
 
-## F04 — Editor shell & playback  [TODO]
+## F04 — Editor shell & playback  [IN PROGRESS]
 Goal: play projects with video sync, waveforms, trim.
 
 - [ ] F04.T01 — Waveform data generation (downsampled peaks cache per project) in EchoCore. Tests.
