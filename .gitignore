@@ -4,6 +4,7 @@
 # Xcode — the project is generated from project.yml by XcodeGen (run `xcodegen generate`)
 *.xcodeproj/
 *.xcworkspace/
+App-iOS/Info.plist
 xcuserdata/
 *.xcuserstate
 DerivedData/

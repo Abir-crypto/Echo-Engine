@@ -41,7 +41,11 @@ Goal: buildable empty app with module structure, DI root, tokens, localization a
   > this is what makes XcodeGen emit `knownRegions`; empty entries would compile to "" so never add them). es + pt-BR per user
   > (SPEC § 17/§ 20). `DisplayFormat` (`fileSize`, `duration`) carries the conventions doc; tests pin en/de output. Scheme
   > `EchoEngine-RTL` launches with RTL pseudolanguage args. Missing en.lproj is fine: iOS counts the dev region as available.
-- [ ] F01.T07 — App shell: floating tab bar (Projects, Record), placeholder screens, appearance + tint applied at root, Info.plist keys (microphone usage, photo add usage, background audio).
+- [x] F01.T07 — App shell: floating tab bar (Projects, Record), placeholder screens, appearance + tint applied at root, Info.plist keys (microphone usage, photo add usage, background audio).
+  > Done: `RootView` = native `TabView` (mockups draw a custom capsule bar; SPEC § 18.1 native wins), `.tint(tint.text)` (= mockups' accentText),
+  > appearance/tint via `@AppStorage(AppSettingsKey…)`; placeholder Home/Record; `#if DEBUG DebugAppearanceMenu`. Usage strings in InfoPlist
+  > catalog; `UIBackgroundModes` via XcodeGen `info:` (generated `App-iOS/Info.plist`, gitignored). Simulator-verified iPhone light/dark/RTL + iPad.
+  > `xcodebuild test` on a still-booting sim fails "Busy/preflight": run `simctl bootstatus <id> -b` first.
 
 **Checkpoint test:** app launches on iPhone and iPad simulators; tabs switch; Dark/Light/System and tint changes apply (temporary debug toggle OK); Arabic RTL pseudolanguage mirrors layout.
 

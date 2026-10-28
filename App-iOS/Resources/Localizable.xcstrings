@@ -1,7 +1,12 @@
 {
   "sourceLanguage": "en",
   "strings": {
-    "Echo Engine": {}
+    "Projects": {
+      "comment": "Tab bar item and title of the projects screen."
+    },
+    "Record": {
+      "comment": "Tab bar item and title of the record screen."
+    }
   },
   "version": "1.0"
 }

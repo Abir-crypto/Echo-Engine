@@ -3,6 +3,8 @@ import SwiftUI
 /// User-selectable tint; used for buttons and processed audio (SPEC § 14.2, § 18.2).
 enum AppTint: String, CaseIterable, Codable {
     case amber, teal, violet, green, rose, blue
+
+    static let `default` = AppTint.amber
 }
 
 extension AppTint {
