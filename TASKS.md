@@ -96,7 +96,11 @@ Goal: import audio/video into a project with exact storage messaging.
   > Done: `EchoCore/Storage/`: `StorageEstimating` + `StorageEstimator` (§ 15 constants; KB = 1,000 bytes; export assumes the default
   > output: video kept + AAC 256), `availableBytes()` = `volumeAvailableCapacityForImportantUsage`. `ProjectReadiness` carries the
   > shortfall in bytes; `readiness(of:availableBytes:)` checks edit before export. `FakeStorageEstimator`. Exact-number tests.
-- [ ] F03.T03 — `AVMediaImporter`: copy to `source.<ext>`, extract `working.caf` (48 kHz float, channel rules § 6.2), thumbnail, cancellation + cleanup.
+- [x] F03.T03 — `AVMediaImporter`: copy to `source.<ext>`, extract `working.caf` (48 kHz float, channel rules § 6.2), thumbnail, cancellation + cleanup.
+  > Done: `MediaImporting` → `ImportedMedia {sourceFileName, workingChannelCount, overview}`. `AVMediaImporter`: 4 MB chunked copy (security-scoped
+  > access, cancellation per chunk), `AVAssetReaderAudioMixOutput` → interleaved float CAF at 48 kHz, mono stays mono, >2 ch → stereo (user
+  > decision); 48-bucket peak overview → `waveform-overview.json` (user decision: drawn live, not an image); video → `thumbnail.jpg` at 10%.
+  > Any error/cancel removes the files it wrote; the caller (F03.T04) deletes the folder. Progress: copy 0–0.5, extract 0.5–1. `FakeMediaImporter`.
 - [ ] F03.T04 — Import UI: PhotosPicker + fileImporter, progress, errors, storage-blocked message, open created project.
 - [ ] F03.T05 — Home cards show real thumbnails, durations, readiness warnings.
 

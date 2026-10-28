@@ -190,7 +190,8 @@ Documents/Projects/<projectUUID>/        # one folder per project
     source.<ext>                         # imported original, NEVER modified (excluded from backup)
     working.caf                          # extracted working audio, 48 kHz float (excluded from backup)
     takes/                               # recordings: raw.caf, processed.caf, ch1.caf..chN.caf (excluded from backup)
-    thumbnail.jpg
+    thumbnail.jpg                        # video projects: frame at 10%
+    waveform-overview.json               # peak levels (0...1) drawn as tinted bars on Home cards
 Library/Caches/Renders/<projectUUID>/<chainHash>.m4a   # ALAC renders (never backed up, safe to delete)
 Library/Application Support/Presets/<presetUUID>.json  # user presets
 ```
@@ -299,7 +300,7 @@ source → [AI op 1] → [AI op 2] → … → (cached render file) → live man
 ### 6.2 Working format
 
 - On import, extract/convert source audio to `working.caf`: 48 kHz, 32-bit float, original channel count
-  (mono or stereo; downmix >2 channels to stereo for video sources).
+  (mono or stereo; any source with more than 2 channels, video or audio, is downmixed to stereo).
 - RNNoise runs per channel at 48 kHz mono, 480-sample frames.
 - Renders stored as ALAC 24-bit at 48 kHz.
 
@@ -455,7 +456,8 @@ One `EditorView` for both media types; only the header differs.
   clear message. Video without an audio track: reject ("This video has no audio").
 - No duration limit; storage check is the limit (§ 15).
 - Steps: inspect → storage check (import stage) → copy to `source.<ext>` (same container/extension) →
-  extract `working.caf` → thumbnail (video frame at 10% or waveform image for audio) → create `Project` with
+  extract `working.caf` → thumbnail (video: frame at 10% to `thumbnail.jpg`) and waveform overview levels for
+  every project (`waveform-overview.json`; Home draws them as tinted bars) → create `Project` with
   one full-range clip → open Editor (or show readiness state).
 - Progress UI for copy/extract; cancellable; partial project folder deleted on cancel/failure.
 
@@ -869,3 +871,5 @@ Record new user decisions here (date, decision, section updated).
   keeps a newer kind (§ 5.3). The app links `EchoCoreFakes` in every configuration (previews and debug samples;
   approved with the `EchoCoreFakes` decision), and the app test target links no EchoCore products: a second
   copy duplicates EchoCore's types and breaks `catch`/`as?` across them (§ 4.1).
+- 2026-10-28: Sources with more than 2 channels are downmixed to stereo whether video or audio (§ 6.2). Audio
+  thumbnails are stored waveform levels drawn live (follow tint and processed state), not an image (§ 5.1, § 10).
