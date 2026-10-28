@@ -87,7 +87,11 @@ Goal: persistent projects with schema versioning and the Home screen.
 ## F03 — Import & storage checks  [IN PROGRESS]
 Goal: import audio/video into a project with exact storage messaging.
 
-- [ ] F03.T01 — `MediaInspector`: duration, tracks, container, codecs, size; supported-format validation; no-audio rejection (§ 10).
+- [x] F03.T01 — `MediaInspector`: duration, tracks, container, codecs, size; supported-format validation; no-audio rejection (§ 10).
+  > Done: `EchoCore/Import/`: `MediaInspecting` → `MediaInspection {mediaType, sourceInfo, fileExtension}`; typed `ImportError`
+  > (`.unsupportedFormat`/`.noAudio`/`.unreadable`). `AVMediaInspector`: extension → UTType checked against the § 10 list (DRM-protected
+  > video excluded), then AVURLAsset duration/tracks/format (FourCC codecs, channels, rate, file size); video = has a video track.
+  > Tests generate real WAV/M4A/CAF/AIFF/MOV files (`Tests/EchoCoreTests/Support/TestMedia.swift`). `FakeMediaInspector`.
 - [ ] F03.T02 — `StorageEstimator` + `ProjectReadiness` (§ 15). Tests with fixed numbers.
 - [ ] F03.T03 — `AVMediaImporter`: copy to `source.<ext>`, extract `working.caf` (48 kHz float, channel rules § 6.2), thumbnail, cancellation + cleanup.
 - [ ] F03.T04 — Import UI: PhotosPicker + fileImporter, progress, errors, storage-blocked message, open created project.
