@@ -20,7 +20,7 @@ struct ContrastTests {
     }
 
     static let pairings: [Pairing] = {
-        let neutralText = [ColorToken.textPrimary, .textSecondary, .textTertiary, .warning]
+        let neutralText = [ColorToken.textPrimary, .textSecondary, .textTertiary, .textValue, .warning]
         let surfaces = [ColorToken.ground, .surface]
         var pairings = neutralText.flatMap { text in
             surfaces.map { Pairing(text: text.rawValue, background: $0.rawValue) }

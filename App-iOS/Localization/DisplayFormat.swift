@@ -20,4 +20,26 @@ enum DisplayFormat {
         let pattern: Duration.TimeFormatStyle.Pattern = seconds >= 3600 ? .hourMinuteSecond : .minuteSecond
         return Duration.seconds(seconds.rounded(.down)).formatted(.time(pattern: pattern).locale(locale))
     }
+
+    /// When a project was last changed, for Home cards: "Edited today", "Yesterday", "21 Oct"; earlier years
+    /// add the year.
+    static func projectDate(
+        _ date: Date,
+        now: Date,
+        calendar: Calendar = .autoupdatingCurrent,
+        locale: Locale = .autoupdatingCurrent
+    ) -> String {
+        if calendar.isDate(date, inSameDayAs: now) {
+            return String(localized: "Edited today")
+        }
+        if let yesterday = calendar.date(byAdding: .day, value: -1, to: now), calendar.isDate(date, inSameDayAs: yesterday) {
+            return String(localized: "Yesterday")
+        }
+        var style = Date.FormatStyle(locale: locale, calendar: calendar, timeZone: calendar.timeZone)
+            .day().month(.abbreviated)
+        if !calendar.isDate(date, equalTo: now, toGranularity: .year) {
+            style = style.year()
+        }
+        return date.formatted(style)
+    }
 }

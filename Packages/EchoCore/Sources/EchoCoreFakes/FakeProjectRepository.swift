@@ -6,12 +6,20 @@ public actor FakeProjectRepository: ProjectRepository {
     public private(set) var stored: [UUID: StoredProject]
     /// Successful `save` calls, including those made by `rename`.
     public private(set) var saveCount = 0
+    /// Reported by `diskUsage(id:)`; 0 when missing.
+    public var diskUsageByID: [UUID: Int64]
     private let clock: any DateProviding
 
-    public init(projects: [Project] = [], readOnlyIDs: Set<UUID> = [], clock: any DateProviding = FakeClock()) {
+    public init(
+        projects: [Project] = [],
+        readOnlyIDs: Set<UUID> = [],
+        diskUsageByID: [UUID: Int64] = [:],
+        clock: any DateProviding = FakeClock()
+    ) {
         stored = Dictionary(uniqueKeysWithValues: projects.map {
             ($0.id, StoredProject(project: $0, isReadOnly: readOnlyIDs.contains($0.id)))
         })
+        self.diskUsageByID = diskUsageByID
         self.clock = clock
     }
 
@@ -49,5 +57,10 @@ public actor FakeProjectRepository: ProjectRepository {
 
     public func delete(id: UUID) throws {
         guard stored.removeValue(forKey: id) != nil else { throw ProjectRepositoryError.notFound }
+    }
+
+    public func diskUsage(id: UUID) throws -> Int64 {
+        guard stored[id] != nil else { throw ProjectRepositoryError.notFound }
+        return diskUsageByID[id] ?? 0
     }
 }

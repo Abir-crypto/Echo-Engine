@@ -124,6 +124,21 @@ final class FileProjectRepositoryTests {
         #expect(FileManager.default.fileExists(atPath: folder.source(fileName: "source.mov").path))
     }
 
+    @Test func diskUsageCountsEveryFileInTheFolder() async throws {
+        let project = project()
+        let folder = try await repository.createFolder(for: project.id)
+        try FileManager.default.createDirectory(at: folder.takes, withIntermediateDirectories: true)
+        try Data(count: 100_000).write(to: folder.source(fileName: project.sourceFileName))
+        try Data(count: 50_000).write(to: folder.takes.appending(path: "raw.caf"))
+        try await repository.save(project)
+
+        let usage = try await repository.diskUsage(id: project.id)
+
+        #expect(usage >= 150_000)
+        #expect(usage < 400_000)
+        await #expect(throws: ProjectRepositoryError.notFound) { try await repository.diskUsage(id: UUID()) }
+    }
+
     @Test func newerSchemaProjectIsReadOnly() async throws {
         let project = project()
         try writeManifest(project) { $0["schemaVersion"] = Project.currentSchemaVersion + 1 }

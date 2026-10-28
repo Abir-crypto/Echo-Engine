@@ -93,6 +93,22 @@ struct ProjectModelTests {
         #expect(features == [.noiseSuppression, .voiceLeveler])
     }
 
+    @Test func processedMeansAnyAIStepManualChangeOrLoudnessTarget() {
+        #expect(!newProject().isProcessed)
+
+        var withAI = newProject()
+        withAI.clips[0].aiStack = [AIOperation(kind: .voiceLeveler, strength: 1)]
+        #expect(withAI.isProcessed)
+
+        var withManual = newProject()
+        withManual.clips[0].manual.inputGainDB = 2
+        #expect(withManual.isProcessed)
+
+        var withLoudness = newProject()
+        withLoudness.outputLoudness = .youtube
+        #expect(withLoudness.isProcessed)
+    }
+
     @Test func manualSettingsDefaultToNeutral() {
         let manual = ManualSettings()
         #expect(manual.inputGainDB == 0)

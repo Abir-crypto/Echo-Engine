@@ -36,6 +36,9 @@ targets:
         product: EchoCore
       - package: EchoCore
         product: EchoAudioUnits
+      # Previews and debug-only sample projects (SPEC § 4.1, § 20).
+      - package: EchoCore
+        product: EchoCoreFakes
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: akumatech.Echo-Engine
@@ -66,10 +69,10 @@ targets:
     platform: iOS
     sources:
       - path: App-iOSTests
+    # Link nothing from EchoCore here: the host app already links EchoCore and EchoCoreFakes, and a second
+    # copy in the test bundle duplicates their types (breaks `as?`, `is` and `catch` across the two).
     dependencies:
       - target: EchoEngine
-      - package: EchoCore
-        product: EchoCoreFakes
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: akumatech.Echo-Engine.tests

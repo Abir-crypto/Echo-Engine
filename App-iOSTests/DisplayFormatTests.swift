@@ -20,4 +20,22 @@ struct DisplayFormatTests {
     func durationSwitchesToHoursFromOneHour(_ seconds: TimeInterval, _ expected: String) {
         #expect(DisplayFormat.duration(seconds, locale: english) == expected)
     }
+
+    @Test func projectDateIsRelativeForTodayAndYesterdayThenShort() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = try #require(TimeZone(identifier: "UTC"))
+        let british = Locale(identifier: "en_GB")
+        let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 10, day: 28, hour: 15)))
+        func date(_ year: Int, _ month: Int, _ day: Int, hour: Int = 9) throws -> Date {
+            try #require(calendar.date(from: DateComponents(year: year, month: month, day: day, hour: hour)))
+        }
+        func format(_ date: Date) -> String {
+            DisplayFormat.projectDate(date, now: now, calendar: calendar, locale: british)
+        }
+
+        #expect(try format(date(2026, 10, 28, hour: 0)) == "Edited today")
+        #expect(try format(date(2026, 10, 27, hour: 23)) == "Yesterday")
+        #expect(try format(date(2026, 10, 21)) == "21 Oct")
+        #expect(try format(date(2025, 12, 31)) == "31 Dec 2025")
+    }
 }

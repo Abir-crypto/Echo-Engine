@@ -29,3 +29,8 @@ extension AppTint {
     /// Text on a `fill` background.
     var on: Color { Color(assetName(.on)) }
 }
+
+extension EnvironmentValues {
+    /// The user's tint, for views that need a role other than the app-wide `.tint()` text role (SPEC § 18.4).
+    @Entry var appTint = AppTint.default
+}

@@ -8,12 +8,19 @@ import Observation
 final class AppContainer {
     let entitlements: any EntitlementProvider
     let capabilities: any DeviceCapabilityChecking
+    let projects: any ProjectRepository
 
     init(
         entitlements: any EntitlementProvider = FreeV1Entitlements(),
-        capabilities: any DeviceCapabilityChecking = DefaultCapabilities()
+        capabilities: any DeviceCapabilityChecking = DefaultCapabilities(),
+        projects: any ProjectRepository = FileProjectRepository(root: .projectsDirectory, migrator: ProjectMigrator())
     ) {
         self.entitlements = entitlements
         self.capabilities = capabilities
+        self.projects = projects
+    }
+
+    func makeHomeModel() -> HomeModel {
+        HomeModel(repository: projects)
     }
 }

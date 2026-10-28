@@ -9,6 +9,7 @@ struct AppContainerTests {
         let container = AppContainer()
         #expect(container.entitlements is FreeV1Entitlements)
         #expect(container.capabilities is DefaultCapabilities)
+        #expect(container.projects is FileProjectRepository)
     }
 
     @Test func usesInjectedServices() {

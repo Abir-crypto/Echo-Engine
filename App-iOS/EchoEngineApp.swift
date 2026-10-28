@@ -8,8 +8,8 @@ struct EchoEngineApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
-                .environment(container)
+            RootView(container: container)
+                .environment(\.appTint, tint)
                 // System-tinted controls are mostly text and icons on Ground, so they use the text role.
                 .tint(tint.text)
                 .preferredColorScheme(appearance.colorScheme)

@@ -1,11 +1,74 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "Audio": {
+      "comment": "Accessibility label of the audio badge on a project card."
+    },
+    "Cancel": {
+      "comment": "Cancel button."
+    },
+    "Delete": {
+      "comment": "Delete action for a project."
+    },
+    "Delete project": {
+      "comment": "Destructive confirmation button."
+    },
+    "Delete “%@”?": {
+      "comment": "Delete confirmation title. %@ = project title."
+    },
+    "Edited today": {
+      "comment": "Project card date when the project changed today."
+    },
+    "Import a video or audio file, or record something new.": {
+      "comment": "Empty projects screen."
+    },
+    "Import audio or video": {
+      "comment": "Primary button on the projects screen."
+    },
+    "It can’t be undone.": {
+      "comment": "Delete confirmation message when the size is unknown."
+    },
+    "OK": {
+      "comment": "Dismisses an alert."
+    },
     "Projects": {
       "comment": "Tab bar item and title of the projects screen."
     },
+    "Projects couldn’t be loaded. Restart Echo Engine to try again.": {
+      "comment": "Error alert."
+    },
     "Record": {
       "comment": "Tab bar item and title of the record screen."
+    },
+    "Rename": {
+      "comment": "Rename action for a project."
+    },
+    "Rename project": {
+      "comment": "Title of the rename dialog."
+    },
+    "Settings": {
+      "comment": "Settings button and screen title."
+    },
+    "The project couldn’t be deleted. Try again.": {
+      "comment": "Error alert."
+    },
+    "The project couldn’t be renamed. Try again.": {
+      "comment": "Error alert."
+    },
+    "This frees %@. It can’t be undone.": {
+      "comment": "Delete confirmation message. %@ = size, e.g. 1.4 GB."
+    },
+    "This project was made with a newer version of Echo Engine. Update the app to change it.": {
+      "comment": "Error alert."
+    },
+    "Title": {
+      "comment": "Placeholder of the project title field."
+    },
+    "Video": {
+      "comment": "Accessibility label of the video badge on a project card."
+    },
+    "Yesterday": {
+      "comment": "Project card date when the project changed yesterday."
     }
   },
   "version": "1.0"

@@ -67,4 +67,19 @@ public actor FileProjectRepository: ProjectRepository {
         guard fileManager.fileExists(atPath: folder.url.path) else { throw ProjectRepositoryError.notFound }
         try fileManager.removeItem(at: folder.url)
     }
+
+    public func diskUsage(id: UUID) throws -> Int64 {
+        let folder = folder(for: id)
+        guard fileManager.fileExists(atPath: folder.url.path) else { throw ProjectRepositoryError.notFound }
+        let keys: [URLResourceKey] = [.isRegularFileKey, .totalFileAllocatedSizeKey]
+        guard let files = fileManager.enumerator(at: folder.url, includingPropertiesForKeys: keys) else { return 0 }
+        var total: Int64 = 0
+        for case let file as URL in files {
+            let values = try file.resourceValues(forKeys: Set(keys))
+            if values.isRegularFile == true {
+                total += Int64(values.totalFileAllocatedSize ?? 0)
+            }
+        }
+        return total
+    }
 }

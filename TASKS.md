@@ -74,7 +74,11 @@ Goal: persistent projects with schema versioning and the Home screen.
   > at schedule time, chained saves so `flush()` returns only once everything is on disk, failures → `onError`). App modifier
   > `.flushesAutosave(_:)` flushes on scene phase ≠ active and on disappear (Editor wires it in F04). Fakes: `ManualClock` (test clock,
   > `advance(by:)`), `FakeProjectAutosaver`; `FakeProjectRepository.saveCount`. Autosaver tests passed 20/20 repeated runs.
-- [ ] F02.T05 — Home screen UI per canvas: title, gear, Import button (non-functional yet), grid cards with thumbnail/waveform placeholder, badges, empty state, rename/delete context menu (§ 14.1, § 18.5). Previews dark/light/RTL.
+- [x] F02.T05 — Home screen UI per canvas: title, gear, Import button (non-functional yet), grid cards with thumbnail/waveform placeholder, badges, empty state, rename/delete context menu (§ 14.1, § 18.5). Previews dark/light/RTL.
+  > Done: `HomeView`/`HomeModel`/`ProjectCard` (native `.inlineLarge` title + grey gear → placeholder `SettingsView`; adaptive grid; context menu
+  > Rename/Delete with `diskUsage` "frees X"; empty state with Import + Record → tab switch). New tokens `TextValue`/`BadgeFill`, `PrimaryButtonStyle`/
+  > `SecondaryButtonStyle`, `\.appTint` env, `DisplayFormat.projectDate`. Debug: `DebugMenu` (Settings) + `-seedSampleProjects YES`. App links `EchoCoreFakes`;
+  > test target links NO EchoCore products (a second copy duplicated types and broke `catch`). Mockup diff: native tab bar/nav glass (§ 18.1).
 
 **Checkpoint test:** seed debug projects; they persist across launches; rename and delete work; empty state shows when none.
 

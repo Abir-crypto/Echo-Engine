@@ -748,6 +748,8 @@ translation of those mockups; if a mockup and this section disagree, this sectio
 | `Warning` | #F3A39C | #B4342A | storage warnings |
 | `Success` | #4CAF6E | #2F8F50 | toggles on |
 | `Dim` | rgba(14,18,24,.62) | rgba(243,245,248,.72) | outside-trim overlay |
+| `TextValue` | #C9D1DB | #3A4452 | row values, icon glyphs on circle buttons, secondary button text, badge icons |
+| `BadgeFill` | rgba(22,27,34,.78) | rgba(255,255,255,.92) | badges over thumbnails (type, duration) |
 
 Tints (each: `Tint/<name>` fill, `Tint/<name>-text` for text/icons on Ground, `Tint/<name>-wave` for processed
 waveform, `Tint/<name>-on` for text on a filled tint button):
@@ -779,8 +781,8 @@ enum Appearance: String, CaseIterable { case system, dark, light }
 - System font (SF Pro) via Dynamic Type styles. Numbers that change (timers, durations, dB, %) use
   `.monospacedDigit()`.
 - Mapping: screen titles `.largeTitle.bold()` (34); editor/settings nav title `.headline`; section titles
-  `.title3.bold()` (20); row titles `.body.weight(.semibold)` (16–17); values/captions `.subheadline`/`.footnote`
-  in `TextSecondary`; record timer 68 pt light monospaced.
+  `.title3.bold()` (20); row titles `.body.weight(.semibold)` (16–17); values `.subheadline` in `TextValue`;
+  captions `.footnote` in `TextSecondary`; record timer 68 pt light monospaced.
 - Sentence case everywhere. No all-caps labels.
 
 ### 18.4 Spacing, shape, controls
@@ -855,3 +857,6 @@ Record new user decisions here (date, decision, section updated).
   (§ 4.2); tint roles fixed: app-wide `.tint()` = tint text color, toggles `Success`, primary buttons custom style (§ 18.4).
 - 2026-10-28: Whole project folders are excluded from iCloud backup, not just media, so a restore never shows
   projects whose media is missing (§ 5.1).
+- 2026-10-28: New tokens from the mockups: `TextValue` (values, icon glyphs, secondary button text, badge icons) and
+  `BadgeFill`; values use `TextValue`, not `TextSecondary` (§ 18.2, § 18.3). Home uses the native `.inlineLarge`
+  title so the title and gear share one row as in the mockup (§ 14.1).

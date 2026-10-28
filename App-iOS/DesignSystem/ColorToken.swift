@@ -12,6 +12,7 @@ enum ColorToken: String, CaseIterable {
     case textPrimary = "TextPrimary"
     case textSecondary = "TextSecondary"
     case textTertiary = "TextTertiary"
+    case textValue = "TextValue"
     case iconMuted = "IconMuted"
     case waveformIdle = "WaveformIdle"
     case waveformOriginal = "WaveformOriginal"
@@ -21,6 +22,7 @@ enum ColorToken: String, CaseIterable {
     case warning = "Warning"
     case success = "Success"
     case dim = "Dim"
+    case badgeFill = "BadgeFill"
 
     var color: Color { Color(rawValue) }
 }

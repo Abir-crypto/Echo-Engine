@@ -16,6 +16,9 @@ public protocol ProjectRepository: Sendable {
     /// Changes the title only; the folder keeps its UUID name. Updates `updatedAt`.
     func rename(id: UUID, to title: String) async throws
     func delete(id: UUID) async throws
+    /// Bytes the project folder occupies on disk (manifest, media, takes, thumbnail): what deleting it frees,
+    /// apart from its renders.
+    func diskUsage(id: UUID) async throws -> Int64
     func folder(for id: UUID) -> ProjectFolder
 }
 
