@@ -85,6 +85,8 @@ EchoEngine/
 │   ├── EchoEngineApp.swift          # @main, AppContainer, appearance/tint, consent gate
 │   ├── Features/Home/  Editor/  Record/  Export/  Presets/  Settings/  Onboarding/
 │   ├── Components/                  # Waveform, TrimStrip, LevelMeter, SegmentedPicker, Row, etc.
+│   ├── DesignSystem/                # color tokens (`.token(_:)`), AppTint, Appearance, button styles
+│   ├── Localization/                # DisplayFormat + localization conventions
 │   ├── Platform/                    # iOS implementations: IOSAudioDeviceManager, PhotosExporter, LiveActivity
 │   └── Resources/ (Assets.xcassets, Localizable.xcstrings, BuiltInPresets/, PrivacyInfo.xcprivacy)
 ├── RecordingWidget/                 # Live Activity widget extension
@@ -787,6 +789,9 @@ enum Appearance: String, CaseIterable { case system, dark, light }
 - Primary button: height 54, Tint fill, `Tint-on` text, semibold 17.
 - Secondary: outlined `Stroke`, or `Surface` fill circle for icon buttons (44 pt).
 - Grouped lists: `Surface` container, rows separated by `Separator`, chevron in `IconMuted`.
+- Tint roles: the app-wide `.tint()` is `Tint/<name>-text` (links, toolbar icons, tab bar: tinted text on Ground).
+  Toggles set `.tint(.token(.success))`. Primary buttons use a custom style (Tint fill, `Tint-on` text); never rely
+  on system-tinted fills.
 
 ### 18.5 Screens (match canvas)
 
@@ -844,3 +849,5 @@ Record new user decisions here (date, decision, section updated).
   matching mockup before building a screen; SPEC wins where they disagree (§ 18, CLAUDE.md).
 - 2026-10-28: Project skills committed: `code-review` (mattpocock/skills) and `design-mobile-apps` (Sleek). Sleek is
   kept only for detail screens without a mockup, with user approval per use (§ 18.5).
+- 2026-10-28: After the F01 code review: `App-iOS/DesignSystem/` and `App-iOS/Localization/` added to the module tree
+  (§ 4.2); tint roles fixed: app-wide `.tint()` = tint text color, toggles `Success`, primary buttons custom style (§ 18.4).

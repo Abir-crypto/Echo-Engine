@@ -59,7 +59,11 @@ Goal: persistent projects with schema versioning and the Home screen.
   > original kind so saves don't destroy them. `LoudnessTarget` encodes `{kind, lufs}`; unknown kind → `.custom(lufs)`. `ManualSettings` nests
   > Gate/DeEsser/Compressor/Reverb/Limiter with § 8 ranges as statics; default params (EQ band freqs, gate/comp/de-esser/reverb) are provisional —
   > confirm by ear in F05. `RecordingMetadata` = channel names, editing take, markers; F10–F12 add fields leniently. Times in seconds (Double).
-- [ ] F02.T02 — `ProjectMigrator` (chain runner, backup file, didMigrate), newer-schema read-only detection. Tests with fake migrations.
+- [x] F02.T02 — `ProjectMigrator` (chain runner, backup file, didMigrate), newer-schema read-only detection. Tests with fake migrations.
+  > Done: `EchoCore/Projects/`: `ProjectMigrating` (+ `ProjectMigration` step protocol, `ProjectMigrationError`), `ProjectMigrator` (pure
+  > JSON chain; runner sets `schemaVersion` per step; missing version = 1; register steps in `registeredMigrations`). `migrateFileIfNeeded(at:)`
+  > writes `project.v<N>.backup.json` then the migrated file (atomic); `isReadOnly(schemaVersion:)` for newer schemas. `FakeProjectMigrator`.
+  > Also recorded user decisions (SPEC § 4.2 folders, § 18.4 tint roles). Xcode misses new package files incrementally → clean DerivedData.
 - [ ] F02.T03 — `FileProjectRepository`: folder layout, atomic writes, list sorted by `updatedAt`, rename, delete, backup exclusion flags (§ 5.1). Tests.
 - [ ] F02.T04 — Autosave helper (1 s debounce + flush on scene phase change) (§ 5.3).
 - [ ] F02.T05 — Home screen UI per canvas: title, gear, Import button (non-functional yet), grid cards with thumbnail/waveform placeholder, badges, empty state, rename/delete context menu (§ 14.1, § 18.5). Previews dark/light/RTL.
