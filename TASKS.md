@@ -54,7 +54,11 @@ Goal: buildable empty app with module structure, DI root, tokens, localization a
 ## F02 — Projects & storage model  [IN PROGRESS]
 Goal: persistent projects with schema versioning and the Home screen.
 
-- [ ] F02.T01 — Models: `Project`, `Clip`, `AIOperation`, `AIFeature` (+`.unknown`), `ManualSettings`, `LoudnessTarget`, `EditState`, `SourceInfo`, `RecordingMetadata`, `TimeRangeCodable` with lenient decoding (§ 5.2–5.3). Tests.
+- [x] F02.T01 — Models: `Project`, `Clip`, `AIOperation`, `AIFeature` (+`.unknown`), `ManualSettings`, `LoudnessTarget`, `EditState`, `SourceInfo`, `RecordingMetadata`, `TimeRangeCodable` with lenient decoding (§ 5.2–5.3). Tests.
+  > Done: `EchoCore/Models/`; `UnknownCaseDecodable` gives every persisted enum a `.unknown` fallback, and `.unknown` AI ops re-encode their
+  > original kind so saves don't destroy them. `LoudnessTarget` encodes `{kind, lufs}`; unknown kind → `.custom(lufs)`. `ManualSettings` nests
+  > Gate/DeEsser/Compressor/Reverb/Limiter with § 8 ranges as statics; default params (EQ band freqs, gate/comp/de-esser/reverb) are provisional —
+  > confirm by ear in F05. `RecordingMetadata` = channel names, editing take, markers; F10–F12 add fields leniently. Times in seconds (Double).
 - [ ] F02.T02 — `ProjectMigrator` (chain runner, backup file, didMigrate), newer-schema read-only detection. Tests with fake migrations.
 - [ ] F02.T03 — `FileProjectRepository`: folder layout, atomic writes, list sorted by `updatedAt`, rename, delete, backup exclusion flags (§ 5.1). Tests.
 - [ ] F02.T04 — Autosave helper (1 s debounce + flush on scene phase change) (§ 5.3).
