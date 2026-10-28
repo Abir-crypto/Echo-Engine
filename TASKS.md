@@ -21,11 +21,16 @@ Goal: buildable empty app with module structure, DI root, tokens, localization a
   > Generated `EchoEngine.xcodeproj` is gitignored — run `xcodegen generate` after pulling or editing project.yml.
   > iPhone 17 exists on iOS 26.5 and 27.0: use destination `...,name=iPhone 17,OS=26.5`.
 - [x] F01.T03 — `Packages/EchoCore` SPM package with targets `EchoCore`, `CEchoDSP` (C/C++), `EchoAudioUnits`, `EchoCoreTests`; Swift↔C++ interop enabled; trivial C++ function called from a Swift test.
-  > Done: Package (tools 6.2, iOS 26 + macOS 26, C++20). `CEchoDSP` uses an explicit `module.modulemap`
-  > (`requires cplusplus`); first kernel helper `echo::dsp::dbToLinear`, tested via `swift test`. Swift targets use
+  > Done: Package (tools 6.2, iOS 26 + macOS 26, C++20). `CEchoDSP` exposes headers via umbrella `include/CEchoDSP.h`
+  > (custom modulemap dropped in F01.T04); first kernel helper `echo::dsp::dbToLinear`, tested via `swift test`. Swift targets use
   > `.interoperabilityMode(.Cxx)`, which is viral: project.yml sets `SWIFT_OBJC_INTEROP_MODE: objcxx` project-wide
   > (verified — app import fails without it). App target links products `EchoCore` + `EchoAudioUnits`.
-- [ ] F01.T04 — `AppContainer` composition root skeleton + environment injection; fakes folder; `FreeV1Entitlements`, `DefaultCapabilities` (§ 4.3–4.8).
+- [x] F01.T04 — `AppContainer` composition root skeleton + environment injection; fakes folder; `FreeV1Entitlements`, `DefaultCapabilities` (§ 4.3–4.8).
+  > Done: EchoCore `Entitlements/`: `GatedFeature` (3 AI features + exportVideo/exportAudio; add cases as gated features
+  > land), protocols + always-true v1 impls. New `EchoCoreFakes` target (user decision, SPEC § 4.2/§ 20). `AppContainer`
+  > is `@MainActor @Observable`, init params default to live types (tests/previews inject fakes); app does `.environment(container)`.
+  > Xcode now builds EchoCore as a dynamic framework (app + tests link it). Custom CEchoDSP modulemap caused a
+  > DEFINES_MODULE warning → replaced by umbrella header. After package graph changes, stale DerivedData can give bogus errors.
 - [ ] F01.T05 — Asset catalog with all color tokens and six tints, light/dark variants (§ 18.2); `AppTint`, `Appearance`; `ContrastTests`.
 - [ ] F01.T06 — String Catalog with 11 languages enabled (English content only for now); localization conventions helper; RTL pseudolanguage scheme option (§ 17).
 - [ ] F01.T07 — App shell: floating tab bar (Projects, Record), placeholder screens, appearance + tint applied at root, Info.plist keys (microphone usage, photo add usage, background audio).

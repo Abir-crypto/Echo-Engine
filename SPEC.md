@@ -74,7 +74,7 @@ Hooks to prepare in v1: `Project.clips` (exactly one clip), `EntitlementProvider
 - SOLID: single-purpose types, protocol-first, constructor injection, no service locators, no singletons
   (wrap Apple singletons such as `AVAudioSession`, `FileManager`, `NSUbiquitousKeyValueStore`).
 - One composition root: `AppContainer` (only place that names concrete types). Injected into SwiftUI via environment.
-- Fakes for every protocol in tests and previews.
+- Fakes for every protocol in tests and previews, all in the `EchoCoreFakes` package target (one copy per fake).
 
 ### 4.2 Modules
 
@@ -92,7 +92,8 @@ EchoEngine/
     ├── Sources/EchoCore/            # models, services, pipeline, render, export, presets, storage (Swift)
     ├── Sources/CEchoDSP/            # C/C++: RNNoise (vendored), DSP kernels, pitch detection/shift
     ├── Sources/EchoAudioUnits/      # AUAudioUnit subclasses wrapping CEchoDSP kernels
-    └── Tests/EchoCoreTests/         # Swift Testing + golden files
+    ├── Sources/EchoCoreFakes/       # fakes for every protocol; used by package tests, app tests, SwiftUI previews
+    └── Tests/EchoCoreTests/         # Swift Testing + golden files (Resources/TestAudio/)
 ```
 
 ### 4.3 Services (protocol → single responsibility → v1 concrete)
@@ -802,7 +803,7 @@ enum Appearance: String, CaseIterable { case system, dark, light }
 - Swift Testing for EchoCore logic: models (coding, lenient decoding, unknown enums), migrator, cache keys,
   `firstChangedIndex`, janitor reachability, undo history, storage estimator, preset merge, loudness math,
   Voice Leveler gain curve, key detection, pitch detection on synthetic tones.
-- Golden-file DSP tests: `Resources/TestAudio/` (fan, street, café, quiet room, sung scale, 2-speaker podcast;
+- Golden-file DSP tests: `Packages/EchoCore/Tests/EchoCoreTests/Resources/TestAudio/` (SPM test resources; fan, street, café, quiet room, sung scale, 2-speaker podcast;
   ≤ 10 s each, generated or CC0). Compare output vs reference within tolerance (RMS diff < −50 dB) so DSP changes
   cannot silently degrade.
 - Real-time safety: debug-only render-thread allocation guard in DSP tests.
@@ -818,3 +819,6 @@ Record new user decisions here (date, decision, section updated).
 - 2026-10-28: Initial spec agreed with the user (all sections above).
 - 2026-10-28: Bundle ID `akumatech.Echo-Engine`; display name "Echo Engine"; team ID left unset until device
   testing; Xcode template project replaced by XcodeGen layout in F01.T02 (§ 3).
+- 2026-10-28: Shared fakes live in a new `EchoCoreFakes` package target (§ 4.1, § 4.2). App resources live in
+  `App-iOS/Resources/` per § 4.2; golden test audio lives in the package test target (§ 4.2, § 19); CLAUDE.md
+  repo layout updated to match.

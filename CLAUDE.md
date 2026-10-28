@@ -83,7 +83,10 @@ Never rely on memory of a previous session. If it is not in these files or the r
 /CLAUDE.md  /SPEC.md  /TASKS.md
 /project.yml                 # XcodeGen project definition (source of truth for the Xcode project)
 /App-iOS/                    # iOS/iPadOS app target (SwiftUI)
+/App-iOS/Resources/          # asset catalog, String Catalog, built-in presets, privacy manifest
+/App-iOSTests/               # app unit tests (Swift Testing)
 /Packages/EchoCore/          # platform-independent engine, DSP, models, services
-/Packages/EchoCore/Sources/CEchoDSP/   # C/C++ DSP kernels + vendored RNNoise
-/Resources/                  # asset catalog, String Catalog, built-in presets, test audio
+/Packages/EchoCore/Sources/CEchoDSP/        # C/C++ DSP kernels + vendored RNNoise
+/Packages/EchoCore/Sources/EchoCoreFakes/   # fakes for every protocol (tests + previews)
+/Packages/EchoCore/Tests/EchoCoreTests/Resources/TestAudio/   # golden-file test audio
 ```

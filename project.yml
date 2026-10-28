@@ -56,6 +56,8 @@ targets:
       - path: App-iOSTests
     dependencies:
       - target: EchoEngine
+      - package: EchoCore
+        product: EchoCoreFakes
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: akumatech.Echo-Engine.tests
