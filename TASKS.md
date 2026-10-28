@@ -137,6 +137,7 @@ Goal: final render and delivery.
 - [ ] F08.T02 — Audio encoders: AAC (bitrates), WAV, FLAC, ALAC, sample rate/bit depth (§ 11.1).
 - [ ] F08.T03 — Video remux: composition + passthrough, same container, metadata preserved, trim via edit lists.
 - [ ] F08.T04 — Destinations: Photos (`shouldMoveFile`), Files, Share; temp cleanup.
+- [ ] F08.T04a — `AppSettingsStore` protocol + `UserDefaults`-backed impl + fake (§ 4.3): appearance, tint, last export settings. Route `EchoEngineApp` and `DebugAppearanceMenu` through it (they repeat the `@AppStorage` keys and defaults today). From the F01 code review.
 - [ ] F08.T05 — Export sheet UI per canvas; last-used settings; storage line; post-export actions after confirmed delivery.
 - [ ] F08.T06 — `BGContinuedProcessingTask`, progress, cancellation, failure handling.
 

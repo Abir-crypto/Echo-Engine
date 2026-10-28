@@ -4,7 +4,7 @@ import SwiftUI
 struct RecordView: View {
     var body: some View {
         NavigationStack {
-            Color.ground
+            Color.token(.ground)
                 .ignoresSafeArea()
                 .navigationTitle("Record")
         }

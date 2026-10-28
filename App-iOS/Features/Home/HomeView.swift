@@ -4,7 +4,7 @@ import SwiftUI
 struct HomeView: View {
     var body: some View {
         NavigationStack {
-            Color.ground
+            Color.token(.ground)
                 .ignoresSafeArea()
                 .navigationTitle("Projects")
                 #if DEBUG

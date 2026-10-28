@@ -1,10 +1,7 @@
 import SwiftUI
 
-/// Tab shell with the user's appearance and tint applied (SPEC § 14).
+/// Tab shell (SPEC § 14.1). Appearance and tint are applied by `EchoEngineApp`.
 struct RootView: View {
-    @AppStorage(AppSettingsKey.appearance) private var appearance = Appearance.default
-    @AppStorage(AppSettingsKey.tint) private var tint = AppTint.default
-
     var body: some View {
         TabView {
             Tab("Projects", systemImage: "square.grid.2x2") {
@@ -14,24 +11,24 @@ struct RootView: View {
                 RecordView()
             }
         }
-        // System-tinted controls are mostly text and icons on Ground, so they use the text role.
-        .tint(tint.text)
-        .preferredColorScheme(appearance.colorScheme)
     }
 }
 
 #Preview("Dark") {
     RootView()
+        .tint(AppTint.default.text)
         .preferredColorScheme(.dark)
 }
 
 #Preview("Light") {
     RootView()
+        .tint(AppTint.default.text)
         .preferredColorScheme(.light)
 }
 
 #Preview("Arabic RTL, XXL") {
     RootView()
+        .tint(AppTint.default.text)
         .environment(\.locale, Locale(identifier: "ar"))
         .environment(\.layoutDirection, .rightToLeft)
         .dynamicTypeSize(.xxxLarge)

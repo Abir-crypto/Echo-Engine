@@ -26,22 +26,9 @@ enum ColorToken: String, CaseIterable {
 }
 
 extension ShapeStyle where Self == Color {
-    static var ground: Color { ColorToken.ground.color }
-    static var surface: Color { ColorToken.surface.color }
-    static var surfaceSunken: Color { ColorToken.surfaceSunken.color }
-    static var surfaceRaised: Color { ColorToken.surfaceRaised.color }
-    static var separator: Color { ColorToken.separator.color }
-    static var stroke: Color { ColorToken.stroke.color }
-    static var textPrimary: Color { ColorToken.textPrimary.color }
-    static var textSecondary: Color { ColorToken.textSecondary.color }
-    static var textTertiary: Color { ColorToken.textTertiary.color }
-    static var iconMuted: Color { ColorToken.iconMuted.color }
-    static var waveformIdle: Color { ColorToken.waveformIdle.color }
-    static var waveformOriginal: Color { ColorToken.waveformOriginal.color }
-    static var playhead: Color { ColorToken.playhead.color }
-    static var record: Color { ColorToken.record.color }
-    static var clip: Color { ColorToken.clip.color }
-    static var warning: Color { ColorToken.warning.color }
-    static var success: Color { ColorToken.success.color }
-    static var dim: Color { ColorToken.dim.color }
+    /// A color token as a style: `.foregroundStyle(.token(.textSecondary))`. One entry point instead of
+    /// one static per token, because names like `separator` collide with SwiftUI's own styles.
+    static func token(_ token: ColorToken) -> Color {
+        token.color
+    }
 }
