@@ -58,7 +58,11 @@ Hooks to prepare in v1: `Project.clips` (exactly one clip), `EntitlementProvider
 - Orientation: iPhone portrait; iPad all orientations.
 - Project generation: **XcodeGen** (`project.yml` in repo root is the source of truth; never hand-edit
   `.pbxproj`). If `xcodegen` is not installed, ask the user to run `brew install xcodegen`.
-- Bundle ID / team: ask the user at F01 (placeholder `com.applab.echoengine`).
+- Bundle ID: `akumatech.Echo-Engine`. Display name (`CFBundleDisplayName`): "Echo Engine".
+- Apple team ID: not set yet; leave `DEVELOPMENT_TEAM` out of `project.yml` (simulator builds only). Ask the user
+  for it before the first task that needs a real device (F10 checkpoint).
+- The Xcode template project from the initial commit (`Echo Engine/`, `Echo Engine.xcodeproj`, incl. tracked
+  `xcuserdata`) is deleted in F01.T02 and replaced by the XcodeGen layout (§ 4.2).
 
 ## 4. Architecture
 
@@ -812,3 +816,5 @@ enum Appearance: String, CaseIterable { case system, dark, light }
 Record new user decisions here (date, decision, section updated).
 
 - 2026-10-28: Initial spec agreed with the user (all sections above).
+- 2026-10-28: Bundle ID `akumatech.Echo-Engine`; display name "Echo Engine"; team ID left unset until device
+  testing; Xcode template project replaced by XcodeGen layout in F01.T02 (§ 3).

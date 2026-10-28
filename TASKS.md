@@ -7,10 +7,14 @@ Section references (§) point to SPEC.md.
 
 ---
 
-## F01 — Project foundation  [TODO]
+## F01 — Project foundation  [IN PROGRESS]
 Goal: buildable empty app with module structure, DI root, tokens, localization and tab shell.
 
-- [ ] F01.T01 — Ask user for bundle ID, Apple team ID, display name confirmation. Record in § 3 and § 20.
+- [x] F01.T01 — Ask user for bundle ID, Apple team ID, display name confirmation. Record in § 3 and § 20.
+  > Done: Bundle ID `akumatech.Echo-Engine`, display name "Echo Engine", team ID unset (no `DEVELOPMENT_TEAM`
+  > in project.yml; ask before device testing). Recorded in SPEC § 3 + § 20. F01.T02 must also delete the Xcode
+  > template (`Echo Engine/`, `Echo Engine.xcodeproj`, tracked `xcuserdata`). Toolchain: Xcode 27.1; if
+  > `xcode-select -p` shows CommandLineTools, prefix commands with `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`.
 - [ ] F01.T02 — `.gitignore` (Xcode, SPM `.build`, DerivedData, `.DS_Store`, `xcuserdata`, render caches); `project.yml` (XcodeGen) with App-iOS target (iOS 26, iPhone + iPad), test target; generate project.
 - [ ] F01.T03 — `Packages/EchoCore` SPM package with targets `EchoCore`, `CEchoDSP` (C/C++), `EchoAudioUnits`, `EchoCoreTests`; Swift↔C++ interop enabled; trivial C++ function called from a Swift test.
 - [ ] F01.T04 — `AppContainer` composition root skeleton + environment injection; fakes folder; `FreeV1Entitlements`, `DefaultCapabilities` (§ 4.3–4.8).
