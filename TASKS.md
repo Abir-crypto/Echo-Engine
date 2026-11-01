@@ -231,7 +231,11 @@ Goal: user-ordered AI stack with per-step cached renders.
   with the janitor's sweep (or on Clear cache, F13). From F06.T06.
   > Done: `WaveformProviding.remove(keys:projectID:)`; the janitor removes `RenderKey.waveformKey` peaks with every render it deletes
   > (sweep, eviction, prune). The key name lives in `RenderKey` only.
-- [ ] F06.T07 — Enhance UI: numbered list, strength sheet, reorder, swipe remove, Add enhancement sheet, inline progress, "Already reduces noise" hint; entitlement/capability checks.
+- [x] F06.T07 — Enhance UI: numbered list, strength sheet, reorder, swipe remove, Add enhancement sheet, inline progress, "Already reduces noise" hint; entitlement/capability checks.
+  > Done: `EnhanceSection` per mockup (scroll-disabled `List` sized to content for native swipe-remove + long-press reorder; VoiceOver
+  > actions), `AddEnhancementSheet` (gated by `EntitlementProvider` + `DeviceCapabilityChecking`), `StrengthSheet` (applies on release).
+  > User decisions (SPEC § 9/§ 20): new steps 80 %, each feature once, A/B = filled badge + later rows dimmed, Voice Leveler hidden until
+  > F07 (F07.T01a). Renderer progress now names the step (`ChainRenderProgress`) for the inline bar. Strength moves under the name at AX sizes.
 
 **Checkpoint test:** noisy recording: apply Noise Suppression, Clear Voice, reorder, change strength, undo/redo rapidly; confirm instant undo, correct audio, cache folder shrinks after new edits; tap rows to A/B.
 
@@ -241,6 +245,7 @@ Goal: user-ordered AI stack with per-step cached renders.
 Goal: leveling and loudness targeting.
 
 - [ ] F07.T01 — `VoiceLevelerProcessor` (§ 7.1) as an AI-stack op. Tests on 2-speaker sample.
+- [ ] F07.T01a — Offer Voice Leveler in the Add enhancement sheet (hidden until its processor exists, user decision § 9) and route it in `AIProcessorRouter`.
 - [ ] F07.T02 — `EBUR128Analyzer` (integrated LUFS, true peak). Tests vs reference values.
 - [ ] F07.T03 — Auto Level output stage: analysis over trim range, debounced recompute, static gain + true-peak limiter (§ 6.7).
 - [ ] F07.T04 — Loudness screen: targets (YouTube, Instagram, TikTok, Spotify, Podcast, Apple Music, Custom, Off).

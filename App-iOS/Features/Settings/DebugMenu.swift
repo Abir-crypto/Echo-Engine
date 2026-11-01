@@ -62,9 +62,14 @@ enum DebugManualDemo {
     }
 }
 
-/// `-debugAIDemo YES` adds Noise Suppression to the opened project (an undoable change), until the Enhance UI exists.
+/// `-debugAIDemo YES` adds Noise Suppression and Clear Voice to the opened project (undoable changes).
 enum DebugAIDemo {
     static let launchArgument = "debugAIDemo"
+}
+
+/// `-debugEnhanceSheet add|strength` opens Add enhancement, or the first step's strength, when the editor opens.
+enum DebugEnhanceSheet {
+    static let launchArgument = "debugEnhanceSheet"
 }
 
 /// `-debugImportPath <file>` imports that file at launch, as if chosen in Files.

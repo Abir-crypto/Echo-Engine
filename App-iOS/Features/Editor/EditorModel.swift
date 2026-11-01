@@ -9,6 +9,10 @@ import Observation
 final class EditorModel {
     /// The trim keeps at least this much between its handles (SPEC § 9).
     static let minimumTrimDuration: Double = 1
+    /// A new AI step's strength (user decision, SPEC § 9).
+    static let newStepStrength: Float = 0.8
+    /// Features offered in Add enhancement; Voice Leveler joins in F07 (user decision, SPEC § 9).
+    static let offeredFeatures: [AIFeature] = [.noiseSuppression, .clearVoice]
 
     enum Failure: Equatable {
         /// `working.caf` can't be loaded or the session can't play.
@@ -32,7 +36,9 @@ final class EditorModel {
     private(set) var history = EditHistory()
     /// The AI stack's latest render; `nil` until rendered.
     private(set) var rendered: RenderedChain?
-    /// 0…1 while AI steps render (playback continues on the previous result, SPEC § 6.3), else `nil`.
+    /// The AI step rendering now (its row shows progress, SPEC § 9), else `nil`.
+    private(set) var renderingStep: Int?
+    /// 0…1 within `renderingStep` (playback continues on the previous result meanwhile, SPEC § 6.3).
     private(set) var renderProgress: Double?
     /// Per-step A/B (SPEC § 6.6): the stack row heard on its own, or `nil` for the whole stack.
     private(set) var auditionedStep: Int?
@@ -46,6 +52,8 @@ final class EditorModel {
     @ObservationIgnored private let waveforms: any WaveformProviding
     @ObservationIgnored private let devices: any AudioDeviceManaging
     @ObservationIgnored private let storage: any StorageEstimating
+    @ObservationIgnored private let entitlements: any EntitlementProvider
+    @ObservationIgnored private let capabilities: any DeviceCapabilityChecking
     @ObservationIgnored private let renderer: any AIChainRendering
     @ObservationIgnored private let janitor: any RenderCacheJanitoring
     @ObservationIgnored private var renderTask: Task<Void, Never>?
@@ -67,6 +75,8 @@ final class EditorModel {
         waveforms: any WaveformProviding,
         devices: any AudioDeviceManaging,
         storage: any StorageEstimating,
+        entitlements: any EntitlementProvider,
+        capabilities: any DeviceCapabilityChecking,
         renderer: any AIChainRendering,
         janitor: any RenderCacheJanitoring,
         makeAutosaver: (@escaping @Sendable (any Error) -> Void) -> any ProjectAutosaving
@@ -79,6 +89,8 @@ final class EditorModel {
         self.waveforms = waveforms
         self.devices = devices
         self.storage = storage
+        self.entitlements = entitlements
+        self.capabilities = capabilities
         self.renderer = renderer
         self.janitor = janitor
         let failed = SaveFailureRelay()
@@ -180,6 +192,44 @@ final class EditorModel {
         guard aiStack.indices.contains(step) else { return }
         auditionedStep = auditionedStep == step ? nil : step
         playCurrentSource()
+    }
+
+    /// Whether this device and plan allow `feature` (SPEC § 4.8; always in v1).
+    func isAvailable(_ feature: AIFeature) -> Bool {
+        guard let gate = feature.gatedFeature else { return false }
+        return entitlements.isUnlocked(gate) && capabilities.supports(gate)
+    }
+
+    /// Each feature appears once in the stack (user decision, SPEC § 9).
+    func canAdd(_ feature: AIFeature) -> Bool {
+        canEdit && isAvailable(feature) && !aiStack.contains { $0.kind == feature }
+    }
+
+    /// Adds `feature` at the end of the stack (it runs last), at 80 %.
+    func addEnhancement(_ feature: AIFeature) {
+        guard canAdd(feature) else { return }
+        changeAIStack { $0.append(AIOperation(kind: feature, strength: Self.newStepStrength)) }
+    }
+
+    func removeEnhancement(at index: Int) {
+        guard aiStack.indices.contains(index) else { return }
+        changeAIStack { $0.remove(at: index) }
+    }
+
+    func moveEnhancements(fromOffsets source: IndexSet, toOffset destination: Int) {
+        changeAIStack { $0.move(fromOffsets: source, toOffset: destination) }
+    }
+
+    /// Sets a step's strength (0…1) when its slider is released: one undo step and one render.
+    func setStrength(_ strength: Float, at index: Int) {
+        guard aiStack.indices.contains(index) else { return }
+        changeAIStack { $0[index].strength = min(max(strength, 0), 1) }
+    }
+
+    /// Clear Voice already runs noise suppression; with Noise Suppression in the stack too, its row says so (never
+    /// blocked, SPEC § 7).
+    func showsAlreadyReducesNoise(at index: Int) -> Bool {
+        aiStack.indices.contains(index) && aiStack[index].kind == .clearVoice && aiStack.contains { $0.kind == .noiseSuppression }
     }
 
     /// Changes the AI stack as one undo step, saves it and renders it; playback continues on the previous result
@@ -312,9 +362,10 @@ final class EditorModel {
         renderRequest += 1
         let request = renderRequest
         let chain = self.chain
+        renderingStep = nil
+        renderProgress = nil
         guard !chain.operations.isEmpty else {
             renderTask = nil
-            renderProgress = nil
             rendered = RenderedChain(prefixes: [], output: workingAudio)
             renderedPeaks = nil
             playCurrentSource()
@@ -331,20 +382,23 @@ final class EditorModel {
             } catch {
                 guard let self, self.renderRequest == request else { return }
                 self.renderTask = nil
+                self.renderingStep = nil
                 self.renderProgress = nil
                 self.failure = .cantRender
             }
         }
     }
 
-    fileprivate func renderProgressed(_ progress: Double, request: Int) {
-        guard request == renderRequest, renderTask != nil, progress < 1 else { return }
-        renderProgress = progress
+    fileprivate func renderProgressed(_ progress: ChainRenderProgress, request: Int) {
+        guard request == renderRequest, renderTask != nil else { return }
+        renderingStep = progress.step
+        renderProgress = progress.fraction
     }
 
     private func renderFinished(_ result: RenderedChain, request: Int) {
         guard request == renderRequest else { return }
         renderTask = nil
+        renderingStep = nil
         renderProgress = nil
         rendered = result
         if let step = auditionedStep, !result.prefixes.indices.contains(step) { auditionedStep = nil }
@@ -429,7 +483,7 @@ private final class RenderProgressRelay {
         self.request = request
     }
 
-    nonisolated func report(_ progress: Double) {
+    nonisolated func report(_ progress: ChainRenderProgress) {
         Task { @MainActor in self.model?.renderProgressed(progress, request: self.request) }
     }
 }

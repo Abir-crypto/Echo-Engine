@@ -13,12 +13,13 @@ public actor FakeAIChainRenderer: AIChainRendering {
     public func setError(_ error: (any Error)?) { self.error = error }
     public func setDelay(_ delay: Duration?) { self.delay = delay }
 
-    public func render(source: URL, chain: AIChain, progress: @escaping @Sendable (Double) -> Void) async throws -> RenderedChain {
+    public func render(source: URL, chain: AIChain, progress: @escaping @Sendable (ChainRenderProgress) -> Void) async throws -> RenderedChain {
         chains.append(chain)
-        progress(0)
+        let last = max(chain.operations.count - 1, 0)
+        progress(ChainRenderProgress(step: last, fraction: 0))
         if let delay { try await Task.sleep(for: delay) }
         if let error { throw error }
-        progress(1)
+        progress(ChainRenderProgress(step: last, fraction: 1))
         let prefixes = chain.operations.indices.map { Self.renderURL(source: source, steps: $0 + 1) }
         return RenderedChain(prefixes: prefixes, output: prefixes.last ?? source)
     }

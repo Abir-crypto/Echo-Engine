@@ -7,3 +7,15 @@ public enum GatedFeature: String, CaseIterable, Sendable {
     case exportVideo
     case exportAudio
 }
+
+extension AIFeature {
+    /// The gate this AI feature is checked against (SPEC § 4.8); `nil` for features from newer versions.
+    public var gatedFeature: GatedFeature? {
+        switch self {
+        case .noiseSuppression: .noiseSuppression
+        case .clearVoice: .clearVoice
+        case .voiceLeveler: .voiceLeveler
+        case .unknown: nil
+        }
+    }
+}

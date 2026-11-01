@@ -56,6 +56,12 @@
         }
       }
     },
+    "Add enhancement" : {
+      "comment" : "Editor Enhance section: row that opens the list of AI features; also that sheet's title."
+    },
+    "Added" : {
+      "comment" : "VoiceOver value of a feature already in the stack, in Add enhancement."
+    },
     "Adds the sound of a room." : {
       "comment" : "Effects: explanation under the Reverb switch."
     },
@@ -68,6 +74,9 @@
     "Advanced" : {
       "comment" : "Row that reveals timing and range controls of a dynamics section."
     },
+    "Already reduces noise" : {
+      "comment" : "Hint under Clear Voice when Noise Suppression is also in the stack."
+    },
     "Always on: peaks never go above the ceiling." : {
       "comment" : "Gain and dynamics: caption under the limiter ceiling slider."
     },
@@ -76,6 +85,12 @@
     },
     "An enhancement couldn’t be applied. Free up some space, then try again." : {
       "comment" : "Editor alert when an AI enhancement fails to render (usually no space left)."
+    },
+    "Applied top to bottom" : {
+      "comment" : "Caption next to the Enhance title: steps run in list order."
+    },
+    "Applying" : {
+      "comment" : "VoiceOver label of the progress bar on the step being rendered."
     },
     "Attack" : {
       "comment" : "Gate/compressor: how fast it reacts (slider, milliseconds)."
@@ -92,8 +107,14 @@
     "Cancel" : {
       "comment" : "Cancel button."
     },
+    "Change strength" : {
+      "comment" : "VoiceOver action on an Enhance row."
+    },
     "Changes couldn’t be saved. Free up some space, then try again." : {
       "comment" : "Editor error."
+    },
+    "Clear Voice" : {
+      "comment" : "AI feature name: noise removal plus presence EQ and gentle compression."
     },
     "Collapsed" : {
       "comment" : "VoiceOver value of the closed Advanced row."
@@ -125,11 +146,20 @@
     "Effects" : {
       "comment" : "Editor Adjust row and sheet title: pitch shift and reverb."
     },
+    "Enhance" : {
+      "comment" : "Editor section title for the AI stack."
+    },
+    "Enhancement from a newer version" : {
+      "comment" : "Name of a stack step made by a newer app version."
+    },
     "Equalizer" : {
       "comment" : "Editor Adjust row and sheet title."
     },
     "Evens out loud and quiet parts." : {
       "comment" : "Gain and dynamics: explanation under the Compressor switch."
+    },
+    "Evens out loud and quiet speakers." : {
+      "comment" : "One-line description of Voice Leveler in Add enhancement."
     },
     "Expanded" : {
       "comment" : "VoiceOver value of the open Advanced row."
@@ -160,6 +190,9 @@
     },
     "Hold for original" : {
       "comment" : "Editor: press and hold to hear the original audio."
+    },
+    "How much of the enhanced sound is mixed with the original." : {
+      "comment" : "Caption under the strength slider."
     },
     "Import a video or audio file, or record something new." : {
       "comment" : "Empty projects screen."
@@ -197,6 +230,12 @@
     "Mix" : {
       "comment" : "Reverb: how much room sound is mixed in (slider, percent)."
     },
+    "Move down" : {
+      "comment" : "VoiceOver action on an Enhance row: move it one step later."
+    },
+    "Move up" : {
+      "comment" : "VoiceOver action on an Enhance row: move it one step earlier."
+    },
     "Need %@ more to edit this project. Free up space on your iPad, then come back. Your import is saved." : {
       "comment" : "Editor blocked by storage on iPad (SPEC § 9). %@ = missing space."
     },
@@ -212,8 +251,14 @@
     "Noise gate" : {
       "comment" : "Gain and dynamics: section and switch title."
     },
+    "Noise Suppression" : {
+      "comment" : "AI feature name: removes background noise."
+    },
     "Not available in this version" : {
       "comment" : "EQ band type made by a newer app version; the band is bypassed."
+    },
+    "Not available on this device" : {
+      "comment" : "Shown instead of a feature's description when it can't be used."
     },
     "Off" : {
       "comment" : "Value of an Adjust row when nothing in it is on."
@@ -251,6 +296,9 @@
     "Playhead" : {
       "comment" : "Accessibility label of the playhead on the overview strip."
     },
+    "Plays the enhancements up to this one." : {
+      "comment" : "VoiceOver hint of an Enhance row (per-step A/B)."
+    },
     "Preparing…" : {
       "comment" : "Import progress before copying starts."
     },
@@ -281,6 +329,15 @@
     "Release" : {
       "comment" : "Gate/compressor: how fast it lets go (slider, milliseconds)."
     },
+    "Remove" : {
+      "comment" : "Swipe action / VoiceOver action that removes a step from the AI stack."
+    },
+    "Removes background noise such as fans, traffic and hum." : {
+      "comment" : "One-line description of Noise Suppression in Add enhancement."
+    },
+    "Removes noise and makes speech crisper and more even." : {
+      "comment" : "One-line description of Clear Voice in Add enhancement."
+    },
     "Rename" : {
       "comment" : "Rename action for a project."
     },
@@ -301,6 +358,9 @@
     },
     "Softens harsh “s” sounds." : {
       "comment" : "Gain and dynamics: explanation under the De-esser switch."
+    },
+    "Strength" : {
+      "comment" : "Slider and value label: how much of an AI step is applied (wet/dry)."
     },
     "The import couldn’t finish. Try again." : {
       "comment" : "Import error."
@@ -356,11 +416,17 @@
     "Update Echo Engine to edit this project." : {
       "comment" : "Shown for projects made with a newer app version (SPEC § 5.3)."
     },
+    "Update Echo Engine to use it." : {
+      "comment" : "Description of a step made by a newer app version."
+    },
     "Video" : {
       "comment" : "Accessibility label of the video badge on a project card."
     },
     "Video preview" : {
       "comment" : "Accessibility label of the editor video preview."
+    },
+    "Voice Leveler" : {
+      "comment" : "AI feature name: evens out speaker levels."
     },
     "Waveform" : {
       "comment" : "Accessibility label of the editor waveform."

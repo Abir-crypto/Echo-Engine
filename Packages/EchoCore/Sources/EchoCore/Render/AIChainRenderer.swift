@@ -21,6 +21,19 @@ public struct AIChain: Equatable, Sendable {
     }
 }
 
+/// Which step of a chain is rendering and how far it is (SPEC § 9: progress shows on that row).
+public struct ChainRenderProgress: Equatable, Sendable {
+    /// Index into the chain's operations.
+    public let step: Int
+    /// 0…1 within that step.
+    public let fraction: Double
+
+    public init(step: Int, fraction: Double) {
+        self.step = step
+        self.fraction = fraction
+    }
+}
+
 /// Every prefix of a chain, rendered.
 public struct RenderedChain: Equatable, Sendable {
     /// One render per prefix, first operation first; empty for an empty chain.
@@ -37,8 +50,8 @@ public struct RenderedChain: Equatable, Sendable {
 /// Renders an AI chain prefix by prefix (SPEC § 4.3, § 6.3).
 public protocol AIChainRendering: Sendable {
     /// Makes sure every prefix of `chain` is rendered: reuses cached prefixes, renders the rest on top of the previous
-    /// prefix. Progress covers only the steps that need rendering. A newer `render` call cancels this one.
-    func render(source: URL, chain: AIChain, progress: @escaping @Sendable (Double) -> Void) async throws -> RenderedChain
+    /// prefix. Progress is reported only for steps that need rendering. A newer `render` call cancels this one.
+    func render(source: URL, chain: AIChain, progress: @escaping @Sendable (ChainRenderProgress) -> Void) async throws -> RenderedChain
 }
 
 public actor AIChainRenderer: AIChainRendering {
@@ -52,7 +65,7 @@ public actor AIChainRenderer: AIChainRendering {
         self.cache = cache
     }
 
-    public func render(source: URL, chain: AIChain, progress: @escaping @Sendable (Double) -> Void) async throws -> RenderedChain {
+    public func render(source: URL, chain: AIChain, progress: @escaping @Sendable (ChainRenderProgress) -> Void) async throws -> RenderedChain {
         current?.cancel()
         let task = Task { [processor, cache] in
             try await Self.walk(source: source, chain: chain, processor: processor, cache: cache, progress: progress)
@@ -70,17 +83,13 @@ public actor AIChainRenderer: AIChainRendering {
         chain: AIChain,
         processor: any AIProcessing,
         cache: any RenderCaching,
-        progress: @escaping @Sendable (Double) -> Void
+        progress: @escaping @Sendable (ChainRenderProgress) -> Void
     ) async throws -> RenderedChain {
         let keys = RenderKey.prefixes(projectID: chain.projectID, sourceRange: chain.sourceRange, operations: chain.operations)
         var cached: [URL?] = []
         for key in keys {
             cached.append(await cache.render(for: key, projectID: chain.projectID))
         }
-        let toRender = Double(max(cached.count { $0 == nil }, 1))
-        var rendered = 0.0
-        progress(0)
-
         var input = source
         var prefixes: [URL] = []
         for (index, key) in keys.enumerated() {
@@ -89,21 +98,18 @@ public actor AIChainRenderer: AIChainRendering {
                 input = hit
             } else {
                 let temporary = try await cache.temporaryURL(projectID: chain.projectID)
-                let done = rendered
                 do {
-                    try await processor.process(chain.operations[index], input: input, output: temporary) { step in
-                        progress((done + min(max(step, 0), 1)) / toRender)
+                    try await processor.process(chain.operations[index], input: input, output: temporary) { fraction in
+                        progress(ChainRenderProgress(step: index, fraction: min(max(fraction, 0), 1)))
                     }
                     input = try await cache.store(temporary, for: key, projectID: chain.projectID)
                 } catch {
                     try? FileManager.default.removeItem(at: temporary)
                     throw error
                 }
-                rendered += 1
             }
             prefixes.append(input)
         }
-        progress(1)
         return RenderedChain(prefixes: prefixes, output: input)
     }
 }

@@ -447,6 +447,9 @@ One `EditorView` for both media types; only the header differs.
   feature name, optional hint, strength value (tap → strength slider sheet), drag handle to reorder, swipe to remove.
   "Add enhancement" row opens a sheet listing AI features with one-line descriptions. Rendering progress shows
   inline on the row being rendered. Caption under header: "Applied top to bottom".
+  A new step starts at 80 % strength. Each feature appears at most once; the Add sheet shows added ones with a
+  checkmark (not tappable). Tapping a row auditions the stack up to it (§ 6.6): its number badge fills with the tint
+  and later rows dim; tapping it again plays the whole stack. Voice Leveler is offered from F07 (when it works).
 - **Adjust section**: rows Equalizer (mini curve), Gain and dynamics (gain value), Effects, Loudness (target name).
   Each opens a detail screen/sheet.
 - **States**:
@@ -896,3 +899,5 @@ Record new user decisions here (date, decision, section updated).
   attack/release/range/frequency under "Advanced" (§ 8, § 18.5).
 - 2026-11-01: RNNoise v0.2 with the standard model (best quality; ~5.5 MB in the app, 29 MB weights source in the
   repo), not the "little" model or v0.1.1 (§ 4.9).
+- 2026-11-01: Enhance stack: new steps start at 80 %; each feature once (added ones checked in the Add sheet);
+  auditioned row = filled badge + later rows dimmed; Voice Leveler hidden from Add until F07 (§ 9).

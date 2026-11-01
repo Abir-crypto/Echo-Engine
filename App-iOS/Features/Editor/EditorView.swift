@@ -30,6 +30,7 @@ struct EditorView: View {
     @State private var visibleDuration: Double = 20
     @State private var isRenaming = false
     @State private var adjustSheet: AdjustSheet?
+    @State private var enhanceSheet: EnhanceSheet?
     @State private var newTitle = ""
 
     var body: some View {
@@ -87,7 +88,13 @@ struct EditorView: View {
             if UserDefaults.standard.bool(forKey: DebugAutoplay.launchArgument) { model.togglePlayback() }
             if UserDefaults.standard.bool(forKey: DebugManualDemo.launchArgument) { model.adjust(DebugManualDemo.apply) }
             if UserDefaults.standard.bool(forKey: DebugAIDemo.launchArgument), model.aiStack.isEmpty {
-                model.changeAIStack { $0.append(AIOperation(kind: .noiseSuppression, strength: 1)) }
+                model.addEnhancement(.noiseSuppression)
+                model.addEnhancement(.clearVoice)
+            }
+            switch UserDefaults.standard.string(forKey: DebugEnhanceSheet.launchArgument) {
+            case "add": enhanceSheet = .add
+            case "strength": enhanceSheet = .strength(0)
+            default: break
             }
             adjustSheet = UserDefaults.standard.string(forKey: DebugAdjustSheet.launchArgument).flatMap(AdjustSheet.init)
             #endif
@@ -118,13 +125,24 @@ struct EditorView: View {
                 .disabled(!model.canEdit)
                 overview
                     .disabled(!model.canEdit)
+                EnhanceSection(
+                    model: model,
+                    onEditStrength: { enhanceSheet = .strength($0) },
+                    onAdd: { enhanceSheet = .add }
+                )
+                .padding(.top, 4)
                 AdjustSection(model: model) { adjustSheet = $0 }
-                    .padding(.top, 4)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 32)
             .frame(maxWidth: 700)
             .frame(maxWidth: .infinity)
+        }
+        .sheet(item: $enhanceSheet) { sheet in
+            switch sheet {
+            case .add: AddEnhancementSheet(model: model)
+            case .strength(let index): StrengthSheet(model: model, index: index)
+            }
         }
         .sheet(item: $adjustSheet) { sheet in
             switch sheet {
@@ -236,6 +254,14 @@ struct EditorView: View {
     }
 }
 
+/// The Enhance section's sheets (SPEC § 9).
+private enum EnhanceSheet: Identifiable, Hashable {
+    case add
+    case strength(Int)
+
+    var id: Self { self }
+}
+
 /// What happened and what to do; never apologizes (SPEC § 4.7).
 private struct EditorFailureMessage: LocalizedError {
     let failure: EditorModel.Failure
@@ -261,6 +287,8 @@ private func previewEditor(_ project: Project, readOnly: Bool = false, available
         waveforms: FakeWaveformProvider(peaks: peaks),
         devices: FakeAudioDeviceManager(),
         storage: FakeStorageEstimator(editBytes: 1_000, available: available),
+        entitlements: FakeEntitlements(),
+        capabilities: FakeCapabilities(),
         renderer: FakeAIChainRenderer(),
         janitor: FakeRenderCacheJanitor(),
         makeAutosaver: { _ in FakeProjectAutosaver() }

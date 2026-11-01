@@ -61,6 +61,8 @@ final class AppContainer {
             waveforms: waveforms,
             devices: devices,
             storage: storage,
+            entitlements: entitlements,
+            capabilities: capabilities,
             renderer: renderer,
             janitor: janitor,
             makeAutosaver: { [projects] onError in ProjectAutosaver(repository: projects, onError: onError) }

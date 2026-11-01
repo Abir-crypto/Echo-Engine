@@ -20,6 +20,7 @@ struct EditorModelTests {
         _ project: Project,
         readOnly: Bool = false,
         engine: FakePlaybackEngine? = nil,
+        entitlements: FakeEntitlements = FakeEntitlements(),
         storage: FakeStorageEstimator = FakeStorageEstimator(editBytes: 1_000, available: 1_000_000)
     ) -> (EditorModel, FakePlaybackEngine) {
         let engine = engine ?? FakePlaybackEngine(duration: project.sourceInfo.duration)
@@ -30,6 +31,8 @@ struct EditorModelTests {
             waveforms: FakeWaveformProvider(peaks: WaveformPeaks(sampleRate: 48_000, sourceFrameCount: 512, peaks: [0.2, 0.5])),
             devices: devices,
             storage: storage,
+            entitlements: entitlements,
+            capabilities: FakeCapabilities(),
             renderer: renderer,
             janitor: janitor,
             makeAutosaver: { [autosaver] _ in autosaver }
@@ -423,6 +426,69 @@ struct EditorModelTests {
 
         #expect(model.failure == .cantRender)
         #expect(engine.currentAudio == repository.folder(for: plain.id).working)
+    }
+
+    @Test func addingAFeaturePutsItLastAtEightyPercent() async {
+        let (model, _) = makeModel(plain)
+        await model.open()
+
+        model.addEnhancement(.noiseSuppression)
+        model.addEnhancement(.clearVoice)
+
+        #expect(model.aiStack.map(\.kind) == [.noiseSuppression, .clearVoice])
+        #expect(model.aiStack.allSatisfy { $0.strength == 0.8 })
+        #expect(model.history.undoStates.count == 2)
+        #expect(model.showsAlreadyReducesNoise(at: 1))
+        #expect(!model.showsAlreadyReducesNoise(at: 0))
+    }
+
+    @Test func eachFeatureOnceAndOnlyWhenAvailable() async {
+        let (model, _) = makeModel(plain, entitlements: FakeEntitlements(locked: [.clearVoice]))
+        await model.open()
+        model.addEnhancement(.noiseSuppression)
+
+        #expect(!model.canAdd(.noiseSuppression), "already in the stack")
+        #expect(!model.isAvailable(.clearVoice))
+        model.addEnhancement(.clearVoice)
+        #expect(model.aiStack.count == 1)
+        #expect(!model.isAvailable(.unknown))
+    }
+
+    @Test func removingMovingAndStrengthAreEachOneStep() async {
+        var project = plain
+        project.clips[0].aiStack = [noise, clear]
+        let (model, _) = makeModel(project)
+        await model.open()
+
+        model.moveEnhancements(fromOffsets: [1], toOffset: 0)
+        #expect(model.aiStack.map(\.kind) == [.clearVoice, .noiseSuppression])
+        model.setStrength(0.35, at: 1)
+        #expect(model.aiStack[1].strength == 0.35)
+        model.removeEnhancement(at: 0)
+        #expect(model.aiStack.map(\.kind) == [.noiseSuppression])
+        #expect(model.history.undoStates.count == 3)
+
+        model.undo()
+        model.undo()
+        model.undo()
+        #expect(model.aiStack.map(\.kind) == [.noiseSuppression, .clearVoice])
+    }
+
+    @Test func theRenderingStepShowsProgressUntilDone() async {
+        await renderer.setDelay(.milliseconds(200))
+        let (model, engine) = makeModel(plain)
+        await model.open()
+
+        model.addEnhancement(.noiseSuppression)
+        await waitUntil { model.renderingStep != nil }
+        #expect(model.renderingStep == 0)
+        #expect(model.renderProgress == 0)
+
+        for _ in 0..<50 where engine.currentAudio != render(1, of: plain) {
+            try? await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(model.renderingStep == nil)
+        #expect(model.renderProgress == nil)
     }
 
     @Test func closingPrunesToTheCurrentRenders() async {

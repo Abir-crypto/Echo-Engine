@@ -209,6 +209,8 @@ func previewAdjustModel() -> EditorModel {
         waveforms: FakeWaveformProvider(),
         devices: FakeAudioDeviceManager(),
         storage: FakeStorageEstimator(editBytes: 1_000, available: .max),
+        entitlements: FakeEntitlements(),
+        capabilities: FakeCapabilities(),
         renderer: FakeAIChainRenderer(),
         janitor: FakeRenderCacheJanitor(),
         makeAutosaver: { _ in FakeProjectAutosaver() }

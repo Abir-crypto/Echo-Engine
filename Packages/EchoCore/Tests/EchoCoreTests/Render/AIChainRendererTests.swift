@@ -86,17 +86,17 @@ final class AIChainRendererTests {
         #expect(await processor.processed.count == 3)
     }
 
-    @Test func progressCoversOnlyTheStepsToRender() async throws {
+    @Test func progressNamesTheStepBeingRenderedAndSkipsCachedOnes() async throws {
         _ = try await render([noise])
-        let log = Mutex<[Double]>([])
+        let log = Mutex<[ChainRenderProgress]>([])
 
         _ = try await renderer.render(source: source, chain: chain([noise, clear])) { value in log.withLock { $0.append(value) } }
 
         let values = log.withLock { $0 }
-        #expect(values.first == 0)
-        #expect(values.last == 1)
-        #expect(values.contains(0), "the cached step adds nothing")
-        #expect(zip(values, values.dropFirst()).allSatisfy { $0 <= $1 })
+        #expect(values.allSatisfy { $0.step == 1 }, "step 0 was cached")
+        #expect(values.first?.fraction == 0)
+        #expect(values.last?.fraction == 1)
+        #expect(zip(values, values.dropFirst()).allSatisfy { $0.fraction <= $1.fraction })
     }
 
     /// A render in its own task (the test class isn't `Sendable`).
