@@ -130,7 +130,11 @@ Goal: play projects with video sync, waveforms, trim.
   > F05/F07) → main mixer; trim via `scheduleSegment`, seek reschedules, generation counter drops stale completions; end of range stops with
   > the playhead at the end, next play restarts at the range start. Completion uses `.dataRendered` (`.dataPlayedBack` never fires offline).
   > Tests render offline (`init(manualRenderingFormat:)`, ≤ 4,096 frames/call) on a frame-index ramp; 10/10 repeated runs. Audio session: F04.T04.
-- [ ] F04.T03 — Video sync: muted `AVPlayer` + `AVPlayerLayer`, shared host-time start, drift correction (§ 6.6).
+- [x] F04.T03 — Video sync: muted `AVPlayer` + `AVPlayerLayer`, shared host-time start, drift correction (§ 6.6).
+  > Done: `load(audio:video:)` adds a muted `AVPlayer` (`automaticallyWaitsToMinimizeStalling = false`, `forwardPlaybackEndTime` = trim end).
+  > Play: player node `play(at:)` host time − output latency, video `setRate(_:time:atHostTime:)` at the same host time (+100 ms lead).
+  > Every 0.5 s audible audio vs video; > 10 ms → audio rescheduled onto the video timeline (`VideoSync`, pure, tested). Pause/seek move both.
+  > App `Components/VideoPreview` (AVPlayerLayer-backed view). Real-time sync only checkable by hand (checkpoint: 5+ min on device).
 - [ ] F04.T04 — Editor layout per canvas: top bar (rename on title tap), header switch (VideoPreview / DetailWaveform with pinch zoom), transport row, overview strip with trim handles, forced LTR (§ 9).
 - [ ] F04.T05 — `UndoManager` with `EditState` snapshots, 30-step cap, drag-end registration (§ 6.5); trim changes undoable; autosave wired.
 

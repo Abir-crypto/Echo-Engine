@@ -24,7 +24,7 @@ final class AVPlaybackEngineTests {
 
     private func makeEngine() throws -> AVPlaybackEngine {
         let engine = try AVPlaybackEngine(manualRenderingFormat: format)
-        try engine.load(audio: audio)
+        try engine.load(audio: audio, video: nil)
         return engine
     }
 
@@ -130,5 +130,56 @@ final class AVPlaybackEngineTests {
         let engine = try makeEngine()
         engine.playbackRange = TimeRangeCodable(start: -1, duration: 10)
         #expect(engine.playbackRange == TimeRangeCodable(start: 0, duration: 2))
+    }
+
+    @Test func audioProjectsHaveNoVideoPlayer() throws {
+        #expect(try makeEngine().videoPlayer == nil)
+    }
+
+    @Test func videoIsMutedAndEndsAtTheTrimEnd() async throws {
+        let video = directory.appending(path: "source.mov")
+        try await TestMedia.writeMovie(to: video, seconds: 2, withAudio: true)
+        let engine = try AVPlaybackEngine(manualRenderingFormat: format)
+        try engine.load(audio: audio, video: video)
+
+        let player = try #require(engine.videoPlayer)
+        #expect(player.isMuted)
+        #expect(!player.automaticallyWaitsToMinimizeStalling)
+        #expect(player.currentItem?.forwardPlaybackEndTime.seconds == 2)
+
+        engine.playbackRange = TimeRangeCodable(start: 0.5, duration: 1)
+        #expect(player.currentItem?.forwardPlaybackEndTime.seconds == 1.5)
+    }
+
+    @Test func seekingWhilePausedMovesTheVideo() async throws {
+        let video = directory.appending(path: "source.mov")
+        try await TestMedia.writeMovie(to: video, seconds: 2, withAudio: true)
+        let engine = try AVPlaybackEngine(manualRenderingFormat: format)
+        try engine.load(audio: audio, video: video)
+        let player = try #require(engine.videoPlayer)
+
+        engine.seek(to: 1.2)
+
+        for _ in 0..<200 where abs(player.currentTime().seconds - 1.2) > 0.001 {
+            try await Task.sleep(for: .milliseconds(10))
+        }
+        #expect(abs(player.currentTime().seconds - 1.2) < 0.001)
+    }
+}
+
+struct VideoSyncTests {
+    @Test func audibleTimeAdvancesWithHostTimeMinusLatency() {
+        let audible = VideoSync.audibleTime(rendered: 10, renderedAt: 100, now: 100.02, outputLatency: 0.015)
+        #expect(abs(audible - 10.005) < 1e-9)
+    }
+
+    @Test func driftBeyondTenMillisecondsNeedsResync() {
+        #expect(!VideoSync.needsResync(audioTime: 5.009, videoTime: 5))
+        #expect(VideoSync.needsResync(audioTime: 5.011, videoTime: 5))
+        #expect(VideoSync.needsResync(audioTime: 4.989, videoTime: 5))
+    }
+
+    @Test func videoTimeIsProjectedToTheResyncStart() {
+        #expect(abs(VideoSync.videoTime(at: 50.05, from: 12, now: 50, rate: 1) - 12.05) < 1e-9)
     }
 }
