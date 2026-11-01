@@ -378,8 +378,9 @@ final class EditorModel {
             return
         }
         let projectID = project.id
+        guard let renderKey = RenderKey(hash: output.deletingPathExtension().lastPathComponent) else { return }
         Task { [weak self, waveforms] in
-            let key = "render-\(output.deletingPathExtension().lastPathComponent)"
+            let key = renderKey.waveformKey
             let peaks = try? await waveforms.peaks(of: output, projectID: projectID, key: key, progress: { _ in })
             guard let self, self.rendered?.output == output else { return }
             self.renderedPeaks = peaks

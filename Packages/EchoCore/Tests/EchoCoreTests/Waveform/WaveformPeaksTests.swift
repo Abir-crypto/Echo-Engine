@@ -120,6 +120,19 @@ final class CachedWaveformProviderTests {
         #expect(regenerated.peaks.allSatisfy { $0 == 0.2 })
     }
 
+    @Test func removingKeysDeletesOnlyThoseWaveforms() async throws {
+        let audio = directory.appending(path: "working.caf")
+        try TestMedia.writeSamples([Array(repeating: 0.5, count: 4_800)], to: audio)
+        _ = try await provider.peaks(of: audio, projectID: projectID, key: "working") { _ in }
+        _ = try await provider.peaks(of: audio, projectID: projectID, key: "render-abc") { _ in }
+
+        try await provider.remove(keys: ["render-abc", "render-missing"], projectID: projectID)
+
+        let folder = directory.appending(path: "Waveforms/\(projectID.uuidString)")
+        #expect(!FileManager.default.fileExists(atPath: folder.appending(path: "render-abc.peaks").path))
+        #expect(FileManager.default.fileExists(atPath: folder.appending(path: "working.peaks").path))
+    }
+
     @Test func removeAllDeletesTheProjectsWaveforms() async throws {
         let audio = directory.appending(path: "working.caf")
         try TestMedia.writeSamples([Array(repeating: 0.5, count: 4_800)], to: audio)

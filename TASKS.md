@@ -227,8 +227,10 @@ Goal: user-ordered AI stack with per-step cached renders.
   > `renderProgress`, `renderedPeaks` (key "render-<hash>"), janitor sweep after history changes and prune on close. Debug `-debugAIDemo`.
 - [x] F06.T06a — "Hold for original" also plays `working.caf` instead of the AI render (crossfade) on top of F05's chain bypass (§ 6.6). From F05.T05.
   > Done: with T06 — `holdOriginal` swaps to `working.caf` (crossfade) and back to the auditioned step or full render on release.
-- [ ] F06.T06b — Waveform peaks of renders ("render-<hash>" in the waveform cache) outlive their renders until project delete; remove them
+- [x] F06.T06b — Waveform peaks of renders ("render-<hash>" in the waveform cache) outlive their renders until project delete; remove them
   with the janitor's sweep (or on Clear cache, F13). From F06.T06.
+  > Done: `WaveformProviding.remove(keys:projectID:)`; the janitor removes `RenderKey.waveformKey` peaks with every render it deletes
+  > (sweep, eviction, prune). The key name lives in `RenderKey` only.
 - [ ] F06.T07 — Enhance UI: numbered list, strength sheet, reorder, swipe remove, Add enhancement sheet, inline progress, "Already reduces noise" hint; entitlement/capability checks.
 
 **Checkpoint test:** noisy recording: apply Noise Suppression, Clear Voice, reorder, change strength, undo/redo rapidly; confirm instant undo, correct audio, cache folder shrinks after new edits; tap rows to A/B.

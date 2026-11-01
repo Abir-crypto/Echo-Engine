@@ -29,6 +29,16 @@ public actor CachedWaveformProvider: WaveformProviding {
         return generated
     }
 
+    public func remove(keys: Set<String>, projectID: UUID) throws {
+        let folder = root.appending(path: projectID.uuidString)
+        for key in keys {
+            let file = folder.appending(path: "\(key).peaks")
+            if fileManager.fileExists(atPath: file.path) {
+                try fileManager.removeItem(at: file)
+            }
+        }
+    }
+
     public func removeAll(projectID: UUID) throws {
         let folder = root.appending(path: projectID.uuidString)
         if fileManager.fileExists(atPath: folder.path) {

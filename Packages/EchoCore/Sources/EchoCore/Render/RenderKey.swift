@@ -27,6 +27,9 @@ public struct RenderKey: Hashable, Sendable, Codable, CustomStringConvertible {
 
     public var description: String { hash }
 
+    /// The waveform cache key of this render's peaks.
+    public var waveformKey: String { "render-\(hash)" }
+
     /// Fixed decimals with a "." in every locale, so keys never depend on the device's settings.
     private static func number(_ value: Double, digits: Int) -> String {
         String(format: "%.\(digits)f", locale: Locale(identifier: "en_US_POSIX"), value)

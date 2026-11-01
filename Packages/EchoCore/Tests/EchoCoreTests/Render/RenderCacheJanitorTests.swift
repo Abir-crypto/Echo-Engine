@@ -6,6 +6,7 @@ import Testing
 final class RenderCacheJanitorTests {
     private let root: URL
     private let cache: FileRenderCache
+    private let waveforms = FakeWaveformProvider()
     private let project = UUID()
     private let range = TimeRangeCodable.full(duration: 60)
 
@@ -47,7 +48,7 @@ final class RenderCacheJanitorTests {
     private func janitor(available: Int64 = .max, failsToMeasure: Bool = false) -> RenderCacheJanitor {
         var storage = FakeStorageEstimator(available: available)
         storage.failsToMeasure = failsToMeasure
-        return RenderCacheJanitor(cache: cache, storage: storage)
+        return RenderCacheJanitor(cache: cache, storage: storage, waveforms: waveforms)
     }
 
     @Test func keepsTheCurrentPrefixesAndEveryHistoryStateAndDeletesTheRest() async throws {
@@ -58,6 +59,7 @@ final class RenderCacheJanitorTests {
         try await janitor().sweep(projectID: project, sourceRange: range, current: state([a, c]), history: [state([a, b])])
 
         #expect(try await cachedKeys() == [key([a]), key([a, b]), key([a, c])])
+        #expect(await waveforms.removedKeys == [key([d]).waveformKey], "their waveforms go too")
     }
 
     @Test func overBudgetTheOldestHistoryStatesGoFirst() async throws {
@@ -109,5 +111,6 @@ final class RenderCacheJanitorTests {
         try await janitor().prune(projectID: project, sourceRange: range, current: state([a, b]))
 
         #expect(try await cachedKeys() == [key([a]), key([a, b])])
+        #expect(await waveforms.removedKeys == [key([c]).waveformKey])
     }
 }

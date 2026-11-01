@@ -16,10 +16,12 @@ public actor RenderCacheJanitor: RenderCacheJanitoring {
 
     private let cache: any RenderCaching
     private let storage: any StorageEstimating
+    private let waveforms: any WaveformProviding
 
-    public init(cache: any RenderCaching, storage: any StorageEstimating) {
+    public init(cache: any RenderCaching, storage: any StorageEstimating, waveforms: any WaveformProviding) {
         self.cache = cache
         self.storage = storage
+        self.waveforms = waveforms
     }
 
     public func sweep(projectID: UUID, sourceRange: TimeRangeCodable, current: EditState, history: [EditState]) async throws {
@@ -28,7 +30,7 @@ public actor RenderCacheJanitor: RenderCacheJanitoring {
         let reachable = historyKeys.reduce(keep) { $0.union($1) }
 
         let entries = try await cache.entries(projectID: projectID)
-        try await cache.remove(Set(entries.map(\.key)).subtracting(reachable), projectID: projectID)
+        try await remove(Set(entries.map(\.key)).subtracting(reachable), projectID: projectID)
 
         var sizes = Dictionary(entries.filter { reachable.contains($0.key) }.map { ($0.key, $0.bytes) }, uniquingKeysWith: max)
         var total = sizes.values.reduce(0, +)
@@ -38,7 +40,7 @@ public actor RenderCacheJanitor: RenderCacheJanitoring {
             // Evict this state's renders unless the current state or a newer history state still needs them.
             let stillNeeded = historyKeys[(index + 1)...].reduce(keep) { $0.union($1) }
             let evict = historyKeys[index].subtracting(stillNeeded).filter { sizes[$0] != nil }
-            try await cache.remove(evict, projectID: projectID)
+            try await remove(evict, projectID: projectID)
             for key in evict {
                 total -= sizes.removeValue(forKey: key) ?? 0
             }
@@ -49,7 +51,14 @@ public actor RenderCacheJanitor: RenderCacheJanitoring {
     public func prune(projectID: UUID, sourceRange: TimeRangeCodable, current: EditState) async throws {
         let keep = keys(of: current, projectID: projectID, sourceRange: sourceRange)
         let entries = try await cache.entries(projectID: projectID)
-        try await cache.remove(Set(entries.map(\.key)).subtracting(keep), projectID: projectID)
+        try await remove(Set(entries.map(\.key)).subtracting(keep), projectID: projectID)
+    }
+
+    /// Renders and their waveform peaks go together.
+    private func remove(_ keys: Set<RenderKey>, projectID: UUID) async throws {
+        guard !keys.isEmpty else { return }
+        try await cache.remove(keys, projectID: projectID)
+        try? await waveforms.remove(keys: Set(keys.map(\.waveformKey)), projectID: projectID)
     }
 
     private func keys(of state: EditState, projectID: UUID, sourceRange: TimeRangeCodable) -> Set<RenderKey> {

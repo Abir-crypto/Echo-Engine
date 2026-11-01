@@ -45,7 +45,7 @@ final class AppContainer {
         self.renders = renders
         let processor = AIProcessorRouter(processors: [.noiseSuppression: RNNoiseProcessor(), .clearVoice: ClearVoiceProcessor()])
         self.renderer = renderer ?? AIChainRenderer(processor: processor, cache: renders)
-        self.janitor = janitor ?? RenderCacheJanitor(cache: renders, storage: storage)
+        self.janitor = janitor ?? RenderCacheJanitor(cache: renders, storage: storage, waveforms: waveforms)
     }
 
     func makeHomeModel() -> HomeModel {

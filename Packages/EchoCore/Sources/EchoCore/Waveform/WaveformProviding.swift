@@ -10,6 +10,8 @@ public protocol WaveformProviding: Sendable {
         key: String,
         progress: @escaping @Sendable (Double) -> Void
     ) async throws -> WaveformPeaks
+    /// Deletes the cached waveforms stored under `keys` (e.g. of renders the janitor removed).
+    func remove(keys: Set<String>, projectID: UUID) async throws
     /// Deletes every cached waveform of the project.
     func removeAll(projectID: UUID) async throws
 }

@@ -5,6 +5,7 @@ import Foundation
 public actor FakeWaveformProvider: WaveformProviding {
     public let peaks: WaveformPeaks
     public private(set) var removedProjectIDs: [UUID] = []
+    public private(set) var removedKeys: Set<String> = []
 
     public init(peaks: WaveformPeaks = WaveformPeaks(sampleRate: 48_000, sourceFrameCount: 0, peaks: [])) {
         self.peaks = peaks
@@ -17,6 +18,10 @@ public actor FakeWaveformProvider: WaveformProviding {
         progress: @escaping @Sendable (Double) -> Void
     ) async throws -> WaveformPeaks {
         peaks
+    }
+
+    public func remove(keys: Set<String>, projectID: UUID) {
+        removedKeys.formUnion(keys)
     }
 
     public func removeAll(projectID: UUID) {
