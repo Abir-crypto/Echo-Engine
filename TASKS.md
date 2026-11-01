@@ -201,7 +201,11 @@ Goal: user-ordered AI stack with per-step cached renders.
   > (provenance; upstream fix 372f7b4 applied: v0.2 doesn't build on arm64). C API `Denoiser.h` (`EEDenoiser*`, −1…1 floats). Swift
   > `RNNoiseDenoiser` (streaming, removes RNNoise's 960-sample delay, output length = input) + `RNNoiseDenoiser.denoise(buffer)` via
   > `AudioChannels` (`AVAudioConverter` → 48 kHz float, per channel). Tests on generated speech (`TestAudio/voice.caf`) + fan noise: −26 dB in pauses, speech ±0.2 dB.
-- [ ] F06.T02 — `AIProcessing` + `RNNoiseProcessor` (wet/dry strength), `ClearVoiceProcessor` (§ 7), `AIProcessorRouter` (`.unknown` pass-through).
+- [x] F06.T02 — `AIProcessing` + `RNNoiseProcessor` (wet/dry strength), `ClearVoiceProcessor` (§ 7), `AIProcessorRouter` (`.unknown` pass-through).
+  > Done: `ChunkedRender` streams 48 kHz float input 1 s at a time through a `ChunkTransform` into ALAC 24-bit 48 kHz (cancellation +
+  > progress per chunk; failed/cancelled renders leave no file; typed `RenderError`). `WetDryMix` keeps dry aligned with delayed wet.
+  > Clear Voice = RNNoise → HPF 80 / −2 dB@250 / +2.5 dB shelf@3k → compressor 3:1 @ −20 (strength scales EQ, ratio, mix). Router
+  > passes `.unknown` and features without a processor (Voice Leveler until F07) through. `FakeAIProcessor` for F06.T04.
 - [ ] F06.T03 — `FileRenderCache` (ALAC 24-bit, chain-hash keys § 6.3). Tests.
 - [ ] F06.T04 — `AIChainRenderer`: prefix walk, progress, cancellation, latest-change-wins; `firstChangedIndex`. Tests with fake processor.
 - [ ] F06.T05 — `RenderCacheJanitor`: reachability from history + current prefixes, budget eviction, close-time pruning (§ 6.4). Tests.

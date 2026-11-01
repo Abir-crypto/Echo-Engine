@@ -37,6 +37,10 @@ BiquadCoefficients makeBiquad(FilterShape shape, double sampleRate, double frequ
         a1 = 2 * ((A - 1) - (A + 1) * cosw);
         a2 = (A + 1) - (A - 1) * cosw - sqrtA2alpha;
         break;
+    case FilterShape::highPass:
+        b0 = (1 + cosw) / 2; b1 = -(1 + cosw); b2 = (1 + cosw) / 2;
+        a0 = 1 + alpha; a1 = -2 * cosw; a2 = 1 - alpha;
+        break;
     case FilterShape::lowPass:
         b0 = (1 - cosw) / 2; b1 = 1 - cosw; b2 = (1 - cosw) / 2;
         a0 = 1 + alpha; a1 = -2 * cosw; a2 = 1 - alpha;
