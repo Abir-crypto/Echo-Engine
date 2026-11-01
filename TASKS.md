@@ -153,7 +153,13 @@ Goal: play projects with video sync, waveforms, trim.
 ## F05 — Manual effects chain  [IN PROGRESS]
 Goal: real-time manual controls as C++ DSP in Audio Units.
 
-- [ ] F05.T01 — `CEchoDSP` kernels: gain, biquad EQ (6 bands), gate, compressor, de-esser, limiter. Golden-file tests + render-thread allocation guard.
+- [x] F05.T01 — `CEchoDSP` kernels: gain, biquad EQ (6 bands), gate, compressor, de-esser, limiter. Golden-file tests + render-thread allocation guard.
+  > Done: `echo::dsp` C++ kernels (`prepare`/setters/`process(float* const*, ch, frames)`, ≤ 2 ch, fixed-size state, `noexcept`): params ramp
+  > 30 ms via `SmoothedValue`, enable/disable is a ramped mix; EQ = RBJ biquads, log-freq glide, coeffs per 32 frames, `magnitudeDB` for the curve;
+  > de-esser = band-pass detector (−30 dBFS) driving a dynamic high shelf (≤ 12 dB × amount); limiter = 1.5 ms look-ahead, ramped gain, 50 ms
+  > release, `latencyFrames()` (72 @ 48 kHz) for F05.T03. Kernels clamp compressor threshold −60…0 / makeup 0…24 (not in the model yet). Tests:
+  > analytic per kernel, golden files `Resources/TestAudio/Golden/*.f32` (re-record: `ECHO_UPDATE_GOLDEN=1 swift test`), zero `operator new` via
+  > test-only `CEchoDSPTestSupport` (thread-local counter, proven to catch a kernel allocation).
 - [ ] F05.T02 — Kernels: reverb, formant-preserving pitch shift (PSOLA; shared with auto-tune later). Tests.
 - [ ] F05.T03 — `EchoAudioUnits`: AUAudioUnit subclasses + `AUParameterTree` with ramping; chain assembly in `AVPlaybackEngine` in § 8 order.
 - [ ] F05.T03a — Playback resilience: on `AVAudioEngineConfigurationChange` (route change, e.g. headphones unplugged) and session
