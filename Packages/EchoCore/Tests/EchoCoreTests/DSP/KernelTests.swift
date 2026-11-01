@@ -188,6 +188,21 @@ struct KernelTests {
         #expect(hot.map(abs).max()! > 2, "the input really is hot")
     }
 
+    @Test func limiterCatchesPeaksBetweenSamples() {
+        // A 12 kHz sine shifted by 45°: samples at ±0.85 (−1.4 dB, under a −1 dB ceiling), true peak 1.2 (+1.6 dBTP).
+        let input = (0..<9_600).map { Float(1.2 * sin(2 * .pi * 12_000 * Double($0) / sampleRate + .pi / 4)) }
+        var kernel = echo.dsp.LimiterKernel()
+        kernel.prepare(sampleRate)
+        let buffers = ChannelBuffers([input])
+        buffers.processBlocks { kernel.process($0, 1, $1) }
+
+        var detector = echo.dsp.TruePeakDetector()
+        detector.prepare(sampleRate)
+        let truePeak = buffers.output[0].suffix(4_800).map { detector.next($0) }.max()!
+        #expect(input.map(abs).max()! < echo.dsp.dbToLinear(-1), "a sample-peak limiter would let this through")
+        #expect(truePeak <= echo.dsp.dbToLinear(-1) * 1.02, "true peak held at the ceiling (within the estimate's accuracy)")
+    }
+
     @Test func limiterOnlyDelaysQuietAudio() {
         var kernel = echo.dsp.LimiterKernel()
         kernel.prepare(sampleRate)

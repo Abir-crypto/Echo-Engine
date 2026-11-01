@@ -15,6 +15,7 @@ struct EditorModelTests {
     private let repository = FakeProjectRepository()
     private let renderer = FakeAIChainRenderer()
     private let janitor = FakeRenderCacheJanitor()
+    private let autoLevel = FakeAutoLevelAnalyzer()
 
     private func makeModel(
         _ project: Project,
@@ -35,6 +36,8 @@ struct EditorModelTests {
             capabilities: FakeCapabilities(),
             renderer: renderer,
             janitor: janitor,
+            autoLevel: autoLevel,
+            autoLevelDelay: .milliseconds(5),
             makeAutosaver: { [autosaver] _ in autosaver }
         )
         return (model, engine)
@@ -492,6 +495,88 @@ struct EditorModelTests {
         }
         #expect(model.renderingStep == nil)
         #expect(model.renderProgress == nil)
+    }
+
+    // MARK: Auto Level (F07.T03)
+
+    private func waitForAutoLevel(_ count: Int) async {
+        for _ in 0..<100 where await autoLevel.requests.count < count {
+            try? await Task.sleep(for: .milliseconds(5))
+        }
+        try? await Task.sleep(for: .milliseconds(20))
+    }
+
+    @Test func autoLevelIsOffByDefault() async {
+        let (model, engine) = makeModel(plain)
+        await model.open()
+        try? await Task.sleep(for: .milliseconds(30))
+
+        #expect(await autoLevel.requests.isEmpty)
+        #expect(model.autoLevelGainDB == nil)
+        #expect(engine.autoLevelGainDB == 0)
+    }
+
+    @Test func aTargetMeasuresTheProcessedAudioOverTheTrim() async {
+        let (model, engine) = makeModel(plain)
+        await model.open()
+        model.moveTrimStart(to: 2)
+        model.finishTrim()
+
+        model.setOutputLoudness(.youtube)
+        await waitForAutoLevel(1)
+
+        let request = await autoLevel.requests.last
+        #expect(request?.audio == repository.folder(for: plain.id).working)
+        #expect(request?.range.start == 2)
+        #expect(request?.target == .youtube)
+        #expect(model.autoLevelGainDB == 4)
+        #expect(engine.autoLevelGainDB == 4)
+        #expect(model.history.undoStates.count == 2, "trim, then the target")
+    }
+
+    @Test func manualChangesAreMeasuredOnceTheySettle() async {
+        var project = plain
+        project.outputLoudness = .podcast
+        let (model, _) = makeModel(project)
+        await model.open()
+        await waitForAutoLevel(1)
+
+        model.adjust { $0.inputGainDB = 1 }
+        model.adjust { $0.inputGainDB = 2 }
+        model.adjust { $0.inputGainDB = 3 }
+        await waitForAutoLevel(2)
+
+        let requests = await autoLevel.requests
+        #expect(requests.count == 2, "three quick changes, one measurement")
+        #expect(requests.last?.manual.inputGainDB == 3)
+    }
+
+    @Test func autoLevelWaitsForTheRenderAndMeasuresIt() async {
+        var project = plain
+        project.outputLoudness = .youtube
+        project.clips[0].aiStack = [noise]
+        let (model, _) = makeModel(project)
+        await model.open()
+        await waitForAutoLevel(1)
+
+        #expect(await autoLevel.requests.map(\.audio) == [render(1, of: project)])
+        #expect(model.autoLevelGainDB == 4)
+    }
+
+    @Test func turningTheTargetOffResetsTheGainAndUndoBringsItBack() async {
+        let (model, engine) = makeModel(plain)
+        await model.open()
+        model.setOutputLoudness(.spotify)
+        await waitForAutoLevel(1)
+
+        model.setOutputLoudness(nil)
+        #expect(model.autoLevelGainDB == nil)
+        #expect(engine.autoLevelGainDB == 0)
+
+        model.undo()
+        await waitForAutoLevel(2)
+        #expect(model.outputLoudness == .spotify)
+        #expect(engine.autoLevelGainDB == 4)
     }
 
     @Test func closingPrunesToTheCurrentRenders() async {

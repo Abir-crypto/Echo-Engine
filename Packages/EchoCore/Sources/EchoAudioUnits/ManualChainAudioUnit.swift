@@ -52,7 +52,7 @@ public final class ManualChainAudioUnit: EchoEffectAudioUnit {
     }
 }
 
-/// The final look-ahead limiter (SPEC § 6.6, § 6.7, § 8): ceiling −6…0 dB, always on.
+/// Auto Level gain, then the final look-ahead true-peak limiter (SPEC § 6.6, § 6.7, § 8): ceiling −6…0 dB, always on.
 public final class OutputLimiterAudioUnit: EchoEffectAudioUnit {
     public static let componentDescription = AudioComponentDescription.echoEffect(subType: "ecLM")
 
@@ -62,6 +62,7 @@ public final class OutputLimiterAudioUnit: EchoEffectAudioUnit {
         [
             parameter("ceiling", address: EEOutputLimiterParameter.ceiling.rawValue, range: -6...0, unit: .decibels),
             parameter("bypass", address: EEOutputLimiterParameter.bypass.rawValue, range: 0...1, unit: .boolean),
+            parameter("autoLevelGain", address: EEOutputLimiterParameter.gain.rawValue, range: -20...20, unit: .decibels),
         ]
     }
 }

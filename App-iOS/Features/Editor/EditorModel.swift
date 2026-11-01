@@ -44,6 +44,8 @@ final class EditorModel {
     private(set) var auditionedStep: Int?
     /// Waveform after the AI stack (its last render); `nil` without AI steps.
     private(set) var renderedPeaks: WaveformPeaks?
+    /// Auto Level's current gain in dB (SPEC § 6.7); `nil` while the target is Off or before it's measured.
+    private(set) var autoLevelGainDB: Double?
     var failure: Failure?
 
     let engine: any PlaybackEngine
@@ -54,6 +56,10 @@ final class EditorModel {
     @ObservationIgnored private let storage: any StorageEstimating
     @ObservationIgnored private let entitlements: any EntitlementProvider
     @ObservationIgnored private let capabilities: any DeviceCapabilityChecking
+    @ObservationIgnored private let autoLevel: any AutoLevelAnalyzing
+    /// Auto Level waits this long after the last change before measuring (SPEC § 6.7: 500 ms).
+    @ObservationIgnored private let autoLevelDelay: Duration
+    @ObservationIgnored private var autoLevelTask: Task<Void, Never>?
     @ObservationIgnored private let renderer: any AIChainRendering
     @ObservationIgnored private let janitor: any RenderCacheJanitoring
     @ObservationIgnored private var renderTask: Task<Void, Never>?
@@ -79,6 +85,8 @@ final class EditorModel {
         capabilities: any DeviceCapabilityChecking,
         renderer: any AIChainRendering,
         janitor: any RenderCacheJanitoring,
+        autoLevel: any AutoLevelAnalyzing,
+        autoLevelDelay: Duration = .milliseconds(500),
         makeAutosaver: (@escaping @Sendable (any Error) -> Void) -> any ProjectAutosaving
     ) {
         project = stored.project
@@ -93,6 +101,8 @@ final class EditorModel {
         self.capabilities = capabilities
         self.renderer = renderer
         self.janitor = janitor
+        self.autoLevel = autoLevel
+        self.autoLevelDelay = autoLevelDelay
         let failed = SaveFailureRelay()
         autosaver = makeAutosaver { _ in failed.report() }
         failed.onFailure = { [weak self] in self?.failure = .cantSave }
@@ -107,6 +117,8 @@ final class EditorModel {
     var manual: ManualSettings { project.editState.manual }
     /// The clip's AI stack, in processing order (SPEC § 7).
     var aiStack: [AIOperation] { project.editState.aiStack }
+    /// Auto Level's loudness target; `nil` is Off (SPEC § 6.7).
+    var outputLoudness: LoudnessTarget? { project.editState.outputLoudness }
 
     private var workingAudio: URL { repository.folder(for: project.id).working }
 
@@ -149,6 +161,8 @@ final class EditorModel {
         sessionEvents = nil
         renderTask?.cancel()
         renderTask = nil
+        autoLevelTask?.cancel()
+        autoLevelTask = nil
         engine.pause()
         await lastSave?.value
         await autosaver.flush()
@@ -263,7 +277,9 @@ final class EditorModel {
     /// A trim drag ended: one undo step, saved (SPEC § 6.5: undo registers on drag end, not per value).
     func finishTrim() {
         engine.playbackRange = project.trimRange
+        let trimChanged = project.editState.trimRange != committedState.trimRange
         commit()
+        if trimChanged { scheduleAutoLevel() }
     }
 
     func undo() {
@@ -285,6 +301,17 @@ final class EditorModel {
         guard state.manual != project.editState.manual else { return }
         project.editState = state
         engine.apply(state.manual)
+        scheduleAutoLevel()
+    }
+
+    /// Sets the Auto Level target (`nil` = Off) as one undo step.
+    func setOutputLoudness(_ target: LoudnessTarget?) {
+        guard canEdit, target != outputLoudness else { return }
+        var state = project.editState
+        state.outputLoudness = target
+        project.editState = state
+        commit()
+        scheduleAutoLevel()
     }
 
     /// A slider drag or toggle ended: one undo step, saved (SPEC § 6.5).
@@ -350,6 +377,36 @@ final class EditorModel {
             renderChain()
         } else {
             sweepRenders()
+            scheduleAutoLevel()
+        }
+    }
+
+    // MARK: Auto Level
+
+    /// Measures the processed audio over the trim range once changes settle and sends the gain to the engine
+    /// (SPEC § 6.7). While an AI render is in progress it waits for it.
+    private func scheduleAutoLevel() {
+        autoLevelTask?.cancel()
+        autoLevelTask = nil
+        guard isLoaded else { return }
+        guard let target = outputLoudness else {
+            autoLevelGainDB = nil
+            engine.setAutoLevelGain(0)
+            return
+        }
+        guard renderTask == nil, let audio = rendered?.output else { return }
+        let manual = self.manual, range = project.trimRange, delay = autoLevelDelay
+        autoLevelTask = Task { [weak self, autoLevel] in
+            do {
+                try await Task.sleep(for: delay)
+                let gain = try await autoLevel.gain(of: audio, manual: manual, range: range, target: target)
+                try Task.checkCancellation()
+                guard let self else { return }
+                self.autoLevelGainDB = gain
+                self.engine.setAutoLevelGain(gain)
+            } catch {
+                // Cancelled by a newer change, or unmeasurable: the previous gain stays.
+            }
         }
     }
 
@@ -370,6 +427,7 @@ final class EditorModel {
             renderedPeaks = nil
             playCurrentSource()
             sweepRenders()
+            scheduleAutoLevel()
             return
         }
         let source = workingAudio
@@ -405,6 +463,7 @@ final class EditorModel {
         playCurrentSource()
         sweepRenders()
         loadRenderedPeaks(of: result.output)
+        scheduleAutoLevel()
     }
 
     /// Hold for original → `working.caf`; an auditioned step → its prefix render; otherwise the whole stack's render.

@@ -251,8 +251,8 @@ struct EditState: Codable, Equatable {       // what undo/redo snapshots
 
 `ManualSettings` (all with defaults that are "neutral"/off): `eq: [EQBand]` (6 bands), `inputGainDB`,
 `gate`, `compressor`, `deEsser`, `limiter`, `reverb`, `pitchSemitones`. `LoudnessTarget`: `.youtube(-14)`,
-`.instagram(-14)`, `.tiktok(-14)`, `.spotify(-14)`, `.podcast(-16)`, `.appleMusic(-16)`, `.custom(LUFS)`;
-true-peak ceiling −1 dBTP.
+`.instagram(-14)`, `.tiktok(-14)`, `.spotify(-14)`, `.podcast(-16)`, `.appleMusic(-16)`, `.custom(LUFS)`
+(Custom: −30…−8 LUFS in 0.5 steps, starting at −14); true-peak ceiling −1 dBTP by default (the Limiter's ceiling, § 6.7).
 
 ### 5.3 Persistence rules
 
@@ -360,6 +360,9 @@ func firstChangedIndex(old: [AIOperation], new: [AIOperation]) -> Int {
 - Analysis: EBU R128 integrated loudness of (AI render + manual chain) over `trimRange`, computed offline when
   the target, AI stack, manual settings, or trim change (debounced 500 ms; cheap, no model).
 - Applies static gain to reach target, then true-peak limiter at −1 dBTP.
+  The gain is limited to −20…+20 dB (a target out of reach lands below it rather than raising noise a lot).
+  There is one limiter, last in the chain: it uses the user's Limiter ceiling (§ 8, default −1) as a true-peak ceiling,
+  with or without Auto Level.
 - Preview uses the last computed gain; export recomputes exactly.
 
 ---
@@ -416,7 +419,7 @@ Order inside the chain: input gain → gate → EQ → de-esser → compressor �
 | Compressor | threshold, ratio 1–20, attack, release, makeup | off |
 | Pitch shift | −12…+12 semitones, formant preserving | 0 |
 | Reverb | room size, damping, mix | off |
-| Limiter | ceiling −6…0 dB | −1 dB, always on |
+| Limiter | ceiling −6…0 dB (true peak, also after Auto Level) | −1 dB, always on |
 
 - UI grouping (Editor "Adjust"): **Equalizer**, **Gain and dynamics** (gain, gate, compressor, de-esser, limiter),
   **Effects** (pitch shift, reverb), **Loudness** (Auto Level target).
@@ -901,3 +904,5 @@ Record new user decisions here (date, decision, section updated).
   repo), not the "little" model or v0.1.1 (§ 4.9).
 - 2026-11-01: Enhance stack: new steps start at 80 %; each feature once (added ones checked in the Add sheet);
   auditioned row = filled badge + later rows dimmed; Voice Leveler hidden from Add until F07 (§ 9).
+- 2026-11-01: Auto Level: one true-peak limiter at the end using the user's Limiter ceiling (not a fixed −1 dBTP);
+  Auto Level gain limited to −20…+20 dB; Custom loudness −30…−8 LUFS in 0.5 steps, default −14 (§ 5.2, § 6.7, § 8).

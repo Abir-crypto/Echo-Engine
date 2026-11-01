@@ -18,6 +18,7 @@ final class AppContainer {
     let renders: any RenderCaching
     let renderer: any AIChainRendering
     let janitor: any RenderCacheJanitoring
+    let autoLevel: any AutoLevelAnalyzing
 
     init(
         entitlements: any EntitlementProvider = FreeV1Entitlements(),
@@ -31,7 +32,8 @@ final class AppContainer {
         waveforms: any WaveformProviding = CachedWaveformProvider(root: .waveformCacheDirectory),
         renders: any RenderCaching = FileRenderCache(root: .renderCacheDirectory),
         renderer: (any AIChainRendering)? = nil,
-        janitor: (any RenderCacheJanitoring)? = nil
+        janitor: (any RenderCacheJanitoring)? = nil,
+        autoLevel: any AutoLevelAnalyzing = AutoLevelAnalyzer()
     ) {
         self.entitlements = entitlements
         self.capabilities = capabilities
@@ -45,6 +47,7 @@ final class AppContainer {
         self.renders = renders
         self.renderer = renderer ?? AIChainRenderer(processor: AIProcessorRouter(processors: Self.aiProcessors), cache: renders)
         self.janitor = janitor ?? RenderCacheJanitor(cache: renders, storage: storage, waveforms: waveforms)
+        self.autoLevel = autoLevel
     }
 
     /// The processor of every AI feature (SPEC § 7).
@@ -69,6 +72,7 @@ final class AppContainer {
             capabilities: capabilities,
             renderer: renderer,
             janitor: janitor,
+            autoLevel: autoLevel,
             makeAutosaver: { [projects] onError in ProjectAutosaver(repository: projects, onError: onError) }
         )
     }

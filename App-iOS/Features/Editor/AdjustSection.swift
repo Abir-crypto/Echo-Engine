@@ -213,6 +213,7 @@ func previewAdjustModel() -> EditorModel {
         capabilities: FakeCapabilities(),
         renderer: FakeAIChainRenderer(),
         janitor: FakeRenderCacheJanitor(),
+        autoLevel: FakeAutoLevelAnalyzer(),
         makeAutosaver: { _ in FakeProjectAutosaver() }
     )
 }

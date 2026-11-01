@@ -227,17 +227,27 @@ public:
     uint64_t parameterCount() const noexcept override { return EEOutputLimiterParameterCount; }
     uint64_t bypassAddress() const noexcept override { return EEOutputLimiterParameterBypass; }
     float defaultValue(uint64_t address) const noexcept override { return address == EEOutputLimiterParameterCeiling ? -1 : 0; }
-    void prepare(double sampleRate) override { limiter_.prepare(sampleRate); }
+    void prepare(double sampleRate) override {
+        gain_.prepare(sampleRate);
+        limiter_.prepare(sampleRate);
+    }
     void apply(uint64_t address, float value) noexcept override {
         if (address == EEOutputLimiterParameterCeiling) { limiter_.setCeilingDB(value); }
+        if (address == EEOutputLimiterParameterGain) { gain_.setGainDB(std::clamp(value, -20.0f, 20.0f)); }
     }
     void process(float* const* channels, int channelCount, int frameCount) noexcept override {
+        gain_.process(channels, channelCount, frameCount);
         limiter_.process(channels, channelCount, frameCount);
     }
-    void reset() noexcept override { limiter_.reset(); }
+    void reset() noexcept override {
+        gain_.reset();
+        limiter_.reset();
+    }
     int latencyFrames() const noexcept override { return limiter_.latencyFrames(); }
 
 private:
+    /// Auto Level (SPEC § 6.7): ramps to a new gain like every parameter.
+    GainKernel gain_;
     LimiterKernel limiter_;
 };
 
@@ -337,6 +347,18 @@ void EEEffectRequestReset(EEEffect *effect) { effect->needsReset.store(true, std
 
 int32_t EEEffectLatencyFrames(const EEEffect *effect) {
     return effect->isPrepared ? effect->processor->latencyFrames() : 0;
+}
+
+void EEEffectProcess(EEEffect *effect, float *const *channels, int32_t channelCount, int32_t frameCount) {
+    if (!effect->isPrepared) { return; }
+    effect->applyPendingParameters();
+    const int count = std::clamp(static_cast<int>(channelCount), 0, kMaxChannels);
+    for (int start = 0; start < frameCount; start += effect->maximumFrames) {
+        const int frames = std::min(effect->maximumFrames, static_cast<int>(frameCount) - start);
+        float *chunk[kMaxChannels] = {};
+        for (int channel = 0; channel < count; ++channel) { chunk[channel] = channels[channel] + start; }
+        effect->process(chunk, count, frames);
+    }
 }
 
 AUInternalRenderBlock EEEffectRenderBlock(EEEffect *effect) {

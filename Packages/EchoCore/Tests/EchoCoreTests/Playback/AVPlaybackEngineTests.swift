@@ -252,6 +252,17 @@ final class AVPlaybackEngineTests {
         #expect(abs(released[released.count - 1] - Float(1_024 + 9_599) / 1_000_000 * gain) < 1e-6, "processed again")
     }
 
+    @Test func theAutoLevelGainApplies() throws {
+        let engine = try makeEngine()
+        engine.setAutoLevelGain(6)
+        try engine.play()
+        _ = try renderSamples(engine, frames: engine.chainLatencyFrames)
+        let samples = try renderSamples(engine, frames: 1_024)
+
+        let gain = echo.dsp.dbToLinear(6)
+        #expect(zip(samples, 0..<1_024).allSatisfy { abs($0 - Float($1) / 1_000_000 * gain) < 1e-6 })
+    }
+
     @Test func theOutputLimiterHoldsTheCeiling() throws {
         let loud = directory.appending(path: "loud.caf")
         try TestMedia.writeSamples([(0..<9_600).map { $0.isMultiple(of: 2) ? 0.95 : -0.95 }], to: loud)

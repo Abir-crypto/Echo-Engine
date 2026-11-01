@@ -44,27 +44,8 @@ void LoudnessMeter::prepare(double sampleRate, int channelCount, bool measuresTr
     blocks_.clear();
 
     measuresTruePeak_ = measuresTruePeak;
-    oversampling_ = sampleRate < 96'000 ? 4 : sampleRate < 192'000 ? 2 : 1;
-    // Windowed-sinc interpolator, `kTapsPerPhase` taps per phase; each phase sums to 1.
-    const int taps = oversampling_ * kTapsPerPhase;
-    phases_.assign(static_cast<size_t>(taps), 0.0f);
-    for (int phase = 0; phase < oversampling_; ++phase) {
-        double sum = 0;
-        std::vector<double> coefficients(kTapsPerPhase);
-        for (int tap = 0; tap < kTapsPerPhase; ++tap) {
-            const int n = tap * oversampling_ + phase;
-            const double x = (n - (taps - 1) / 2.0) / oversampling_;
-            const double sinc = x == 0 ? 1 : std::sin(M_PI * x) / (M_PI * x);
-            const double window = 0.42 - 0.5 * std::cos(2 * M_PI * (n + 0.5) / taps) + 0.08 * std::cos(4 * M_PI * (n + 0.5) / taps);
-            coefficients[static_cast<size_t>(tap)] = sinc * window;
-            sum += coefficients[static_cast<size_t>(tap)];
-        }
-        for (int tap = 0; tap < kTapsPerPhase; ++tap) {
-            phases_[static_cast<size_t>(phase * kTapsPerPhase + tap)] = static_cast<float>(coefficients[static_cast<size_t>(tap)] / sum);
-        }
-    }
-    history_.assign(static_cast<size_t>(channelCount_ * kTapsPerPhase), 0.0f);
-    historyPosition_ = 0;
+    peakDetectors_.assign(static_cast<size_t>(channelCount_), TruePeakDetector());
+    for (TruePeakDetector& detector : peakDetectors_) { detector.prepare(sampleRate); }
     peak_ = 0;
 }
 
@@ -92,23 +73,11 @@ void LoudnessMeter::finishSubBlock() {
 }
 
 void LoudnessMeter::measurePeak(const float* const* channels, int channelCount, int frameCount) {
-    for (int frame = 0; frame < frameCount; ++frame) {
-        for (int channel = 0; channel < channelCount; ++channel) {
-            float* history = history_.data() + channel * kTapsPerPhase;
-            history[historyPosition_] = channels[channel][frame];
-            for (int phase = 0; phase < oversampling_; ++phase) {
-                const float* coefficients = phases_.data() + phase * kTapsPerPhase;
-                float sum = 0;
-                for (int tap = 0; tap < kTapsPerPhase; ++tap) {
-                    // Newest sample first.
-                    const int index = (historyPosition_ - tap + kTapsPerPhase) % kTapsPerPhase;
-                    sum += coefficients[tap] * history[index];
-                }
-                peak_ = std::max(peak_, std::fabs(sum));
-            }
-            peak_ = std::max(peak_, std::fabs(channels[channel][frame]));
+    for (int channel = 0; channel < channelCount; ++channel) {
+        TruePeakDetector& detector = peakDetectors_[static_cast<size_t>(channel)];
+        for (int frame = 0; frame < frameCount; ++frame) {
+            peak_ = std::max(peak_, detector.next(channels[channel][frame]));
         }
-        historyPosition_ = (historyPosition_ + 1) % kTapsPerPhase;
     }
 }
 

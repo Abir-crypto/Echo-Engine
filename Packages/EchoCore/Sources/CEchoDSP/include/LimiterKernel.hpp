@@ -2,11 +2,12 @@
 
 #include "DSPMath.hpp"
 #include "SmoothedValue.hpp"
+#include "TruePeakDetector.hpp"
 
 namespace echo::dsp {
 
-/// Look-ahead peak limiter, always on (SPEC § 8): the output never exceeds the ceiling. Delays audio by
-/// `latencyFrames()`.
+/// Look-ahead true-peak limiter, always on (SPEC § 6.7, § 8): the output's true peak (between samples too) stays at
+/// the ceiling. Delays audio by `latencyFrames()`; the look-ahead also covers the true-peak estimate's own delay.
 ///
 /// Each frame needs `ceiling / peak` gain (or 1). The gain is the minimum of that over the look-ahead window, released
 /// towards 1 over `kReleaseMs`, then averaged over the same window, so it ramps down across the look-ahead instead of
@@ -30,6 +31,7 @@ public:
 
 private:
     SmoothedValue ceiling_;
+    TruePeakDetector peaks_[kMaxChannels];
     /// Ring buffers of `window_` frames: the delayed audio, the gain each frame needs, and the held, released gain.
     float delay_[kMaxChannels][kMaxWindow] = {};
     float required_[kMaxWindow] = {};

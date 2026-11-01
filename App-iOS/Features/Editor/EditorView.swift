@@ -291,6 +291,7 @@ private func previewEditor(_ project: Project, readOnly: Bool = false, available
         capabilities: FakeCapabilities(),
         renderer: FakeAIChainRenderer(),
         janitor: FakeRenderCacheJanitor(),
+        autoLevel: FakeAutoLevelAnalyzer(),
         makeAutosaver: { _ in FakeProjectAutosaver() }
     )
     return NavigationStack { EditorView(model: model) }

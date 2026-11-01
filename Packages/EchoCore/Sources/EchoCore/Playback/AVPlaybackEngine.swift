@@ -246,6 +246,11 @@ public final class AVPlaybackEngine: PlaybackEngine {
         }
     }
 
+    public func setAutoLevelGain(_ gainDB: Double) {
+        outputLimiter.auAudioUnit.parameterTree?
+            .parameter(withAddress: EEOutputLimiterParameter.gain.rawValue)?.value = AUValue(gainDB)
+    }
+
     public func holdOriginal(_ isHolding: Bool) {
         let value: AUValue = isHolding ? 1 : 0
         manualChain.auAudioUnit.parameterTree?.parameter(withAddress: EEManualChainParameter.bypass.rawValue)?.value = value

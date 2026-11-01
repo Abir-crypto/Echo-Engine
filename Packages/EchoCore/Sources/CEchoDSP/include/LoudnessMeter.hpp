@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Biquad.hpp"
+#include "TruePeakDetector.hpp"
 
 #include <cstdint>
 #include <vector>
@@ -52,14 +53,8 @@ private:
     std::vector<double> blocks_;
 
     bool measuresTruePeak_ = true;
-    int oversampling_ = 4;
-    std::vector<float> phases_;     // oversampling_ × kTapsPerPhase
-    std::vector<float> history_;    // per channel, kTapsPerPhase recent samples
-    int historyPosition_ = 0;
+    std::vector<TruePeakDetector> peakDetectors_;
     float peak_ = 0;
-
-public:
-    static constexpr int kTapsPerPhase = 12;
 };
 
 } // namespace echo::dsp

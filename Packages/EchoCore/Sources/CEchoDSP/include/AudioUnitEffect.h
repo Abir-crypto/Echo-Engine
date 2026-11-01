@@ -14,7 +14,7 @@ extern "C" {
 typedef CF_ENUM(int32_t, EEEffectKind) {
     /// Input gain → gate → EQ → de-esser → compressor → pitch shift → reverb (SPEC § 8).
     EEEffectKindManualChain = 0,
-    /// The final look-ahead limiter, after Auto Level (SPEC § 6.6, § 6.7).
+    /// Auto Level gain, then the final look-ahead true-peak limiter (SPEC § 6.6, § 6.7).
     EEEffectKindOutputLimiter = 1,
 };
 
@@ -68,7 +68,9 @@ typedef CF_ENUM(uint64_t, EEOutputLimiterParameter) {
     EEOutputLimiterParameterCeiling = 0,
     /// 0/1, as `EEManualChainParameterBypass`.
     EEOutputLimiterParameterBypass = 1,
-    EEOutputLimiterParameterCount = 2,
+    /// Auto Level's static gain in dB (−20…+20), before the limiter.
+    EEOutputLimiterParameterGain = 2,
+    EEOutputLimiterParameterCount = 3,
 };
 
 typedef struct EEEffect EEEffect;
@@ -87,6 +89,9 @@ void EEEffectRequestReset(EEEffect *effect);
 /// Frames the effect delays audio by, once prepared.
 int32_t EEEffectLatencyFrames(const EEEffect *effect);
 AUInternalRenderBlock EEEffectRenderBlock(EEEffect *effect);
+/// Offline (analysis, export): applies pending parameters, then processes `channels` in place. Call after
+/// `EEEffectPrepare`, from one thread, with at most `maximumFrames` frames.
+void EEEffectProcess(EEEffect *effect, float *const *channels, int32_t channelCount, int32_t frameCount);
 
 #ifdef __cplusplus
 }

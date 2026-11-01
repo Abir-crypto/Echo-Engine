@@ -256,7 +256,12 @@ Goal: leveling and loudness targeting.
   > Done: C++ `LoudnessMeter` (BS.1770-4: K-weighting from analogue prototypes = standard table at 48 kHz, 400 ms blocks / 100 ms hop,
   > −70 LUFS absolute + −10 LU relative gates, 4× windowed-sinc true peak; offline only). `LoudnessAnalyzing` + `EBUR128Analyzer` (file
   > range, 1 s chunks, progress, cancellation) + `FakeLoudnessAnalyzer`. EBU Tech 3341 cases 1–5 within ±0.02 LU; inter-sample peaks to 0.1 dB.
-- [ ] F07.T03 — Auto Level output stage: analysis over trim range, debounced recompute, static gain + true-peak limiter (§ 6.7).
+- [x] F07.T03 — Auto Level output stage: analysis over trim range, debounced recompute, static gain + true-peak limiter (§ 6.7).
+  > Done: `TruePeakDetector` (shared by meter and limiter) → `LimiterKernel` limits true peak. Output limiter AU gains an Auto Level
+  > `gain` (±20 dB, ramped) before limiting; `EEEffectProcess` runs effects offline. `OfflineEffectChain` (manual chain [+ output stage],
+  > latency removed; export reuses it), `AutoLevelAnalyzing` + `AutoLevelAnalyzer` (render + chain over trim → gain = target − LUFS, ±20).
+  > `EditorModel`: `setOutputLoudness` (undo step), debounced 500 ms recompute on target/render/manual/trim/undo, `setAutoLevelGain`.
+  > User decisions recorded (SPEC § 6.7/§ 8/§ 20): user's ceiling as true peak, ±20 dB, Custom −30…−8.
 - [ ] F07.T04 — Loudness screen: targets (YouTube, Instagram, TikTok, Spotify, Podcast, Apple Music, Custom, Off).
 
 **Checkpoint test:** podcast with quiet/loud speakers levels evenly; Auto Level output measures within ±1 LU of target (check exported file in a loudness meter).

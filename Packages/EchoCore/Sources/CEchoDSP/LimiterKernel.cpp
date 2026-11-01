@@ -16,6 +16,7 @@ void LimiterKernel::prepare(double sampleRate) noexcept {
     const int lookahead = std::clamp(static_cast<int>(kLookaheadSeconds * sampleRate), 1, kMaxWindow - 1);
     window_ = lookahead + 1;
     releaseCoefficient_ = onePoleCoefficient(kReleaseMs, sampleRate);
+    for (TruePeakDetector& detector : peaks_) { detector.prepare(sampleRate); }
     reset();
 }
 
@@ -26,6 +27,7 @@ void LimiterKernel::reset() noexcept {
     }
     std::fill(std::begin(required_), std::end(required_), 1.0f);
     std::fill(std::begin(held_), std::end(held_), 1.0f);
+    for (TruePeakDetector& detector : peaks_) { detector.reset(); }
     position_ = 0;
     released_ = 1;
 }
@@ -41,7 +43,7 @@ void LimiterKernel::process(float* const* channels, int channelCount, int frameC
         const float ceiling = ceiling_.next();
         float peak = 0;
         for (int channel = 0; channel < count; ++channel) {
-            peak = std::max(peak, std::fabs(channels[channel][frame]));
+            peak = std::max(peak, peaks_[channel].next(channels[channel][frame]));
         }
         required_[position_] = peak > ceiling ? ceiling / peak : 1.0f;
 
