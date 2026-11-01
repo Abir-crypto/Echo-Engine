@@ -15,6 +15,7 @@ public final class FakePlaybackEngine: PlaybackEngine {
     public private(set) var loadedVideo: URL?
     /// The last settings passed to `apply`.
     public private(set) var appliedManual: ManualSettings?
+    public private(set) var isHoldingOriginal = false
     @ObservationIgnored public var loadError: (any Error)?
 
     public init(duration: Double = 60) {
@@ -45,5 +46,9 @@ public final class FakePlaybackEngine: PlaybackEngine {
 
     public func apply(_ manual: ManualSettings) {
         appliedManual = manual
+    }
+
+    public func holdOriginal(_ isHolding: Bool) {
+        isHoldingOriginal = isHolding
     }
 }

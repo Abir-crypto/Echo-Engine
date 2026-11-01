@@ -184,7 +184,10 @@ Goal: real-time manual controls as C++ DSP in Audio Units.
   > lacks —, Loudness placeholder) opens sheets `EqualizerSheet` (draggable `EQCurveView` + band chips + Frequency/Gain/Q), `GainDynamicsSheet`
   > (essentials + "Advanced" disclosure), `EffectsSheet`. `ValueSlider` (log scales, VoiceOver steps), `EQResponse` (C++ filter math). Edits
   > go through `EditorModel.adjust` (live) + `finishAdjusting` (existing commit: one undo step + autosave), so persistence/undo already work.
-- [ ] F05.T05 — Persist `ManualSettings`, undo on drag end, "Hold for original" bypass.
+- [x] F05.T05 — Persist `ManualSettings`, undo on drag end, "Hold for original" bypass.
+  > Done: persistence/undo came with T04 (`adjust` + `finishAdjusting` → `EditHistory` step + autosave; open/undo re-`apply`). Hold for original:
+  > `PlaybackEngine.holdOriginal` sets a `bypass` parameter on both AUs; `LatencyMatchedBypass` (AudioUnitEffect.mm) crossfades 30 ms to the dry
+  > input delayed by the effect's latency, kernels keep running, so timing never shifts. Switching to `working.caf` under an AI render: F06.T06a.
 
 **Checkpoint test:** adjust each control during playback with no clicks/dropouts; hold for original; undo/redo; reopen project and settings persist.
 
@@ -199,6 +202,7 @@ Goal: user-ordered AI stack with per-step cached renders.
 - [ ] F06.T04 — `AIChainRenderer`: prefix walk, progress, cancellation, latest-change-wins; `firstChangedIndex`. Tests with fake processor.
 - [ ] F06.T05 — `RenderCacheJanitor`: reachability from history + current prefixes, budget eviction, close-time pruning (§ 6.4). Tests.
 - [ ] F06.T06 — Playback integration: keep playing previous render, swap at playhead with crossfade; per-step A/B by tapping a row.
+- [ ] F06.T06a — "Hold for original" also plays `working.caf` instead of the AI render (crossfade) on top of F05's chain bypass (§ 6.6). From F05.T05.
 - [ ] F06.T07 — Enhance UI: numbered list, strength sheet, reorder, swipe remove, Add enhancement sheet, inline progress, "Already reduces noise" hint; entitlement/capability checks.
 
 **Checkpoint test:** noisy recording: apply Noise Suppression, Clear Voice, reorder, change strength, undo/redo rapidly; confirm instant undo, correct audio, cache folder shrinks after new edits; tap rows to A/B.

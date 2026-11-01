@@ -24,7 +24,7 @@ final class EditorModel {
     private(set) var peaks: WaveformPeaks?
     /// The loudest peak, so waveforms can be drawn relative to it.
     private(set) var peakLevel: Float = 1
-    /// While held, playback compares with the original (wired to the chain in F05/F06).
+    /// While held, playback compares with the original: manual chain bypassed (F05); the AI render too (F06).
     private(set) var isHoldingOriginal = false
     /// Undo/redo of `EditState` snapshots (SPEC § 6.5).
     private(set) var history = EditHistory()
@@ -129,8 +129,12 @@ final class EditorModel {
         engine.seek(to: time)
     }
 
+    /// While held, playback bypasses the manual chain (SPEC § 6.6).
     func holdOriginal(_ isHolding: Bool) {
-        isHoldingOriginal = isHolding && canEdit
+        let isHolding = isHolding && canEdit
+        guard isHolding != isHoldingOriginal else { return }
+        isHoldingOriginal = isHolding
+        engine.holdOriginal(isHolding)
     }
 
     /// Moves the trim start, keeping the end and at least `minimumTrimDuration` (or the whole source when shorter).

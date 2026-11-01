@@ -19,11 +19,72 @@ namespace {
 
 using namespace echo::dsp;
 
+/// Crossfades an effect's output to its dry input delayed by the effect's latency, so bypassing never shifts the
+/// audio in time (SPEC § 6.6 "Hold for original"). The effect keeps running underneath, so releasing is seamless.
+class LatencyMatchedBypass {
+public:
+    /// Allocates; not on the render thread.
+    void prepare(double sampleRate, int latencyFrames, int maximumFrames) {
+        latency_ = latencyFrames;
+        rampFrames_ = rampFrames(sampleRate);
+        amount_.reset(amount_.target());
+        size_t size = 1;
+        while (size < static_cast<size_t>(latencyFrames + maximumFrames + 1)) { size <<= 1; }
+        size_ = size;
+        mask_ = static_cast<int64_t>(size) - 1;
+        ring_.assign(kMaxChannels * size, 0.0f);
+        position_ = 0;
+    }
+
+    void set(bool isBypassed) noexcept { amount_.setTarget(isBypassed ? 1 : 0, rampFrames_); }
+
+    /// Before the effect: remembers the dry input.
+    void capture(float* const* channels, int channelCount, int frameCount) noexcept {
+        for (int channel = 0; channel < channelCount; ++channel) {
+            float* ring = ring_.data() + static_cast<size_t>(channel) * size_;
+            for (int frame = 0; frame < frameCount; ++frame) {
+                ring[static_cast<size_t>((position_ + frame) & mask_)] = channels[channel][frame];
+            }
+        }
+    }
+
+    /// After the effect: blends in the delayed dry input while bypassed.
+    void mix(float* const* channels, int channelCount, int frameCount) noexcept {
+        if (amount_.isSmoothing() || amount_.current() > 0) {
+            for (int frame = 0; frame < frameCount; ++frame) {
+                const float amount = amount_.next();
+                const size_t index = static_cast<size_t>((position_ + frame - latency_) & mask_);
+                for (int channel = 0; channel < channelCount; ++channel) {
+                    const float dry = ring_[static_cast<size_t>(channel) * size_ + index];
+                    channels[channel][frame] += (dry - channels[channel][frame]) * amount;
+                }
+            }
+        }
+        position_ += frameCount;
+    }
+
+    void reset() noexcept {
+        amount_.reset(amount_.target());
+        std::fill(ring_.begin(), ring_.end(), 0.0f);
+    }
+
+private:
+    SmoothedValue amount_;
+    std::vector<float> ring_;
+    size_t size_ = 0;
+    int64_t mask_ = 0;
+    int64_t position_ = 0;
+    int latency_ = 0;
+    int rampFrames_ = 0;
+};
+
 /// A chain of kernels behind parameter addresses. `apply` and `process` run on the render thread.
 class EffectProcessor {
 public:
     virtual ~EffectProcessor() = default;
     virtual uint64_t parameterCount() const noexcept = 0;
+    /// The 0/1 parameter that bypasses the whole effect.
+    virtual uint64_t bypassAddress() const noexcept = 0;
     virtual float defaultValue(uint64_t address) const noexcept = 0;
     virtual void prepare(double sampleRate) = 0;
     virtual void apply(uint64_t address, float value) noexcept = 0;
@@ -31,6 +92,12 @@ public:
     virtual void reset() noexcept = 0;
     virtual int latencyFrames() const noexcept = 0;
 };
+
+/// Whether `address` is one of the EQ bands' fields.
+constexpr bool isEQAddress(uint64_t address) noexcept {
+    return address >= EEManualChainParameterEQFirst
+        && address < EEManualChainParameterEQFirst + EEManualChainParameterEQStride * EEManualChainParameterEQBandCount;
+}
 
 FilterShape filterShape(float kind) noexcept {
     switch (static_cast<int>(std::lround(kind))) {
@@ -44,6 +111,7 @@ FilterShape filterShape(float kind) noexcept {
 class ManualChain final : public EffectProcessor {
 public:
     uint64_t parameterCount() const noexcept override { return EEManualChainParameterCount; }
+    uint64_t bypassAddress() const noexcept override { return EEManualChainParameterBypass; }
 
     float defaultValue(uint64_t address) const noexcept override {
         // Neutral or off, matching `ManualSettings()` (SPEC § 8).
@@ -63,7 +131,7 @@ public:
         case EEManualChainParameterReverbMix: return 0.2f;
         default: break;
         }
-        if (address >= EEManualChainParameterEQFirst && address < EEManualChainParameterCount) {
+        if (isEQAddress(address)) {
             static constexpr float kFrequencies[EEManualChainParameterEQBandCount] = {80, 250, 1'000, 3'000, 6'000, 12'000};
             const uint64_t band = (address - EEManualChainParameterEQFirst) / EEManualChainParameterEQStride;
             switch ((address - EEManualChainParameterEQFirst) % EEManualChainParameterEQStride) {
@@ -111,7 +179,7 @@ public:
         case EEManualChainParameterReverbMix: reverb_.setMix(value); return;
         default: break;
         }
-        if (address >= EEManualChainParameterEQFirst && address < EEManualChainParameterCount) {
+        if (isEQAddress(address)) {
             const uint64_t band = (address - EEManualChainParameterEQFirst) / EEManualChainParameterEQStride;
             float* fields = bands_[band];
             fields[(address - EEManualChainParameterEQFirst) % EEManualChainParameterEQStride] = value;
@@ -157,7 +225,8 @@ private:
 class OutputLimiter final : public EffectProcessor {
 public:
     uint64_t parameterCount() const noexcept override { return EEOutputLimiterParameterCount; }
-    float defaultValue(uint64_t) const noexcept override { return -1; }
+    uint64_t bypassAddress() const noexcept override { return EEOutputLimiterParameterBypass; }
+    float defaultValue(uint64_t address) const noexcept override { return address == EEOutputLimiterParameterCeiling ? -1 : 0; }
     void prepare(double sampleRate) override { limiter_.prepare(sampleRate); }
     void apply(uint64_t address, float value) noexcept override {
         if (address == EEOutputLimiterParameterCeiling) { limiter_.setCeilingDB(value); }
@@ -176,6 +245,7 @@ private:
 
 struct EEEffect {
     std::unique_ptr<EffectProcessor> processor;
+    LatencyMatchedBypass bypass;
     /// Latest value per address, and whether the render thread has yet to apply it.
     std::unique_ptr<std::atomic<float>[]> values;
     std::unique_ptr<std::atomic<bool>[]> pending;
@@ -192,9 +262,28 @@ struct EEEffect {
         const uint64_t count = processor->parameterCount();
         for (uint64_t address = 0; address < count; ++address) {
             if (pending[address].exchange(false, std::memory_order_acquire)) {
-                processor->apply(address, values[address].load(std::memory_order_relaxed));
+                apply(address, values[address].load(std::memory_order_relaxed));
             }
         }
+    }
+
+    void apply(uint64_t address, float value) noexcept {
+        if (address == processor->bypassAddress()) {
+            bypass.set(value >= 0.5f);
+        } else {
+            processor->apply(address, value);
+        }
+    }
+
+    void process(float* const* channels, int channelCount, int frameCount) noexcept {
+        bypass.capture(channels, channelCount, frameCount);
+        processor->process(channels, channelCount, frameCount);
+        bypass.mix(channels, channelCount, frameCount);
+    }
+
+    void reset() noexcept {
+        processor->reset();
+        bypass.reset();
     }
 };
 
@@ -212,7 +301,7 @@ EEEffect *EEEffectCreate(EEEffectKind kind) {
         const float value = effect->processor->defaultValue(address);
         effect->values[address].store(value);
         effect->pending[address].store(false);
-        effect->processor->apply(address, value);
+        effect->apply(address, value);
     }
     return effect;
 }
@@ -224,6 +313,7 @@ void EEEffectPrepare(EEEffect *effect, double sampleRate, int32_t channelCount, 
     effect->applyPendingParameters();
     effect->processor->prepare(sampleRate);
     effect->maximumFrames = std::max(1, static_cast<int>(maximumFrames));
+    effect->bypass.prepare(sampleRate, effect->processor->latencyFrames(), effect->maximumFrames);
     effect->scratch.assign(static_cast<size_t>(kMaxChannels) * static_cast<size_t>(effect->maximumFrames), 0.0f);
     effect->needsReset.store(false);
     effect->isPrepared = true;
@@ -270,18 +360,18 @@ AUInternalRenderBlock EEEffectRenderBlock(EEEffect *effect) {
         const AUAudioUnitStatus status = pullInput(&pullFlags, timestamp, frameCount, 0, outputData);
         if (status != noErr) { return status; }
 
-        if (effect->needsReset.exchange(false, std::memory_order_acquire)) { effect->processor->reset(); }
+        if (effect->needsReset.exchange(false, std::memory_order_acquire)) { effect->reset(); }
         effect->applyPendingParameters();
         for (const AURenderEvent *event = events; event != nullptr; event = event->head.next) {
             if (event->head.eventType == AURenderEventParameter || event->head.eventType == AURenderEventParameterRamp) {
-                effect->processor->apply(event->parameter.parameterAddress, event->parameter.value);
+                effect->apply(event->parameter.parameterAddress, event->parameter.value);
             }
         }
         float *channels[kMaxChannels] = {};
         for (int channel = 0; channel < channelCount; ++channel) {
             channels[channel] = static_cast<float *>(outputData->mBuffers[channel].mData);
         }
-        effect->processor->process(channels, channelCount, static_cast<int>(frameCount));
+        effect->process(channels, channelCount, static_cast<int>(frameCount));
         return noErr;
     };
 }

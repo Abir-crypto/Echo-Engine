@@ -37,6 +37,7 @@ public final class ManualChainAudioUnit: EchoEffectAudioUnit {
             parameter("reverbRoomSize", address: P.reverbRoomSize.rawValue, range: 0...1, unit: .generic),
             parameter("reverbDamping", address: P.reverbDamping.rawValue, range: 0...1, unit: .generic),
             parameter("reverbMix", address: P.reverbMix.rawValue, range: 0...1, unit: .generic),
+            parameter("bypass", address: P.bypass.rawValue, range: toggle, unit: .boolean),
         ]
         for band in 0..<Int(P.eqBandCount.rawValue) {
             parameters += [
@@ -58,7 +59,10 @@ public final class OutputLimiterAudioUnit: EchoEffectAudioUnit {
     override class var effectKind: EEEffectKind { .outputLimiter }
 
     override class var parameters: [AUParameter] {
-        [parameter("ceiling", address: EEOutputLimiterParameter.ceiling.rawValue, range: -6...0, unit: .decibels)]
+        [
+            parameter("ceiling", address: EEOutputLimiterParameter.ceiling.rawValue, range: -6...0, unit: .decibels),
+            parameter("bypass", address: EEOutputLimiterParameter.bypass.rawValue, range: 0...1, unit: .boolean),
+        ]
     }
 }
 

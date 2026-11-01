@@ -223,6 +223,12 @@ public final class AVPlaybackEngine: PlaybackEngine {
         }
     }
 
+    public func holdOriginal(_ isHolding: Bool) {
+        let value: AUValue = isHolding ? 1 : 0
+        manualChain.auAudioUnit.parameterTree?.parameter(withAddress: EEManualChainParameter.bypass.rawValue)?.value = value
+        outputLimiter.auAudioUnit.parameterTree?.parameter(withAddress: EEOutputLimiterParameter.bypass.rawValue)?.value = value
+    }
+
     /// Renders `frames` frames in manual rendering mode (tests only).
     func renderOffline(frames: AVAudioFrameCount) throws -> AVAudioPCMBuffer {
         if !engine.isRunning {

@@ -234,6 +234,24 @@ final class AVPlaybackEngineTests {
         #expect(abs(samples[0] - Float(1_024) / 1_000_000) < 1e-6, "no jump: the first frame is still at unity")
     }
 
+    @Test func holdingForTheOriginalBypassesTheChainWithoutShiftingTime() throws {
+        let engine = try makeEngine()
+        var manual = ManualSettings()
+        manual.inputGainDB = 6
+        engine.apply(manual)
+        try engine.play()
+        _ = try renderHeard(engine, frames: 1_024)
+
+        engine.holdOriginal(true)
+        let held = try render(engine, frames: 4_800)
+        #expect(Array(held.suffix(2_400)) == Array((1_024 + 2_400)..<(1_024 + 4_800)), "the original, at the same time")
+
+        engine.holdOriginal(false)
+        let released = try renderSamples(engine, frames: 4_800)
+        let gain = echo.dsp.dbToLinear(6)
+        #expect(abs(released[released.count - 1] - Float(1_024 + 9_599) / 1_000_000 * gain) < 1e-6, "processed again")
+    }
+
     @Test func theOutputLimiterHoldsTheCeiling() throws {
         let loud = directory.appending(path: "loud.caf")
         try TestMedia.writeSamples([(0..<9_600).map { $0.isMultiple(of: 2) ? 0.95 : -0.95 }], to: loud)

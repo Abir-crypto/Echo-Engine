@@ -7,9 +7,10 @@ import Testing
 struct ManualChainParameterTests {
     private let unit = try! ManualChainAudioUnit(componentDescription: ManualChainAudioUnit.componentDescription)
 
-    @Test func everyParameterIsSetExactlyOnce() {
+    @Test func everySettingsParameterIsSetExactlyOnce() {
         let addresses = ManualSettings().manualChainParameterValues.map(\.address)
-        #expect(addresses.sorted() == Array(0..<EEManualChainParameter.count.rawValue))
+        let settingsAddresses = (0..<EEManualChainParameter.count.rawValue).filter { $0 != EEManualChainParameter.bypass.rawValue }
+        #expect(addresses.sorted() == settingsAddresses, "bypass is Hold for original, not a setting")
         #expect(unit.parameterTree?.allParameters.count == Int(EEManualChainParameter.count.rawValue))
     }
 
@@ -67,5 +68,14 @@ struct ManualChainParameterTests {
         let gain = try #require(unit.parameterTree?.parameter(withAddress: EEManualChainParameter.inputGain.rawValue))
         gain.value = 7.5
         #expect(gain.value == 7.5)
+    }
+}
+
+extension ManualChainParameterTests {
+    @Test func bypassStartsOff() throws {
+        let tree = try #require(unit.parameterTree)
+        #expect(tree.parameter(withAddress: EEManualChainParameter.bypass.rawValue)?.value == 0)
+        let limiter = try OutputLimiterAudioUnit(componentDescription: OutputLimiterAudioUnit.componentDescription)
+        #expect(limiter.parameterTree?.parameter(withAddress: EEOutputLimiterParameter.bypass.rawValue)?.value == 0)
     }
 }

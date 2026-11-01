@@ -295,6 +295,18 @@ struct EditorModelTests {
         #expect(model.history.undoStates.count == 2)
     }
 
+    @Test func holdingForTheOriginalBypassesTheChainUntilReleased() async {
+        let (model, engine) = makeModel(audio)
+        await model.open()
+
+        model.holdOriginal(true)
+        #expect(model.isHoldingOriginal)
+        #expect(engine.isHoldingOriginal)
+
+        model.holdOriginal(false)
+        #expect(!engine.isHoldingOriginal)
+    }
+
     @Test func readOnlyProjectsCannotBeAdjusted() async {
         let (model, engine) = makeModel(audio, readOnly: true)
         await model.open()

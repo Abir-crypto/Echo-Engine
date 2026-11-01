@@ -26,4 +26,7 @@ public protocol PlaybackEngine: AnyObject, Observable {
     /// Sets the live manual chain and the output limiter (SPEC § 8) through their parameters; changes ramp, so this
     /// can be called on every slider step.
     func apply(_ manual: ManualSettings)
+    /// "Hold for original" (SPEC § 6.6): while held, the chain and limiter are bypassed with a short crossfade; the
+    /// timing doesn't change.
+    func holdOriginal(_ isHolding: Bool)
 }

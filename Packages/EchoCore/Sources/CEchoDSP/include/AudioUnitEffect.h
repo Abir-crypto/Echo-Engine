@@ -44,7 +44,9 @@ typedef CF_ENUM(uint64_t, EEManualChainParameter) {
     EEManualChainParameterEQFirst = 20,
     EEManualChainParameterEQStride = 4,
     EEManualChainParameterEQBandCount = 6,
-    EEManualChainParameterCount = 44,
+    /// 0/1: "Hold for original" (SPEC § 6.6). Crossfades to the dry input, delayed by the same latency.
+    EEManualChainParameterBypass = 44,
+    EEManualChainParameterCount = 45,
 };
 
 typedef CF_ENUM(uint64_t, EEEQBandField) {
@@ -64,7 +66,9 @@ typedef CF_ENUM(int32_t, EEEQBandKind) {
 
 typedef CF_ENUM(uint64_t, EEOutputLimiterParameter) {
     EEOutputLimiterParameterCeiling = 0,
-    EEOutputLimiterParameterCount = 1,
+    /// 0/1, as `EEManualChainParameterBypass`.
+    EEOutputLimiterParameterBypass = 1,
+    EEOutputLimiterParameterCount = 2,
 };
 
 typedef struct EEEffect EEEffect;
