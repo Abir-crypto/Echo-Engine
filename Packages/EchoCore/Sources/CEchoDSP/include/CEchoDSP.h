@@ -14,6 +14,7 @@
 #include "PitchDetector.hpp"
 #include "PitchShiftKernel.hpp"
 #include "ReverbKernel.hpp"
+#include "LoudnessMeter.hpp"
 #include "Denoiser.h"
 #include "AudioUnitEffect.h"
 #include "SourceSwitch.h"

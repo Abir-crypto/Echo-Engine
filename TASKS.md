@@ -252,7 +252,10 @@ Goal: leveling and loudness targeting.
 - [x] F07.T01a — Offer Voice Leveler in the Add enhancement sheet (hidden until its processor exists, user decision § 9) and route it in `AIProcessorRouter`.
   > Done: `AppContainer.aiProcessors` (static map, all three features) feeds the router; `EditorModel.offeredFeatures` includes Voice
   > Leveler; a test checks every offered feature has a processor. SPEC § 9 wording updated (offered since F07).
-- [ ] F07.T02 — `EBUR128Analyzer` (integrated LUFS, true peak). Tests vs reference values.
+- [x] F07.T02 — `EBUR128Analyzer` (integrated LUFS, true peak). Tests vs reference values.
+  > Done: C++ `LoudnessMeter` (BS.1770-4: K-weighting from analogue prototypes = standard table at 48 kHz, 400 ms blocks / 100 ms hop,
+  > −70 LUFS absolute + −10 LU relative gates, 4× windowed-sinc true peak; offline only). `LoudnessAnalyzing` + `EBUR128Analyzer` (file
+  > range, 1 s chunks, progress, cancellation) + `FakeLoudnessAnalyzer`. EBU Tech 3341 cases 1–5 within ±0.02 LU; inter-sample peaks to 0.1 dB.
 - [ ] F07.T03 — Auto Level output stage: analysis over trim range, debounced recompute, static gain + true-peak limiter (§ 6.7).
 - [ ] F07.T04 — Loudness screen: targets (YouTube, Instagram, TikTok, Spotify, Podcast, Apple Music, Custom, Off).
 
