@@ -215,7 +215,10 @@ Goal: user-ordered AI stack with per-step cached renders.
   > the previous prefix via cache temp file → `store`; progress over the steps to render; a new `render` cancels the one in flight (caller
   > cancellation too); temp files removed on failure. Returns `RenderedChain` (prefix URLs + output; empty chain = source). `AIChain`
   > + `firstChangedIndex` (SPEC's `zip(...).firstIndex` doesn't compile; same logic over indices). `FakeAIChainRenderer`.
-- [ ] F06.T05 — `RenderCacheJanitor`: reachability from history + current prefixes, budget eviction, close-time pruning (§ 6.4). Tests.
+- [x] F06.T05 — `RenderCacheJanitor`: reachability from history + current prefixes, budget eviction, close-time pruning (§ 6.4). Tests.
+  > Done: `RenderCacheJanitoring` + `RenderCacheJanitor` actor. `sweep(current:history:)` (history = `EditHistory.allStates`, oldest first)
+  > deletes unreachable renders, then over min(2 GB, 10 % free; 2 GB if unknown) evicts history states oldest first, keeping keys the
+  > current or a newer state shares; current never evicted. `prune(current:)` for close. `FakeRenderCacheJanitor`; storage fake can fail to measure.
 - [ ] F06.T06 — Playback integration: keep playing previous render, swap at playhead with crossfade; per-step A/B by tapping a row.
 - [ ] F06.T06a — "Hold for original" also plays `working.caf` instead of the AI render (crossfade) on top of F05's chain bypass (§ 6.6). From F05.T05.
 - [ ] F06.T07 — Enhance UI: numbered list, strength sheet, reorder, swipe remove, Add enhancement sheet, inline progress, "Already reduces noise" hint; entitlement/capability checks.
