@@ -210,7 +210,11 @@ Goal: user-ordered AI stack with per-step cached renders.
   > Done: `RenderKey` (SHA-256 of "projectID|start,duration|kind:strength;…", POSIX-formatted, op IDs excluded; `prefixes`; pinned hash
   > test). `RenderCaching` + `FileRenderCache` actor: `Library/Caches/Renders/<project>/<key>.m4a`, hidden `.render-<UUID>.m4a` temp files
   > on the same volume, `store` = move/replace, `entries` (key + bytes) for the janitor. Project delete now removes renders. `FakeRenderCache`.
-- [ ] F06.T04 — `AIChainRenderer`: prefix walk, progress, cancellation, latest-change-wins; `firstChangedIndex`. Tests with fake processor.
+- [x] F06.T04 — `AIChainRenderer`: prefix walk, progress, cancellation, latest-change-wins; `firstChangedIndex`. Tests with fake processor.
+  > Done: `AIChainRendering` + `AIChainRenderer` actor: walks every prefix (§ 6.3 keeps them all for A/B), reuses hits, renders misses on
+  > the previous prefix via cache temp file → `store`; progress over the steps to render; a new `render` cancels the one in flight (caller
+  > cancellation too); temp files removed on failure. Returns `RenderedChain` (prefix URLs + output; empty chain = source). `AIChain`
+  > + `firstChangedIndex` (SPEC's `zip(...).firstIndex` doesn't compile; same logic over indices). `FakeAIChainRenderer`.
 - [ ] F06.T05 — `RenderCacheJanitor`: reachability from history + current prefixes, budget eviction, close-time pruning (§ 6.4). Tests.
 - [ ] F06.T06 — Playback integration: keep playing previous render, swap at playhead with crossfade; per-step A/B by tapping a row.
 - [ ] F06.T06a — "Hold for original" also plays `working.caf` instead of the AI render (crossfade) on top of F05's chain bypass (§ 6.6). From F05.T05.
