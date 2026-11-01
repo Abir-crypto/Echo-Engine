@@ -193,7 +193,7 @@ Goal: real-time manual controls as C++ DSP in Audio Units.
 
 ---
 
-## F06 — AI stack & render cache  [IN PROGRESS]
+## F06 — AI stack & render cache  [DONE]
 Goal: user-ordered AI stack with per-step cached renders.
 
 - [x] F06.T01 — Vendor RNNoise into `CEchoDSP` (license file), C API, Swift wrapper; 48 kHz mono 480-frame processing with `AVAudioConverter`. Golden-file test (fan noise).
@@ -241,7 +241,7 @@ Goal: user-ordered AI stack with per-step cached renders.
 
 ---
 
-## F07 — Voice Leveler & Auto Level  [TODO]
+## F07 — Voice Leveler & Auto Level  [IN PROGRESS]
 Goal: leveling and loudness targeting.
 
 - [ ] F07.T01 — `VoiceLevelerProcessor` (§ 7.1) as an AI-stack op. Tests on 2-speaker sample.
