@@ -31,7 +31,8 @@ public final class AVPlaybackEngine: PlaybackEngine {
     @ObservationIgnored private var file: AVAudioFile?
     /// Source seconds where the current schedule starts.
     @ObservationIgnored private var segmentStart: Double = 0
-    @ObservationIgnored private var pausedTime: Double = 0
+    /// Observed, so seeking while paused updates the UI; while playing, `currentTime` reads the player node.
+    private var pausedTime: Double = 0
     @ObservationIgnored private var generation = 0
     @ObservationIgnored private var driftTask: Task<Void, Never>?
 

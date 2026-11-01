@@ -34,6 +34,11 @@ struct DebugMenu: View {
     }
 }
 
+/// `-debugAutoplay YES` starts playback when the editor opens.
+enum DebugAutoplay {
+    static let launchArgument = "debugAutoplay"
+}
+
 /// `-debugImportPath <file>` imports that file at launch, as if chosen in Files.
 enum DebugImport {
     static let launchArgument = "debugImportPath"

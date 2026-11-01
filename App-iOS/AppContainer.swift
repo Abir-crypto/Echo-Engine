@@ -13,6 +13,8 @@ final class AppContainer {
     let importer: any MediaImporting
     let storage: any StorageEstimating
     let dateProvider: any DateProviding
+    let devices: any AudioDeviceManaging
+    let waveforms: any WaveformProviding
 
     init(
         entitlements: any EntitlementProvider = FreeV1Entitlements(),
@@ -21,7 +23,9 @@ final class AppContainer {
         inspector: any MediaInspecting = AVMediaInspector(),
         importer: any MediaImporting = AVMediaImporter(),
         storage: any StorageEstimating = StorageEstimator(volume: .documentsDirectory),
-        dateProvider: any DateProviding = SystemClock()
+        dateProvider: any DateProviding = SystemClock(),
+        devices: any AudioDeviceManaging = IOSAudioDeviceManager(),
+        waveforms: any WaveformProviding = CachedWaveformProvider(root: .waveformCacheDirectory)
     ) {
         self.entitlements = entitlements
         self.capabilities = capabilities
@@ -30,10 +34,25 @@ final class AppContainer {
         self.importer = importer
         self.storage = storage
         self.dateProvider = dateProvider
+        self.devices = devices
+        self.waveforms = waveforms
     }
 
     func makeHomeModel() -> HomeModel {
         HomeModel(repository: projects, storage: storage)
+    }
+
+    /// Each editor gets its own playback engine and autosaver.
+    func makeEditorModel(for stored: StoredProject) -> EditorModel {
+        EditorModel(
+            stored: stored,
+            engine: AVPlaybackEngine(),
+            repository: projects,
+            waveforms: waveforms,
+            devices: devices,
+            storage: storage,
+            makeAutosaver: { [projects] onError in ProjectAutosaver(repository: projects, onError: onError) }
+        )
     }
 
     func makeImportModel() -> ImportModel {

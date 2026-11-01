@@ -1,0 +1,43 @@
+import AVFoundation
+import EchoCore
+import Observation
+
+/// Plays nothing: records what was loaded and keeps the playhead where `seek` puts it.
+@MainActor
+@Observable
+public final class FakePlaybackEngine: PlaybackEngine {
+    public var duration: Double
+    public var playbackRange = TimeRangeCodable(start: 0, duration: 0)
+    public private(set) var isPlaying = false
+    public var currentTime: Double = 0
+    public private(set) var videoPlayer: AVPlayer?
+    public private(set) var loadedAudio: URL?
+    public private(set) var loadedVideo: URL?
+    @ObservationIgnored public var loadError: (any Error)?
+
+    public init(duration: Double = 60) {
+        self.duration = duration
+    }
+
+    public func load(audio: URL, video: URL?) throws {
+        if let loadError { throw loadError }
+        loadedAudio = audio
+        loadedVideo = video
+        isPlaying = false
+        if playbackRange.duration == 0 {
+            playbackRange = .full(duration: duration)
+        }
+    }
+
+    public func play() throws {
+        isPlaying = true
+    }
+
+    public func pause() {
+        isPlaying = false
+    }
+
+    public func seek(to time: Double) {
+        currentTime = min(max(time, playbackRange.start), playbackRange.end)
+    }
+}

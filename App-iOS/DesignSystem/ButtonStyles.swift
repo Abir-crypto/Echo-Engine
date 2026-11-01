@@ -46,3 +46,31 @@ extension ButtonStyle where Self == PrimaryButtonStyle {
 extension ButtonStyle where Self == SecondaryButtonStyle {
     static var secondary: SecondaryButtonStyle { SecondaryButtonStyle() }
 }
+
+/// A primary action in a toolbar: Tint fill, `Tint-on` text, 40 pt capsule (Editor Export, SPEC § 9).
+struct CompactPrimaryButtonStyle: ButtonStyle {
+    func makeBody(configuration: Configuration) -> some View {
+        CompactPrimaryButton(configuration: configuration)
+    }
+
+    private struct CompactPrimaryButton: View {
+        let configuration: Configuration
+        @Environment(\.appTint) private var tint
+        @Environment(\.isEnabled) private var isEnabled
+
+        var body: some View {
+            configuration.label
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(tint.on)
+                .padding(.horizontal, 16)
+                .frame(minHeight: 40)
+                .background(tint.fill, in: Capsule())
+                .contentShape(Capsule())
+                .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.4)
+        }
+    }
+}
+
+extension ButtonStyle where Self == CompactPrimaryButtonStyle {
+    static var compactPrimary: CompactPrimaryButtonStyle { CompactPrimaryButtonStyle() }
+}

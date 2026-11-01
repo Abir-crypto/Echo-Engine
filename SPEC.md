@@ -433,6 +433,7 @@ One `EditorView` for both media types; only the header differs.
 - **Transport row**: "Hold for original" (press-and-hold A/B), Play/Pause (large), Undo, Redo.
 - **Overview strip**: full-length waveform, processed part in accent, two trim handles (start/end only),
   regions outside trim dimmed, playhead, current time and "Trimmed to X of Y" label. Forced LTR.
+  The trim keeps at least 1 second between the handles (the whole source when it is shorter).
 - **Enhance section**: AI stack as an ordered list, numbered (order = processing order), each row: number,
   feature name, optional hint, strength value (tap → strength slider sheet), drag handle to reorder, swipe to remove.
   "Add enhancement" row opens a sheet listing AI features with one-line descriptions. Rendering progress shows
@@ -755,6 +756,8 @@ translation of those mockups; if a mockup and this section disagree, this sectio
 | `Dim` | rgba(14,18,24,.62) | rgba(243,245,248,.72) | outside-trim overlay |
 | `TextValue` | #C9D1DB | #3A4452 | row values, icon glyphs on circle buttons, secondary button text, badge icons |
 | `BadgeFill` | rgba(22,27,34,.78) | rgba(255,255,255,.92) | badges over thumbnails (type, duration) |
+| `VideoWell` | #0E1218 | #DDE2E9 | editor video preview background (letterbox) |
+| `VideoWellStroke` | #262E3A | #CED5DE | 1 pt border of the video preview |
 
 Tints (each: `Tint/<name>` fill, `Tint/<name>-text` for text/icons on Ground, `Tint/<name>-wave` for processed
 waveform, `Tint/<name>-on` for text on a filled tint button):
@@ -873,3 +876,5 @@ Record new user decisions here (date, decision, section updated).
   copy duplicates EchoCore's types and breaks `catch`/`as?` across them (§ 4.1).
 - 2026-10-28: Sources with more than 2 channels are downmixed to stereo whether video or audio (§ 6.2). Audio
   thumbnails are stored waveform levels drawn live (follow tint and processed state), not an image (§ 5.1, § 10).
+- 2026-11-01: Editor video preview tokens `VideoWell` and `VideoWellStroke` added from the mockups (§ 18.2).
+  Minimum trim length is 1 second (§ 9).

@@ -23,6 +23,8 @@ enum ColorToken: String, CaseIterable {
     case success = "Success"
     case dim = "Dim"
     case badgeFill = "BadgeFill"
+    case videoWell = "VideoWell"
+    case videoWellStroke = "VideoWellStroke"
 
     var color: Color { Color(rawValue) }
 }

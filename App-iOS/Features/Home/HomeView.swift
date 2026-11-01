@@ -45,7 +45,7 @@ struct HomeView: View {
                     switch route {
                     case .project(let id):
                         if let stored = model.projects.first(where: { $0.project.id == id }) {
-                            EditorView(project: stored.project)
+                            EditorScreen(stored: stored)
                         }
                     }
                 }

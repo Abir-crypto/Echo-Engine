@@ -135,7 +135,11 @@ Goal: play projects with video sync, waveforms, trim.
   > Play: player node `play(at:)` host time − output latency, video `setRate(_:time:atHostTime:)` at the same host time (+100 ms lead).
   > Every 0.5 s audible audio vs video; > 10 ms → audio rescheduled onto the video timeline (`VideoSync`, pure, tested). Pause/seek move both.
   > App `Components/VideoPreview` (AVPlayerLayer-backed view). Real-time sync only checkable by hand (checkpoint: 5+ min on device).
-- [ ] F04.T04 — Editor layout per canvas: top bar (rename on title tap), header switch (VideoPreview / DetailWaveform with pinch zoom), transport row, overview strip with trim handles, forced LTR (§ 9).
+- [x] F04.T04 — Editor layout per canvas: top bar (rename on title tap), header switch (VideoPreview / DetailWaveform with pinch zoom), transport row, overview strip with trim handles, forced LTR (§ 9).
+  > Done: `EditorScreen` (makes `EditorModel` once) → `EditorView`: native back (swipe works; TextValue tint), principal title → rename alert, Export
+  > (disabled until F08), no tab bar; `VideoPreview` in `VideoWell` tokens (user) or `DetailWaveform` (Canvas, playhead-centred, pinch zoom ≥ 2 s,
+  > drag scrub); `TransportRow` (Undo/Redo disabled until T05, hold-original state only → F05/F06); `OverviewStrip` (trim ≥ 1 s per user, 44 pt
+  > handle targets, VoiceOver adjustables). Readiness block + read-only banner. Rename/trim already autosave; `AudioDeviceManaging` + `IOSAudioDeviceManager`.
 - [ ] F04.T05 — `UndoManager` with `EditState` snapshots, 30-step cap, drag-end registration (§ 6.5); trim changes undoable; autosave wired.
 
 **Checkpoint test:** open video and audio projects; play, seek, scrub; trim start/end and hear only the trimmed range; video and audio stay in sync over 5+ minutes; undo/redo trim.

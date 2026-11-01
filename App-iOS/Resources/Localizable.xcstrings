@@ -10,6 +10,9 @@
     "Can’t import": {
       "comment": "Title of the import sheet when an import fails."
     },
+    "Changes couldn’t be saved. Free up some space, then try again.": {
+      "comment": "Editor error."
+    },
     "Delete": {
       "comment": "Delete action for a project."
     },
@@ -22,8 +25,14 @@
     "Edited today": {
       "comment": "Project card date when the project changed today."
     },
+    "Export": {
+      "comment": "Editor toolbar button that opens the export sheet."
+    },
     "Files": {
       "comment": "Import source: the Files app."
+    },
+    "Hold for original": {
+      "comment": "Editor: press and hold to hear the original audio."
     },
     "Import a video or audio file, or record something new.": {
       "comment": "Empty projects screen."
@@ -37,6 +46,12 @@
     "It can’t be undone.": {
       "comment": "Delete confirmation message when the size is unknown."
     },
+    "Need %@ more to edit this project. Free up space on your iPad, then come back. Your import is saved.": {
+      "comment": "Editor blocked by storage on iPad (SPEC § 9). %@ = missing space."
+    },
+    "Need %@ more to edit this project. Free up space on your iPhone, then come back. Your import is saved.": {
+      "comment": "Editor blocked by storage on iPhone (SPEC § 9). %@ = missing space."
+    },
     "Needs %@ to edit": {
       "comment": "Project card warning. %@ = missing space, e.g. 0.2 GB (SPEC § 14.1, § 15)."
     },
@@ -46,8 +61,20 @@
     "OK": {
       "comment": "Dismisses an alert."
     },
+    "Pause": {
+      "comment": "Accessibility label of the pause button."
+    },
     "Photos": {
       "comment": "Import source: the Photos library."
+    },
+    "Pinch to zoom": {
+      "comment": "Caption on the editor waveform."
+    },
+    "Play": {
+      "comment": "Accessibility label of the play button."
+    },
+    "Playhead": {
+      "comment": "Accessibility label of the playhead on the overview strip."
     },
     "Preparing…": {
       "comment": "Import progress before copying starts."
@@ -60,6 +87,9 @@
     },
     "Record": {
       "comment": "Tab bar item and title of the record screen."
+    },
+    "Redo": {
+      "comment": "Accessibility label of the redo button."
     },
     "Rename": {
       "comment": "Rename action for a project."
@@ -94,17 +124,41 @@
     "This project needs about %@. You have %@ free. Free up space, then import again.": {
       "comment": "Import blocked by storage. %1$@ = needed size, %2$@ = free space (SPEC § 15)."
     },
+    "This project’s audio can’t be played. Import the file again to make a new project.": {
+      "comment": "Editor error."
+    },
     "This video has no audio. Choose a video with sound.": {
       "comment": "Import error (SPEC § 10)."
     },
     "Title": {
       "comment": "Placeholder of the project title field."
     },
+    "Touch and hold to hear the original audio.": {
+      "comment": "VoiceOver hint for Hold for original."
+    },
+    "Trim end": {
+      "comment": "Accessibility label of the trim end handle."
+    },
+    "Trim start": {
+      "comment": "Accessibility label of the trim start handle."
+    },
+    "Trimmed to %@ of %@": {
+      "comment": "Below the overview strip. %1$@ = trimmed length, %2$@ = full length, e.g. 2:51 of 3:18."
+    },
+    "Undo": {
+      "comment": "Accessibility label of the undo button."
+    },
     "Update Echo Engine to edit this project.": {
       "comment": "Shown for projects made with a newer app version (SPEC § 5.3)."
     },
     "Video": {
       "comment": "Accessibility label of the video badge on a project card."
+    },
+    "Video preview": {
+      "comment": "Accessibility label of the editor video preview."
+    },
+    "Waveform": {
+      "comment": "Accessibility label of the editor waveform."
     },
     "Yesterday": {
       "comment": "Project card date when the project changed yesterday."
