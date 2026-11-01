@@ -125,7 +125,11 @@ Goal: play projects with video sync, waveforms, trim.
   > reads the coarsest level ≥ 1 bucket per value, rounding outward so peaks are never missed). `WaveformProviding` → `CachedWaveformProvider`
   > actor: vDSP generator (cancellable, progress), cache `URL.waveformCacheDirectory/<project>/<key>.peaks` (binary "EEWP" v1), reused while
   > the source frame count matches; `removeAll(projectID:)` (wire into project delete + Settings Clear cache, F13). `FakeWaveformProvider`.
-- [ ] F04.T02 — `AVPlaybackEngine` audio path (player node → placeholder chain → output), play/pause/seek, trim range playback.
+- [x] F04.T02 — `AVPlaybackEngine` audio path (player node → placeholder chain → output), play/pause/seek, trim range playback.
+  > Done: `EchoCore/Playback/`: `@MainActor PlaybackEngine` (Observable) → `AVPlaybackEngine`: player → `chainInput` mixer (insertion point for
+  > F05/F07) → main mixer; trim via `scheduleSegment`, seek reschedules, generation counter drops stale completions; end of range stops with
+  > the playhead at the end, next play restarts at the range start. Completion uses `.dataRendered` (`.dataPlayedBack` never fires offline).
+  > Tests render offline (`init(manualRenderingFormat:)`, ≤ 4,096 frames/call) on a frame-index ramp; 10/10 repeated runs. Audio session: F04.T04.
 - [ ] F04.T03 — Video sync: muted `AVPlayer` + `AVPlayerLayer`, shared host-time start, drift correction (§ 6.6).
 - [ ] F04.T04 — Editor layout per canvas: top bar (rename on title tap), header switch (VideoPreview / DetailWaveform with pinch zoom), transport row, overview strip with trim handles, forced LTR (§ 9).
 - [ ] F04.T05 — `UndoManager` with `EditState` snapshots, 30-step cap, drag-end registration (§ 6.5); trim changes undoable; autosave wired.
