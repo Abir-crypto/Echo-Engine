@@ -16,6 +16,13 @@ public enum LoudnessTarget: Codable, Equatable, Hashable, Sendable {
         (.spotify, "spotify", -14), (.podcast, "podcast", -16), (.appleMusic, "appleMusic", -16),
     ]
 
+    /// The platform targets in the order the Loudness screen lists them (SPEC § 5.2).
+    public static var platformTargets: [LoudnessTarget] { platforms.map(\.target) }
+    /// Custom loudness: −30…−8 LUFS in 0.5 LU steps, starting at −14 (SPEC § 5.2).
+    public static let customRange: ClosedRange<Double> = -30 ... -8
+    public static let customStep: Double = 0.5
+    public static let customDefault: Double = -14
+
     /// Integrated loudness target in LUFS.
     public var lufs: Double {
         switch self {
@@ -26,6 +33,10 @@ public enum LoudnessTarget: Codable, Equatable, Hashable, Sendable {
 
     public var isUnknown: Bool {
         if case .unknown = self { true } else { false }
+    }
+
+    public var isCustom: Bool {
+        if case .custom = self { true } else { false }
     }
 
     private var kind: String {

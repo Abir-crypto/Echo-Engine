@@ -262,7 +262,11 @@ Goal: leveling and loudness targeting.
   > latency removed; export reuses it), `AutoLevelAnalyzing` + `AutoLevelAnalyzer` (render + chain over trim → gain = target − LUFS, ±20).
   > `EditorModel`: `setOutputLoudness` (undo step), debounced 500 ms recompute on target/render/manual/trim/undo, `setAutoLevelGain`.
   > User decisions recorded (SPEC § 6.7/§ 8/§ 20): user's ceiling as true peak, ±20 dB, Custom −30…−8.
-- [ ] F07.T04 — Loudness screen: targets (YouTube, Instagram, TikTok, Spotify, Podcast, Apple Music, Custom, Off).
+- [x] F07.T04 — Loudness screen: targets (YouTube, Instagram, TikTok, Spotify, Podcast, Apple Music, Custom, Off).
+  > Done: native (user, SPEC § 18.5/§ 20) `LoudnessSheet` from the Adjust Loudness row (now shows the target name): Off + platforms
+  > (`LoudnessTarget.platformTargets`, LUFS each) + Custom with a −30…−8 / 0.5 slider committed on release, checkmark, caption with the
+  > applied gain ("Measuring…" until known). Full-height sheet so Custom and the gain stay in view. `DisplayFormat.lufs`; DEBUG
+  > `-debugLoudness youtube|…|custom-23.5`. Live: interview clip measures −16.9 LUFS in ffmpeg; app applies +3.0 dB for −14.
 
 **Checkpoint test:** podcast with quiet/loud speakers levels evenly; Auto Level output measures within ±1 LU of target (check exported file in a loudness meter).
 

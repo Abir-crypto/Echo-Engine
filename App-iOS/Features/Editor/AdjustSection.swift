@@ -6,7 +6,7 @@ import EchoCoreFakes
 
 /// The detail sheets of the Adjust section (SPEC § 8, § 9).
 enum AdjustSheet: String, Identifiable {
-    case equalizer, gainDynamics, effects
+    case equalizer, gainDynamics, effects, loudness
 
     var id: Self { self }
 }
@@ -44,7 +44,11 @@ struct AdjustSection: View {
                         .foregroundStyle(.token(.textValue))
                 }
                 RowSeparator()
-                loudness
+                row("Loudness", value: loudnessValue, sheet: .loudness) {
+                    loudnessValue
+                        .font(.subheadline)
+                        .foregroundStyle(.token(.textValue))
+                }
             }
             .disabled(!model.canEdit)
             .opacity(model.canEdit ? 1 : 0.5)
@@ -117,35 +121,9 @@ struct AdjustSection: View {
             .foregroundStyle(.token(.textValue))
     }
 
-    /// Auto Level arrives in F07; until then the row only shows the target.
-    private var loudness: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: 12) {
-                rowTitle("Loudness")
-                Spacer(minLength: 8)
-                loudnessValue
-            }
-            VStack(alignment: .leading, spacing: 6) {
-                rowTitle("Loudness")
-                loudnessValue
-            }
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 14)
-        .padding(.vertical, 8)
-        .frame(minHeight: 60)
-        .accessibilityElement(children: .combine)
-    }
-
-    @ViewBuilder
-    private var loudnessValue: some View {
-        if let target = model.project.outputLoudness {
-            valueText(String(localized: "\(target.lufs.formatted(.number.precision(.fractionLength(0)))) LUFS", comment: "A loudness target, e.g. -14 LUFS."))
-        } else {
-            Text("Off")
-                .font(.subheadline)
-                .foregroundStyle(.token(.textValue))
-        }
+    /// The target's name, or Off.
+    private var loudnessValue: Text {
+        model.outputLoudness.map { Text($0.displayName) } ?? Text("Off")
     }
 }
 
@@ -199,9 +177,10 @@ struct AdvancedDisclosureStyle: DisclosureGroupStyle {
 #if DEBUG
 /// An editor model whose project has every Adjust control in use, for previews.
 @MainActor
-func previewAdjustModel() -> EditorModel {
+func previewAdjustModel(outputLoudness: LoudnessTarget? = nil) -> EditorModel {
     var project = PreviewProjects.all()[1]
     DebugManualDemo.apply(&project.clips[0].manual)
+    project.outputLoudness = outputLoudness
     return EditorModel(
         stored: StoredProject(project: project, isReadOnly: false),
         engine: FakePlaybackEngine(duration: project.sourceInfo.duration),

@@ -837,7 +837,7 @@ enum Appearance: String, CaseIterable { case system, dark, light }
 - Detail screens not on canvas (EQ, Gain and dynamics, Effects, Loudness, strength slider, Add enhancement,
   device/channel picker, auto-tune, backing track, presets): follow § 18.1–18.4; grouped rows, segmented controls,
   sliders with value labels; present as sheets with detents where short. If layout is unclear, ask the user.
-  Equalizer, Gain and dynamics and Effects are built natively from § 18 without Sleek (user decision).
+  Equalizer, Gain and dynamics, Effects and Loudness are built natively from § 18 without Sleek (user decision).
   These screens may be designed in Sleek through the `design-mobile-apps` project skill (paid external service,
   user's account and API key): offer it when such a screen comes up and run it only after the user approves.
   Implement any Sleek design natively in SwiftUI with § 18 tokens; never use the skill's React Native/HTML
@@ -906,3 +906,4 @@ Record new user decisions here (date, decision, section updated).
   auditioned row = filled badge + later rows dimmed; Voice Leveler hidden from Add until F07 (§ 9).
 - 2026-11-01: Auto Level: one true-peak limiter at the end using the user's Limiter ceiling (not a fixed −1 dBTP);
   Auto Level gain limited to −20…+20 dB; Custom loudness −30…−8 LUFS in 0.5 steps, default −14 (§ 5.2, § 6.7, § 8).
+- 2026-11-01: The Loudness screen is built natively like the other Adjust sheets, not in Sleek (§ 18.5).

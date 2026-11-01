@@ -579,6 +579,22 @@ struct EditorModelTests {
         #expect(engine.autoLevelGainDB == 4)
     }
 
+    @Test func aCustomTargetIsRemeasuredWhenItChangesAndTheSameChoiceAddsNoStep() async {
+        let (model, engine) = makeModel(plain)
+        await model.open()
+        model.setOutputLoudness(.custom(lufs: -14))
+        await waitForAutoLevel(1)
+
+        model.setOutputLoudness(.custom(lufs: -14))
+        model.setOutputLoudness(.custom(lufs: -23.5))
+        await waitForAutoLevel(2)
+
+        #expect(await autoLevel.requests.map(\.target) == [.custom(lufs: -14), .custom(lufs: -23.5)])
+        #expect(model.outputLoudness == .custom(lufs: -23.5))
+        #expect(model.history.undoStates.count == 2, "the repeated -14 adds no step")
+        #expect(engine.autoLevelGainDB == 4)
+    }
+
     @Test func closingPrunesToTheCurrentRenders() async {
         let (model, _) = makeModel(plain)
         await model.open()

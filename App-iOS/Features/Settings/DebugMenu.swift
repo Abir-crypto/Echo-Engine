@@ -39,9 +39,22 @@ enum DebugAutoplay {
     static let launchArgument = "debugAutoplay"
 }
 
-/// `-debugAdjustSheet equalizer|gainDynamics|effects` opens that Adjust sheet when the editor opens.
+/// `-debugAdjustSheet equalizer|gainDynamics|effects|loudness` opens that Adjust sheet when the editor opens.
 enum DebugAdjustSheet {
     static let launchArgument = "debugAdjustSheet"
+}
+
+/// `-debugLoudness youtube|instagram|tiktok|spotify|podcast|appleMusic|custom<LUFS>` (e.g. `custom-23.5`) sets the
+/// Auto Level target when the editor opens, like choosing it on the Loudness screen.
+enum DebugLoudness {
+    static let launchArgument = "debugLoudness"
+
+    static func target(_ value: String) -> LoudnessTarget? {
+        if value.hasPrefix("custom") {
+            return .custom(lufs: Double(value.dropFirst("custom".count)) ?? LoudnessTarget.customDefault)
+        }
+        return LoudnessTarget.platformTargets.first { String(describing: $0) == value }
+    }
 }
 
 /// `-debugManualDemo YES` turns on a sample of every Adjust control when the editor opens (not saved).

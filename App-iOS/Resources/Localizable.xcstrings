@@ -86,6 +86,9 @@
     "An enhancement couldn’t be applied. Free up some space, then try again." : {
       "comment" : "Editor alert when an AI enhancement fails to render (usually no space left)."
     },
+    "Apple Music" : {
+      "comment" : "Loudness target named after a platform; keep the brand name."
+    },
     "Applied top to bottom" : {
       "comment" : "Caption next to the Enhance title: steps run in list order."
     },
@@ -97,6 +100,15 @@
     },
     "Audio" : {
       "comment" : "Accessibility label of the audio badge on a project card."
+    },
+    "Auto Level applies %@, the most it can." : {
+      "comment" : "The gain Auto Level applies when the target is out of reach; it is at its limit, e.g. +20.0 dB."
+    },
+    "Auto Level applies %@." : {
+      "comment" : "The gain Auto Level applies to reach the loudness target, e.g. +3.5 dB."
+    },
+    "Auto Level brings the final mix to the loudness the platform expects." : {
+      "comment" : "Explains the Loudness screen."
     },
     "Band %lld, %@" : {
       "comment" : "VoiceOver label of an EQ band. %1$lld = band number, %2$@ = its frequency, e.g. Band 3, 1 kHz."
@@ -121,6 +133,9 @@
     },
     "Compressor" : {
       "comment" : "Gain and dynamics: section and switch title."
+    },
+    "Custom" : {
+      "comment" : "Loudness target the user sets with a slider."
     },
     "Damping" : {
       "comment" : "Reverb: how quickly high frequencies fade in the room (slider)."
@@ -176,6 +191,9 @@
     "Frequency" : {
       "comment" : "EQ band / de-esser frequency slider."
     },
+    "From a newer version" : {
+      "comment" : "Name of a loudness target saved by a newer version of the app."
+    },
     "Gain" : {
       "comment" : "EQ band gain slider (boost or cut in dB)."
     },
@@ -209,6 +227,9 @@
     "Input gain" : {
       "comment" : "Gain and dynamics: level going into the chain (slider, dB)."
     },
+    "Instagram" : {
+      "comment" : "Loudness target named after a platform; keep the brand name."
+    },
     "It can’t be undone." : {
       "comment" : "Delete confirmation message when the size is unknown."
     },
@@ -226,6 +247,9 @@
     },
     "Makeup gain" : {
       "comment" : "Compressor: level added after compression (slider, dB)."
+    },
+    "Measuring…" : {
+      "comment" : "Shown while Auto Level measures the loudness of the mix."
     },
     "Mix" : {
       "comment" : "Reverb: how much room sound is mixed in (slider, percent)."
@@ -261,7 +285,7 @@
       "comment" : "Shown instead of a feature's description when it can't be used."
     },
     "Off" : {
-      "comment" : "Value of an Adjust row when nothing in it is on."
+      "comment" : "Value of an Adjust row when nothing in it is on; also the Loudness option that turns Auto Level off."
     },
     "OK" : {
       "comment" : "Dismisses an alert."
@@ -298,6 +322,9 @@
     },
     "Plays the enhancements up to this one." : {
       "comment" : "VoiceOver hint of an Enhance row (per-step A/B)."
+    },
+    "Podcast" : {
+      "comment" : "Loudness target for podcasts."
     },
     "Preparing…" : {
       "comment" : "Import progress before copying starts."
@@ -359,8 +386,14 @@
     "Softens harsh “s” sounds." : {
       "comment" : "Gain and dynamics: explanation under the De-esser switch."
     },
+    "Spotify" : {
+      "comment" : "Loudness target named after a platform; keep the brand name."
+    },
     "Strength" : {
       "comment" : "Slider and value label: how much of an AI step is applied (wet/dry)."
+    },
+    "Target" : {
+      "comment" : "Slider for the custom loudness target, in LUFS."
     },
     "The import couldn’t finish. Try again." : {
       "comment" : "Import error."
@@ -394,6 +427,9 @@
     },
     "Threshold" : {
       "comment" : "Gate/compressor: level where it starts working (slider, dB)."
+    },
+    "TikTok" : {
+      "comment" : "Loudness target named after a platform; keep the brand name."
     },
     "Title" : {
       "comment" : "Placeholder of the project title field."
@@ -433,6 +469,9 @@
     },
     "Yesterday" : {
       "comment" : "Project card date when the project changed yesterday."
+    },
+    "YouTube" : {
+      "comment" : "Loudness target named after a platform; keep the brand name."
     }
   },
   "version" : "1.0"

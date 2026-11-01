@@ -29,6 +29,12 @@ enum DisplayFormat {
         return String(localized: "\(number) dB", locale: locale, comment: "A level in decibels, e.g. +2.5 dB.")
     }
 
+    /// A loudness target: "-14 LUFS", "-23.5 LUFS".
+    static func lufs(_ value: Double, locale: Locale = .autoupdatingCurrent) -> String {
+        let number = value.formatted(.number.precision(.fractionLength(0...1)).locale(locale))
+        return String(localized: "\(number) LUFS", locale: locale, comment: "A loudness target, e.g. -14 LUFS.")
+    }
+
     /// "80 Hz", "250 Hz", "1.2 kHz", "12 kHz".
     static func frequency(_ hertz: Float, locale: Locale = .autoupdatingCurrent) -> String {
         let measurement = hertz >= 1_000

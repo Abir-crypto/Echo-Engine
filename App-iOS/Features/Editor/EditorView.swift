@@ -91,6 +91,9 @@ struct EditorView: View {
                 model.addEnhancement(.noiseSuppression)
                 model.addEnhancement(.clearVoice)
             }
+            if let target = UserDefaults.standard.string(forKey: DebugLoudness.launchArgument).flatMap(DebugLoudness.target) {
+                model.setOutputLoudness(target)
+            }
             switch UserDefaults.standard.string(forKey: DebugEnhanceSheet.launchArgument) {
             case "add": enhanceSheet = .add
             case "strength": enhanceSheet = .strength(0)
@@ -149,6 +152,7 @@ struct EditorView: View {
             case .equalizer: EqualizerSheet(model: model)
             case .gainDynamics: GainDynamicsSheet(model: model)
             case .effects: EffectsSheet(model: model)
+            case .loudness: LoudnessSheet(model: model)
             }
         }
     }

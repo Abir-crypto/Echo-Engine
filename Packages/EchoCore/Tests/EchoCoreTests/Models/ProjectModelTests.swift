@@ -151,6 +151,16 @@ struct LoudnessTargetTests {
         #expect(LoudnessTarget.truePeakCeiling == -1)
     }
 
+    @Test func loudnessScreenListsPlatformsInSpecOrderAndCustomRange() {
+        #expect(LoudnessTarget.platformTargets == [.youtube, .instagram, .tiktok, .spotify, .podcast, .appleMusic])
+        #expect(LoudnessTarget.customRange == -30 ... -8)
+        #expect(LoudnessTarget.customStep == 0.5)
+        #expect(LoudnessTarget.customDefault == -14)
+        #expect(LoudnessTarget.custom(lufs: -20).isCustom)
+        #expect(!LoudnessTarget.youtube.isCustom)
+        #expect(!LoudnessTarget.unknown(kind: "custom2", lufs: -20).isCustom)
+    }
+
     @Test(arguments: [
         LoudnessTarget.youtube, .instagram, .tiktok, .spotify, .podcast, .appleMusic, .custom(lufs: -23),
         .unknown(kind: "netflix", lufs: -27),
