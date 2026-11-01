@@ -117,13 +117,63 @@ final class AVPlaybackEngineTests {
         #expect(try render(engine, frames: 2).first == 4_800)
     }
 
-    @Test func trimmingAroundTheMovesItInside() throws {
+    @Test func trimmingAroundThePlayheadMovesItInside() throws {
         let engine = try makeEngine()
         engine.seek(to: 0.2)
 
         engine.playbackRange = TimeRangeCodable(start: 1, duration: 0.5)
 
         #expect(engine.currentTime == 1)
+    }
+
+    @Test func seekingToTheRangeEndWhilePlayingStops() throws {
+        let engine = try makeEngine()
+        try engine.play()
+        _ = try render(engine, frames: 512)
+
+        engine.seek(to: 5)
+
+        #expect(!engine.isPlaying)
+        #expect(engine.currentTime == 2)
+    }
+
+    @Test func shorteningTheEndWhilePlayingStopsAtTheNewEnd() async throws {
+        let engine = try makeEngine()
+        try engine.play()
+        _ = try render(engine, frames: 4_800)
+
+        engine.playbackRange = TimeRangeCodable(start: 0, duration: 0.15)
+        let played = try render(engine, frames: 8_192)
+        try await waitUntilStopped(engine)
+
+        #expect(Array(played.prefix(2_400)) == Array(4_800..<7_200))
+        #expect(played.dropFirst(2_400).allSatisfy { $0 == 0 }, "silence after the new end")
+        #expect(!engine.isPlaying)
+        #expect(engine.currentTime == 0.15)
+    }
+
+    @Test func extendingTheEndWhilePlayingPlaysOn() async throws {
+        let engine = try makeEngine()
+        engine.playbackRange = TimeRangeCodable(start: 0, duration: 0.1)
+        try engine.play()
+        _ = try render(engine, frames: 2_400)
+
+        engine.playbackRange = TimeRangeCodable(start: 0, duration: 0.2)
+        let played = try render(engine, frames: 4_800)
+
+        #expect(played == Array(2_400..<7_200))
+        #expect(engine.isPlaying)
+    }
+
+    @Test func movingTheEndBeforeThePlayheadWhilePlayingStopsThere() throws {
+        let engine = try makeEngine()
+        try engine.play()
+        _ = try render(engine, frames: 9_600)
+
+        engine.playbackRange = TimeRangeCodable(start: 0, duration: 0.1)
+
+        #expect(!engine.isPlaying)
+        #expect(engine.currentTime == 0.1)
     }
 
     @Test func rangeIsClampedToTheAudio() throws {

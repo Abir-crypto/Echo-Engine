@@ -25,6 +25,8 @@ struct EditorScreen: View {
 struct EditorView: View {
     let model: EditorModel
 
+    @Environment(\.appTint) private var tint
+    @Environment(\.deviceFamily) private var deviceFamily
     @State private var visibleDuration: Double = 20
     @State private var isRenaming = false
     @State private var newTitle = ""
@@ -37,6 +39,8 @@ struct EditorView: View {
                 editor
             }
         }
+        // Content keeps the app tint; the TextValue tint below is only for the navigation bar.
+        .tint(tint.text)
         .background(Color.token(.ground).ignoresSafeArea())
         .navigationTitle(model.project.title)
         .navigationBarTitleDisplayMode(.inline)
@@ -64,7 +68,8 @@ struct EditorView: View {
             }
             .sharedBackgroundVisibility(.hidden)
         }
-        // The native back chevron is a circle-button glyph: TextValue, not the tint (SPEC § 18.4).
+        // The native back chevron is a circle-button glyph: TextValue, not the tint (SPEC § 18.4). Alerts are attached
+        // outside it, so their text buttons keep the app tint.
         .tint(.token(.textValue))
         .alert("Rename project", isPresented: $isRenaming) {
             TextField("Title", text: $newTitle)
@@ -190,7 +195,7 @@ struct EditorView: View {
                 .foregroundStyle(.token(.warning))
                 .accessibilityHidden(true)
             Group {
-                if UIDevice.current.userInterfaceIdiom == .pad {
+                if deviceFamily == .pad {
                     Text("Need \(DisplayFormat.fileSize(bytes)) more to edit this project. Free up space on your iPad, then come back. Your import is saved.")
                 } else {
                     Text("Need \(DisplayFormat.fileSize(bytes)) more to edit this project. Free up space on your iPhone, then come back. Your import is saved.")
@@ -250,13 +255,19 @@ private func previewEditor(_ project: Project, readOnly: Bool = false, available
     previewEditor(PreviewProjects.all()[0]).preferredColorScheme(.light)
 }
 
-#Preview("Read-only, RTL, XXL") {
+#Preview("Read-only, Arabic RTL, XXL") {
     previewEditor(PreviewProjects.all()[3], readOnly: true)
+        .environment(\.locale, Locale(identifier: "ar"))
         .environment(\.layoutDirection, .rightToLeft)
         .dynamicTypeSize(.xxxLarge)
 }
 
 #Preview("Needs space") {
     previewEditor(PreviewProjects.all()[2], available: 0)
+}
+
+#Preview("Needs space, iPad") {
+    previewEditor(PreviewProjects.all()[2], available: 0)
+        .environment(\.deviceFamily, .pad)
 }
 #endif

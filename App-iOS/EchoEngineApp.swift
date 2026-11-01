@@ -21,6 +21,7 @@ struct EchoEngineApp: App {
         WindowGroup {
             RootView(container: container, homeModel: homeModel, importModel: importModel)
                 .environment(\.appTint, tint)
+                .environment(\.deviceFamily, .current)
                 // System-tinted controls are mostly text and icons on Ground, so they use the text role.
                 .tint(tint.text)
                 .preferredColorScheme(appearance.colorScheme)

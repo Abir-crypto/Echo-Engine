@@ -222,7 +222,8 @@ private struct HomeFailureMessage: LocalizedError {
 private func previewModel(_ projects: [Project]) -> HomeModel {
     HomeModel(
         repository: FakeProjectRepository(projects: projects, overviewsByID: PreviewProjects.overviews(for: projects)),
-        storage: FakeStorageEstimator(editBytes: 1_200_000_000, available: 1_000_000_000)
+        storage: FakeStorageEstimator(editBytes: 1_200_000_000, available: 1_000_000_000),
+        waveforms: FakeWaveformProvider()
     )
 }
 

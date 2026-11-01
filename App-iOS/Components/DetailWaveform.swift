@@ -54,8 +54,9 @@ struct DetailWaveform: View {
         // The time bubble and caption sit inside a fixed 200 pt well.
         .dynamicTypeSize(...DynamicTypeSize.xxxLarge)
         .frame(height: 200)
-        .background(.token(.surface), in: .rect(cornerRadius: 16))
-        .clipShape(.rect(cornerRadius: 16))
+        // Waveform wells are 12 (SPEC § 18.4; the mockup's 16 is overridden by SPEC).
+        .background(.token(.surface), in: .rect(cornerRadius: 12))
+        .clipShape(.rect(cornerRadius: 12))
         .simultaneousGesture(zoom)
         .environment(\.layoutDirection, .leftToRight)
         .accessibilityElement()

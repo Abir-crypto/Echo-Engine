@@ -39,7 +39,7 @@ final class AppContainer {
     }
 
     func makeHomeModel() -> HomeModel {
-        HomeModel(repository: projects, storage: storage)
+        HomeModel(repository: projects, storage: storage, waveforms: waveforms)
     }
 
     /// Each editor gets its own playback engine and autosaver.

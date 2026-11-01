@@ -23,10 +23,12 @@ final class HomeModel {
 
     private let repository: any ProjectRepository
     private let storage: any StorageEstimating
+    private let waveforms: any WaveformProviding
 
-    init(repository: any ProjectRepository, storage: any StorageEstimating) {
+    init(repository: any ProjectRepository, storage: any StorageEstimating, waveforms: any WaveformProviding) {
         self.repository = repository
         self.storage = storage
+        self.waveforms = waveforms
     }
 
     func load() async {
@@ -70,6 +72,8 @@ final class HomeModel {
     func delete(_ id: UUID) async {
         do {
             try await repository.delete(id: id)
+            // Caches are rebuilt on demand, so a failed removal only leaves files the system may purge.
+            try? await waveforms.removeAll(projectID: id)
             projects.removeAll { $0.project.id == id }
             thumbnails[id] = nil
             readiness[id] = nil

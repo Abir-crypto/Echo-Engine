@@ -18,6 +18,9 @@ struct OverviewStrip: View {
     let onTrimEnded: () -> Void
 
     @Environment(\.appTint) private var tint
+    /// Resets when a handle drag ends or the system cancels it (e.g. the scroll view takes over), so every drag is
+    /// finished with `onTrimEnded`.
+    @GestureState private var isDraggingHandle = false
 
     private static let barCount = 56
     private static let handleWidth: CGFloat = 8
@@ -52,6 +55,9 @@ struct OverviewStrip: View {
                     .onChanged { onSeek(time(at: $0.location.x, width)) }
             )
             .coordinateSpace(.named(Self.space))
+        }
+        .onChange(of: isDraggingHandle) { _, isDragging in
+            if !isDragging { onTrimEnded() }
         }
         .frame(height: height)
         .background(.token(.surface), in: .rect(cornerRadius: 12))
@@ -103,8 +109,8 @@ struct OverviewStrip: View {
             .offset(x: center - Self.handleHitWidth / 2)
             .highPriorityGesture(
                 DragGesture(minimumDistance: 0, coordinateSpace: .named(Self.space))
+                    .updating($isDraggingHandle) { _, isDragging, _ in isDragging = true }
                     .onChanged { onMove(self.time(at: $0.location.x, width)) }
-                    .onEnded { _ in onTrimEnded() }
             )
             .opacity(isEditable ? 1 : 0.4)
             .allowsHitTesting(isEditable)

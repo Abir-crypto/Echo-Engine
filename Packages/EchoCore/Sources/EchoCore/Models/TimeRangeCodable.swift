@@ -10,6 +10,11 @@ public struct TimeRangeCodable: Codable, Equatable, Hashable, Sendable {
 
     public var end: Double { start + duration }
 
+    /// Whether `time` lies within the range, ends included.
+    public func contains(_ time: Double) -> Bool {
+        time >= start && time <= end
+    }
+
     /// The whole source, from zero to `duration`.
     public static func full(duration: Double) -> TimeRangeCodable {
         TimeRangeCodable(start: 0, duration: duration)

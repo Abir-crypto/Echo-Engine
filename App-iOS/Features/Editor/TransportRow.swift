@@ -10,7 +10,8 @@ struct TransportRow: View {
     let onRedo: () -> Void
     let onHoldOriginal: (Bool) -> Void
 
-    @State private var isHolding = false
+    /// Resets when the touch ends or the system cancels it, so a cancelled hold never sticks.
+    @GestureState private var isHolding = false
 
     var body: some View {
         HStack {
@@ -51,16 +52,9 @@ struct TransportRow: View {
             .contentShape(Rectangle())
             .gesture(
                 DragGesture(minimumDistance: 0)
-                    .onChanged { _ in
-                        guard !isHolding else { return }
-                        isHolding = true
-                        onHoldOriginal(true)
-                    }
-                    .onEnded { _ in
-                        isHolding = false
-                        onHoldOriginal(false)
-                    }
+                    .updating($isHolding) { _, isHolding, _ in isHolding = true }
             )
+            .onChange(of: isHolding) { _, isHolding in onHoldOriginal(isHolding) }
             .accessibilityElement()
             .accessibilityLabel(Text("Hold for original"))
             .accessibilityHint(Text("Touch and hold to hear the original audio."))

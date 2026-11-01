@@ -19,7 +19,12 @@ public final class AVPlaybackEngine: PlaybackEngine {
             let clamped = clamp(playbackRange)
             if clamped != playbackRange { playbackRange = clamped; return }
             updateVideoEnd()
-            if !playbackRange.contains(currentTime) { seek(to: playbackRange.start) }
+            if !playbackRange.contains(currentTime) {
+                seek(to: playbackRange.start)
+            } else if isPlaying, rangeEndFrame != scheduledEndFrame {
+                // The playing segment still ends at the old range end.
+                seek(to: currentTime)
+            }
         }
     }
 
@@ -31,6 +36,8 @@ public final class AVPlaybackEngine: PlaybackEngine {
     @ObservationIgnored private var file: AVAudioFile?
     /// Source seconds where the current schedule starts.
     @ObservationIgnored private var segmentStart: Double = 0
+    /// Where the current schedule ends, so a moved range end can be rescheduled.
+    @ObservationIgnored private var scheduledEndFrame: AVAudioFramePosition = 0
     /// Observed, so seeking while paused updates the UI; while playing, `currentTime` reads the player node.
     private var pausedTime: Double = 0
     @ObservationIgnored private var generation = 0
@@ -77,21 +84,21 @@ public final class AVPlaybackEngine: PlaybackEngine {
     }
 
     public func play() throws {
-        guard let file, !isPlaying, playbackRange.duration > 0 else { return }
-        if pausedTime >= playbackRange.end - 1 / file.processingFormat.sampleRate {
+        guard file != nil, !isPlaying, playbackRange.duration > 0 else { return }
+        if isAtEnd(pausedTime) {
             pausedTime = playbackRange.start
         }
         if !engine.isRunning {
             engine.prepare()
             try engine.start()
         }
-        schedule(from: pausedTime)
+        guard schedule(from: pausedTime) else { return }
         if let video = videoPlayer, !isOffline {
             // Start both from one host time; audio starts earlier by the output latency so what is heard matches
             // what is shown.
             let start = Self.now() + VideoSync.startDelay
             player.play(at: AVAudioTime(hostTime: AVAudioTime.hostTime(forSeconds: start - outputLatency)))
-            video.setRate(1, time: CMTime(seconds: pausedTime, preferredTimescale: 48_000), atHostTime: Self.cmHostTime(start))
+            video.setRate(1, time: Self.cmTime(pausedTime), atHostTime: Self.cmHostTime(start))
             startDriftCorrection()
         } else {
             player.play()
@@ -114,14 +121,15 @@ public final class AVPlaybackEngine: PlaybackEngine {
             seekVideo(to: target)
             return
         }
-        if videoPlayer != nil, !isOffline {
+        if isAtEnd(target) {
+            finishAtEnd()
+        } else if videoPlayer != nil, !isOffline {
             stopPlayback()
             pausedTime = target
             try? play()
         } else {
             stopPlayer()
-            schedule(from: target)
-            player.play()
+            if schedule(from: target) { player.play() } else { finishAtEnd() }
         }
     }
 
@@ -140,14 +148,17 @@ public final class AVPlaybackEngine: PlaybackEngine {
 
     // MARK: Scheduling
 
-    private func schedule(from time: Double) {
-        guard let file else { return }
+    /// Schedules `time`…range end; `false` when nothing is left to play.
+    @discardableResult
+    private func schedule(from time: Double) -> Bool {
+        guard let file else { return false }
         let sampleRate = file.processingFormat.sampleRate
         let startFrame = AVAudioFramePosition((time * sampleRate).rounded())
-        let endFrame = min(file.length, AVAudioFramePosition((playbackRange.end * sampleRate).rounded()))
+        let endFrame = rangeEndFrame
         segmentStart = Double(startFrame) / sampleRate
         pausedTime = segmentStart
-        guard endFrame > startFrame else { return }
+        scheduledEndFrame = endFrame
+        guard endFrame > startFrame else { return false }
         generation += 1
         let scheduled = generation
         // `.dataRendered`, not `.dataPlayedBack`: the latter never fires in offline rendering (tests), and stopping the
@@ -158,13 +169,31 @@ public final class AVPlaybackEngine: PlaybackEngine {
         ) { [weak self] _ in
             Task { @MainActor in self?.segmentFinished(scheduled) }
         }
+        return true
+    }
+
+    private func segmentFinished(_ scheduled: Int) {
+        guard scheduled == generation, isPlaying else { return }
+        finishAtEnd()
     }
 
     /// The range end was reached: stop with the playhead at the end; the next `play` restarts at the range start.
-    private func segmentFinished(_ scheduled: Int) {
-        guard scheduled == generation, isPlaying else { return }
+    private func finishAtEnd() {
         stopPlayback()
         pausedTime = playbackRange.end
+        seekVideo(to: pausedTime)
+    }
+
+    /// The last frame of the range, in file frames.
+    private var rangeEndFrame: AVAudioFramePosition {
+        guard let file else { return 0 }
+        return min(file.length, AVAudioFramePosition((playbackRange.end * file.processingFormat.sampleRate).rounded()))
+    }
+
+    /// Less than one frame of the range is left after `time`.
+    private func isAtEnd(_ time: Double) -> Bool {
+        guard let file else { return true }
+        return time >= playbackRange.end - 1 / file.processingFormat.sampleRate
     }
 
     private func stopPlayback() {
@@ -206,13 +235,11 @@ public final class AVPlaybackEngine: PlaybackEngine {
     }
 
     private func updateVideoEnd() {
-        videoPlayer?.currentItem?.forwardPlaybackEndTime = CMTime(seconds: playbackRange.end, preferredTimescale: 48_000)
+        videoPlayer?.currentItem?.forwardPlaybackEndTime = Self.cmTime(playbackRange.end)
     }
 
     private func seekVideo(to time: Double) {
-        videoPlayer?.seek(
-            to: CMTime(seconds: time, preferredTimescale: 48_000), toleranceBefore: .zero, toleranceAfter: .zero
-        )
+        videoPlayer?.seek(to: Self.cmTime(time), toleranceBefore: .zero, toleranceAfter: .zero)
     }
 
     private func startDriftCorrection() {
@@ -237,7 +264,10 @@ public final class AVPlaybackEngine: PlaybackEngine {
         guard VideoSync.needsResync(audioTime: audible, videoTime: videoNow) else { return }
         let start = now + VideoSync.resyncDelay
         stopPlayer()
-        schedule(from: VideoSync.videoTime(at: start, from: videoNow, now: now, rate: Double(video.rate)))
+        guard schedule(from: VideoSync.videoTime(at: start, from: videoNow, now: now, rate: Double(video.rate))) else {
+            finishAtEnd()
+            return
+        }
         player.play(at: AVAudioTime(hostTime: AVAudioTime.hostTime(forSeconds: start - outputLatency)))
     }
 
@@ -245,6 +275,10 @@ public final class AVPlaybackEngine: PlaybackEngine {
 
     private static func now() -> Double {
         AVAudioTime.seconds(forHostTime: mach_absolute_time())
+    }
+
+    private static func cmTime(_ seconds: Double) -> CMTime {
+        CMTime(seconds: seconds, preferredTimescale: 48_000)
     }
 
     private static func cmHostTime(_ seconds: Double) -> CMTime {
@@ -261,10 +295,4 @@ public final class AVPlaybackEngine: PlaybackEngine {
 
 public enum PlaybackError: Error, Equatable {
     case renderFailed
-}
-
-extension TimeRangeCodable {
-    public func contains(_ time: Double) -> Bool {
-        time >= start && time <= end
-    }
 }

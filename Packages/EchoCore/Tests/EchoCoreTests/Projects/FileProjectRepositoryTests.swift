@@ -69,6 +69,14 @@ final class FileProjectRepositoryTests {
         #expect(try await repository.list().map(\.project.id) == [valid.id])
     }
 
+    @Test func aManifestWithoutAClipIsDamaged() async throws {
+        let damaged = project()
+        try writeManifest(damaged) { $0["clips"] = [Any]() }
+
+        await #expect(throws: ProjectRepositoryError.damaged) { try await repository.load(id: damaged.id) }
+        #expect(try await repository.list().isEmpty)
+    }
+
     @Test func listIsEmptyBeforeTheFirstProject() async throws {
         #expect(try await repository.list().isEmpty)
     }

@@ -34,6 +34,8 @@ public actor FileProjectRepository: ProjectRepository {
         guard fileManager.fileExists(atPath: manifest.path) else { throw ProjectRepositoryError.notFound }
         let migration = try migrator.migrateFileIfNeeded(at: manifest)
         let project = try JSONDecoder().decode(Project.self, from: migration.data)
+        // Every project has its clip (SPEC § 5.2); a manifest without one is damaged.
+        guard !project.clips.isEmpty else { throw ProjectRepositoryError.damaged }
         let isReadOnly = migrator.isReadOnly(schemaVersion: migration.fromVersion) || project.containsUnknownValues
         return StoredProject(project: project, isReadOnly: isReadOnly)
     }

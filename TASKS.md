@@ -262,6 +262,7 @@ Goal: live pitch correction and sing-along.
 Goal: complete Settings screen.
 
 - [ ] F13.T01 — Settings UI per canvas: Appearance, Tint, Presets link, Privacy toggles, Storage (sizes, Clear cache), Acknowledgements, Version (§ 14.2).
+- [ ] F13.T01a — Clear cache also removes waveform caches (`Library/Caches/Waveforms`, `WaveformProviding.removeAll`); project delete already does (F04 review).
 - [ ] F13.T02 — Storage sizes computation; project info sheet with per-project breakdown (§ 15).
 
 **Checkpoint test:** every setting persists and applies instantly; Clear cache frees space and projects re-render on open.

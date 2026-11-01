@@ -96,6 +96,19 @@ struct EditorModelTests {
         #expect(model.isTrimmed)
     }
 
+    @Test func aTrimDragWhilePlayingReachesTheEngineWhenItEnds() async {
+        let (model, engine) = makeModel(video)
+        await model.open()
+        model.togglePlayback()
+
+        model.moveTrimEnd(to: 120)
+        model.moveTrimEnd(to: 100)
+        #expect(engine.playbackRange == video.trimRange, "the playing audio isn't restarted per drag step")
+
+        model.finishTrim()
+        #expect(engine.playbackRange == TimeRangeCodable(start: 0, duration: 100))
+    }
+
     @Test func trimStaysInsideTheSource() async {
         let (model, _) = makeModel(video)
         await model.open()

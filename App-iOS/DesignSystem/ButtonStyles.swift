@@ -65,7 +65,9 @@ struct CompactPrimaryButtonStyle: ButtonStyle {
                 .padding(.horizontal, 16)
                 .frame(minHeight: 40)
                 .background(tint.fill, in: Capsule())
-                .contentShape(Capsule())
+                // A 40 pt capsule with a 44 pt touch target (SPEC § 17).
+                .padding(.vertical, 2)
+                .contentShape(Rectangle())
                 .opacity(isEnabled ? (configuration.isPressed ? 0.8 : 1) : 0.4)
         }
     }

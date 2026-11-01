@@ -43,4 +43,6 @@ public enum ProjectRepositoryError: Error, Equatable {
     case notFound
     /// The project is from a newer app version (see `StoredProject.isReadOnly`).
     case readOnly
+    /// The manifest decodes but can't be a project, e.g. it has no clip.
+    case damaged
 }

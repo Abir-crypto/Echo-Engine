@@ -139,6 +139,7 @@ final class EditorModel {
 
     /// A trim drag ended: one undo step, saved (SPEC § 6.5: undo registers on drag end, not per value).
     func finishTrim() {
+        engine.playbackRange = project.trimRange
         commit()
     }
 
@@ -162,7 +163,9 @@ final class EditorModel {
 
     private func applyTrim(_ range: TimeRangeCodable) {
         project.trimRange = range
-        engine.playbackRange = range
+        // A playing engine restarts its audio for a new range, which would stutter on every drag step, so it gets
+        // the range when the drag ends.
+        if !engine.isPlaying { engine.playbackRange = range }
     }
 
     /// Makes the current edit state an undo step if it changed since the last one, then saves.
