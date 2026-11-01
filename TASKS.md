@@ -160,7 +160,12 @@ Goal: real-time manual controls as C++ DSP in Audio Units.
   > release, `latencyFrames()` (72 @ 48 kHz) for F05.T03. Kernels clamp compressor threshold −60…0 / makeup 0…24 (not in the model yet). Tests:
   > analytic per kernel, golden files `Resources/TestAudio/Golden/*.f32` (re-record: `ECHO_UPDATE_GOLDEN=1 swift test`), zero `operator new` via
   > test-only `CEchoDSPTestSupport` (thread-local counter, proven to catch a kernel allocation).
-- [ ] F05.T02 — Kernels: reverb, formant-preserving pitch shift (PSOLA; shared with auto-tune later). Tests.
+- [x] F05.T02 — Kernels: reverb, formant-preserving pitch shift (PSOLA; shared with auto-tune later). Tests.
+  > Done: `PitchDetector` (YIN on a ~12 kHz decimated copy, 70–1000 Hz, unvoiced below 0.8 confidence per § 13.5; `push`/`detect`).
+  > `PitchShiftKernel` = TD-PSOLA: pulse-aligned analysis marks, 2-period Hann grains spaced period/ratio, energy-preserving gain;
+  > constant latency 2.5 × 70 Hz period (1,715 frames @ 48 kHz) even at 0 st (then exactly the delayed input) — F05.T03 must report and
+  > compensate it. `ReverbKernel` = Freeverb (8 combs + 4 allpasses, skips work and clears its tail while off). Buffers allocate in
+  > `prepare` (off the render thread); scenarios guard only the render loop. Golden tolerance now SPEC § 19's −50 dB (relative).
 - [ ] F05.T03 — `EchoAudioUnits`: AUAudioUnit subclasses + `AUParameterTree` with ramping; chain assembly in `AVPlaybackEngine` in § 8 order.
 - [ ] F05.T03a — Playback resilience: on `AVAudioEngineConfigurationChange` (route change, e.g. headphones unplugged) and session
   interruptions (calls), pause cleanly (keep the playhead, `isPlaying` false, video paused) and restart the engine on next play. From F04.

@@ -82,6 +82,63 @@ enum TestSignal {
         (0..<frames).map { amplitude * Float(sin(2 * .pi * frequency * Double($0) / sampleRate)) }
     }
 
+    /// A vowel-like voice: a pulse train at `f0` through two formant resonators (700 Hz and 1.2 kHz), peaking at 0.5.
+    static func vowel(f0: Double, frames: Int, formants: [Double] = [700, 1_200]) -> [Float] {
+        let period = Int((sampleRate / f0).rounded())
+        var resonators = formants.map { (echo.dsp.makeBiquad(.bandPass, sampleRate, $0, 0, 5), echo.dsp.BiquadState()) }
+        let raw = (0..<frames).map { frame -> Float in
+            let pulse: Float = frame % period == 0 ? 1 : 0
+            var output: Float = 0
+            for index in resonators.indices {
+                output += resonators[index].1.process(resonators[index].0, pulse, 0)
+            }
+            return output
+        }
+        let peak = raw.map(abs).max() ?? 1
+        return raw.map { $0 * 0.5 / peak }
+    }
+
+    /// Deterministic white noise in −amplitude…amplitude.
+    static func noise(amplitude: Float, frames: Int) -> [Float] {
+        var seed: UInt32 = 0xC0FF_EE11
+        return (0..<frames).map { _ in
+            seed = seed &* 1_664_525 &+ 1_013_904_223
+            return amplitude * (Float(seed >> 8) / Float(1 << 23) - 1)
+        }
+    }
+
+    /// The pitch `PitchDetector` finds at the end of `samples`, in Hz; `nil` when unvoiced.
+    static func detectedFrequency(_ samples: [Float]) -> Double? {
+        var detector = echo.dsp.PitchDetector()
+        detector.prepare(sampleRate)
+        samples.forEach { detector.push($0) }
+        let estimate = detector.detect()
+        return estimate.period > 0 ? sampleRate / Double(estimate.period) : nil
+    }
+
+    /// Power-weighted mean frequency between `low` and `high` (Hann-windowed Goertzel bins), to compare spectral
+    /// envelopes.
+    static func spectralCentroid(_ samples: [Float], from low: Double = 200, to high: Double = 4_000, step: Double = 10) -> Double {
+        let count = samples.count
+        let windowed = samples.enumerated().map { index, sample in
+            Double(sample) * (0.5 - 0.5 * cos(2 * .pi * Double(index) / Double(count - 1)))
+        }
+        var weighted = 0.0, total = 0.0
+        for frequency in stride(from: low, through: high, by: step) {
+            let coefficient = 2 * cos(2 * .pi * frequency / sampleRate)
+            var previous = 0.0, beforePrevious = 0.0
+            for sample in windowed {
+                let current = sample + coefficient * previous - beforePrevious
+                beforePrevious = previous
+                previous = current
+            }
+            let power = previous * previous + beforePrevious * beforePrevious - coefficient * previous * beforePrevious
+            weighted += frequency * power
+            total += power
+        }
+        return weighted / total
+    }
+
     static func rms<C: Collection<Float>>(_ samples: C) -> Float {
         guard !samples.isEmpty else { return 0 }
         return (samples.reduce(0) { $0 + $1 * $1 } / Float(samples.count)).squareRoot()

@@ -9,7 +9,8 @@ enum class FilterShape : int {
     peaking = 1,
     highShelf = 2,
     bandPass = 3,
-    bypass = 4,
+    lowPass = 4,
+    bypass = 5,
 };
 
 /// Normalized biquad coefficients (a0 = 1).
