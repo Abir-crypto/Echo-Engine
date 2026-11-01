@@ -437,7 +437,10 @@ struct EditorModelTests {
 
         #expect(model.aiStack.map(\.kind) == [.noiseSuppression, .clearVoice])
         #expect(model.aiStack.allSatisfy { $0.strength == 0.8 })
-        #expect(model.history.undoStates.count == 2)
+        #expect(EditorModel.offeredFeatures == [.noiseSuppression, .clearVoice, .voiceLeveler])
+        model.addEnhancement(.voiceLeveler)
+        #expect(model.aiStack.last?.kind == .voiceLeveler)
+        #expect(model.history.undoStates.count == 3)
         #expect(model.showsAlreadyReducesNoise(at: 1))
         #expect(!model.showsAlreadyReducesNoise(at: 0))
     }

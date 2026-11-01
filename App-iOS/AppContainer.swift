@@ -43,10 +43,14 @@ final class AppContainer {
         self.devices = devices
         self.waveforms = waveforms
         self.renders = renders
-        let processor = AIProcessorRouter(processors: [.noiseSuppression: RNNoiseProcessor(), .clearVoice: ClearVoiceProcessor()])
-        self.renderer = renderer ?? AIChainRenderer(processor: processor, cache: renders)
+        self.renderer = renderer ?? AIChainRenderer(processor: AIProcessorRouter(processors: Self.aiProcessors), cache: renders)
         self.janitor = janitor ?? RenderCacheJanitor(cache: renders, storage: storage, waveforms: waveforms)
     }
+
+    /// The processor of every AI feature (SPEC § 7).
+    static let aiProcessors: [AIFeature: any AIProcessing] = [
+        .noiseSuppression: RNNoiseProcessor(), .clearVoice: ClearVoiceProcessor(), .voiceLeveler: VoiceLevelerProcessor(),
+    ]
 
     func makeHomeModel() -> HomeModel {
         HomeModel(repository: projects, storage: storage, waveforms: waveforms, renders: renders)

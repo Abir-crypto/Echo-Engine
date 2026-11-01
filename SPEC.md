@@ -449,7 +449,7 @@ One `EditorView` for both media types; only the header differs.
   inline on the row being rendered. Caption under header: "Applied top to bottom".
   A new step starts at 80 % strength. Each feature appears at most once; the Add sheet shows added ones with a
   checkmark (not tappable). Tapping a row auditions the stack up to it (§ 6.6): its number badge fills with the tint
-  and later rows dim; tapping it again plays the whole stack. Voice Leveler is offered from F07 (when it works).
+  and later rows dim; tapping it again plays the whole stack. Voice Leveler is offered since F07 (when it began to work).
 - **Adjust section**: rows Equalizer (mini curve), Gain and dynamics (gain value), Effects, Loudness (target name).
   Each opens a detail screen/sheet.
 - **States**:

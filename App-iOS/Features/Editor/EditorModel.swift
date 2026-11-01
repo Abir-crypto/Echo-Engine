@@ -11,8 +11,8 @@ final class EditorModel {
     static let minimumTrimDuration: Double = 1
     /// A new AI step's strength (user decision, SPEC § 9).
     static let newStepStrength: Float = 0.8
-    /// Features offered in Add enhancement; Voice Leveler joins in F07 (user decision, SPEC § 9).
-    static let offeredFeatures: [AIFeature] = [.noiseSuppression, .clearVoice]
+    /// Features offered in Add enhancement (SPEC § 7, § 9).
+    static let offeredFeatures: [AIFeature] = [.noiseSuppression, .clearVoice, .voiceLeveler]
 
     enum Failure: Equatable {
         /// `working.caf` can't be loaded or the session can't play.

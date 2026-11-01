@@ -12,6 +12,11 @@ struct AppContainerTests {
         #expect(container.projects is FileProjectRepository)
     }
 
+    @Test func everyOfferedEnhancementHasAProcessor() {
+        #expect(Set(EditorModel.offeredFeatures).isSubset(of: AppContainer.aiProcessors.keys))
+        #expect(AppContainer.aiProcessors[.voiceLeveler] is VoiceLevelerProcessor)
+    }
+
     @Test func usesInjectedServices() {
         let container = AppContainer(
             entitlements: FakeEntitlements(locked: [.clearVoice]),
