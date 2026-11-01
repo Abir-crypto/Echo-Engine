@@ -1,0 +1,26 @@
+{
+  "frames" : 471902,
+  "sampleRate" : 48000,
+  "segments" : [
+    {
+      "end" : 87497,
+      "speaker" : "A",
+      "start" : 14400
+    },
+    {
+      "end" : 222608,
+      "speaker" : "B",
+      "start" : 111497
+    },
+    {
+      "end" : 344229,
+      "speaker" : "A",
+      "start" : 246608
+    },
+    {
+      "end" : 457502,
+      "speaker" : "B",
+      "start" : 368229
+    }
+  ]
+}

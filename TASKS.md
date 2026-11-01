@@ -244,7 +244,11 @@ Goal: user-ordered AI stack with per-step cached renders.
 ## F07 — Voice Leveler & Auto Level  [IN PROGRESS]
 Goal: leveling and loudness targeting.
 
-- [ ] F07.T01 — `VoiceLevelerProcessor` (§ 7.1) as an AI-stack op. Tests on 2-speaker sample.
+- [x] F07.T01 — `VoiceLevelerProcessor` (§ 7.1) as an AI-stack op. Tests on 2-speaker sample.
+  > Done: `VoiceLevelerProcessor` (two passes: linked 50 ms window RMS, then `LevelerTransform` via `ChunkedRender`; progress 30/70).
+  > `VoiceLevelerCurve`: speech > 2× 10th-percentile floor → gain to −20 dBFS (±12, × strength); smoothing = mean of upcoming speech in
+  > 300 ms, falls at once, rises with 500 ms release; silences 0 dB; phrases start at level. Soft limiter (−1 dBFS) only on boosted samples,
+  > so strength 0 is untouched. Two-speaker clip (`TestAudio/two-speakers.caf`, generated): 18 dB gap → 2.6 dB, pauses unchanged. Golden file.
 - [ ] F07.T01a — Offer Voice Leveler in the Add enhancement sheet (hidden until its processor exists, user decision § 9) and route it in `AIProcessorRouter`.
 - [ ] F07.T02 — `EBUR128Analyzer` (integrated LUFS, true peak). Tests vs reference values.
 - [ ] F07.T03 — Auto Level output stage: analysis over trim range, debounced recompute, static gain + true-peak limiter (§ 6.7).
