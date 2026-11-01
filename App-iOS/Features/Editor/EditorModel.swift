@@ -101,7 +101,9 @@ final class EditorModel {
         await autosaver.flush()
     }
 
+    /// Read-only projects play nothing either: all controls are disabled (SPEC § 9).
     func togglePlayback() {
+        guard canEdit else { return }
         if engine.isPlaying {
             engine.pause()
             return
@@ -115,11 +117,12 @@ final class EditorModel {
     }
 
     func seek(to time: Double) {
+        guard canEdit else { return }
         engine.seek(to: time)
     }
 
     func holdOriginal(_ isHolding: Bool) {
-        isHoldingOriginal = isHolding
+        isHoldingOriginal = isHolding && canEdit
     }
 
     /// Moves the trim start, keeping the end and at least `minimumTrimDuration` (or the whole source when shorter).

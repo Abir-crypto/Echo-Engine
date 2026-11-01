@@ -108,8 +108,10 @@ struct EditorView: View {
                     onRedo: model.redo,
                     onHoldOriginal: model.holdOriginal
                 )
-                .disabled(!model.isLoaded)
+                // Read-only: all controls disabled, playback included (SPEC § 9).
+                .disabled(!model.canEdit)
                 overview
+                    .disabled(!model.canEdit)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 32)
@@ -140,6 +142,7 @@ struct EditorView: View {
                     onScrub: model.seek
                 )
             }
+            .disabled(!model.canEdit)
         }
     }
 

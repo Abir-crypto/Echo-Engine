@@ -444,7 +444,7 @@ One `EditorView` for both media types; only the header differs.
   Each opens a detail screen/sheet.
 - **States**:
   - `ProjectReadiness.needsSpaceToEdit(bytes)`: editor blocked with message "Need <X> more to edit this project.
-    Free up space on your iPhone, then come back. Your import is saved."
+    Free up space on your iPhone, then come back. Your import is saved." On iPad the sentence says "iPad".
   - Read-only (newer schema): banner + all controls disabled.
 - Applying a preset: from the Enhance header menu "Apply preset…"; replaces aiStack + manual + outputLoudness;
   one undo step; sets `basePresetID`; editor subtitle "Based on: <name>" / "Based on: <name> (modified)".
@@ -882,3 +882,4 @@ Record new user decisions here (date, decision, section updated).
   Minimum trim length is 1 second (§ 9).
 - 2026-11-01: Undo/redo uses an own `EditHistory` instead of Foundation `UndoManager`, so the janitor can list
   every state; ⌘Z / ⇧⌘Z, no shake-to-undo (§ 6.5).
+- 2026-11-01: The not-enough-space message names the device: "iPad" on iPad, "iPhone" on iPhone (§ 9).

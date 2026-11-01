@@ -144,20 +144,24 @@ struct EditorModelTests {
         #expect(await autosaver.scheduled.map(\.title) == ["Episode 12, final"])
     }
 
-    @Test func readOnlyProjectsCanPlayButNotChange() async {
+    @Test func readOnlyProjectsDisableEveryControl() async {
         let (model, engine) = makeModel(audio, readOnly: true)
         await model.open()
 
         model.rename(to: "New title")
         model.moveTrimStart(to: 30)
         model.togglePlayback()
+        model.seek(to: 12)
+        model.holdOriginal(true)
         await model.close()
 
         #expect(model.project.title == audio.title)
         #expect(model.project.trimRange == audio.trimRange)
         #expect(await autosaver.scheduled.isEmpty)
-        #expect(devices.playbackActivations == 1)
-        #expect(!engine.isPlaying, "close pauses")
+        #expect(devices.playbackActivations == 0)
+        #expect(!engine.isPlaying)
+        #expect(engine.currentTime == 0)
+        #expect(!model.isHoldingOriginal)
     }
 
     @Test func aTrimDragIsOneUndoStep() async {
