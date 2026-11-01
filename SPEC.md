@@ -334,7 +334,9 @@ func firstChangedIndex(old: [AIOperation], new: [AIOperation]) -> Int {
 
 ### 6.5 Undo/redo
 
-- One `UndoManager` per editor session; registers full `EditState` snapshots (small).
+- One `EditHistory` (EchoCore) per editor session: undo and redo stacks of full `EditState` snapshots (small).
+  Not Foundation's `UndoManager`, which can't list its states; the render janitor reads every state (§ 6.4).
+  Undo/Redo buttons plus ⌘Z / ⇧⌘Z on hardware keyboards; no shake-to-undo.
 - Linear history, max 30 steps. A new change after undo discards the redo branch (history only; janitor then
   deletes their renders).
 - Sliders/knobs register undo on drag end, not per value change.
@@ -878,3 +880,5 @@ Record new user decisions here (date, decision, section updated).
   thumbnails are stored waveform levels drawn live (follow tint and processed state), not an image (§ 5.1, § 10).
 - 2026-11-01: Editor video preview tokens `VideoWell` and `VideoWellStroke` added from the mockups (§ 18.2).
   Minimum trim length is 1 second (§ 9).
+- 2026-11-01: Undo/redo uses an own `EditHistory` instead of Foundation `UndoManager`, so the janitor can list
+  every state; ⌘Z / ⇧⌘Z, no shake-to-undo (§ 6.5).

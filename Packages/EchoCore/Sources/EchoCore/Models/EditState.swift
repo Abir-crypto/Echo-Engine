@@ -17,3 +17,18 @@ public struct EditState: Codable, Equatable, Sendable {
         self.outputLoudness = outputLoudness
     }
 }
+
+extension Project {
+    /// The undoable part of the project: the (single, v1) clip's AI stack and manual settings, trim and loudness.
+    public var editState: EditState {
+        get {
+            EditState(aiStack: clips[0].aiStack, manual: clips[0].manual, trimRange: trimRange, outputLoudness: outputLoudness)
+        }
+        set {
+            clips[0].aiStack = newValue.aiStack
+            clips[0].manual = newValue.manual
+            trimRange = newValue.trimRange
+            outputLoudness = newValue.outputLoudness
+        }
+    }
+}

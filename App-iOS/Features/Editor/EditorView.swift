@@ -96,11 +96,11 @@ struct EditorView: View {
                 header
                 TransportRow(
                     isPlaying: model.engine.isPlaying,
-                    canUndo: false,
-                    canRedo: false,
+                    canUndo: model.canUndo,
+                    canRedo: model.canRedo,
                     onTogglePlay: model.togglePlayback,
-                    onUndo: {},
-                    onRedo: {},
+                    onUndo: model.undo,
+                    onRedo: model.redo,
                     onHoldOriginal: model.holdOriginal
                 )
                 .disabled(!model.isLoaded)

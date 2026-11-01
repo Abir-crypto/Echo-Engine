@@ -140,7 +140,11 @@ Goal: play projects with video sync, waveforms, trim.
   > (disabled until F08), no tab bar; `VideoPreview` in `VideoWell` tokens (user) or `DetailWaveform` (Canvas, playhead-centred, pinch zoom ≥ 2 s,
   > drag scrub); `TransportRow` (Undo/Redo disabled until T05, hold-original state only → F05/F06); `OverviewStrip` (trim ≥ 1 s per user, 44 pt
   > handle targets, VoiceOver adjustables). Readiness block + read-only banner. Rename/trim already autosave; `AudioDeviceManaging` + `IOSAudioDeviceManager`.
-- [ ] F04.T05 — `UndoManager` with `EditState` snapshots, 30-step cap, drag-end registration (§ 6.5); trim changes undoable; autosave wired.
+- [x] F04.T05 — `UndoManager` with `EditState` snapshots, 30-step cap, drag-end registration (§ 6.5); trim changes undoable; autosave wired.
+  > Done: own `EchoCore/Editing/EditHistory` (user decision, SPEC § 6.5/§ 20: Foundation `UndoManager` can't list states for the janitor):
+  > undo/redo stacks, cap 30, new change clears redo, `allStates` = timeline minus current. `Project.editState` get/set (clip 0). `EditorModel`
+  > commits on drag end (no step if unchanged), `undo()`/`redo()` restore project + playback range and autosave; ⌘Z / ⇧⌘Z. Title isn't undoable
+  > (not in `EditState`). Autosave: every edit schedules, scene phase/disappear/close flush.
 
 **Checkpoint test:** open video and audio projects; play, seek, scrub; trim start/end and hear only the trimmed range; video and audio stay in sync over 5+ minutes; undo/redo trim.
 

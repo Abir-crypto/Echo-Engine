@@ -26,6 +26,8 @@ final class EditorModel {
     private(set) var peakLevel: Float = 1
     /// While held, playback compares with the original (wired to the chain in F05/F06).
     private(set) var isHoldingOriginal = false
+    /// Undo/redo of `EditState` snapshots (SPEC § 6.5).
+    private(set) var history = EditHistory()
     var failure: Failure?
 
     let engine: any PlaybackEngine
@@ -36,6 +38,8 @@ final class EditorModel {
     @ObservationIgnored private let storage: any StorageEstimating
     /// Saves are queued in order so the newest snapshot is always scheduled last.
     @ObservationIgnored private var lastSave: Task<Void, Never>?
+    /// The edit state as of the last undo step; a commit records it before moving on.
+    @ObservationIgnored private var committedState: EditState
 
     init(
         stored: StoredProject,
@@ -48,6 +52,7 @@ final class EditorModel {
     ) {
         project = stored.project
         isReadOnly = stored.isReadOnly
+        committedState = stored.project.editState
         self.engine = engine
         self.repository = repository
         self.waveforms = waveforms
@@ -60,6 +65,8 @@ final class EditorModel {
 
     var isVideo: Bool { project.mediaType == .video }
     var canEdit: Bool { isLoaded && !isReadOnly }
+    var canUndo: Bool { canEdit && history.canUndo }
+    var canRedo: Bool { canEdit && history.canRedo }
     var sourceDuration: Double { project.sourceInfo.duration }
 
     var isTrimmed: Bool {
@@ -130,9 +137,19 @@ final class EditorModel {
         applyTrim(TimeRangeCodable(start: start, duration: end - start))
     }
 
-    /// A trim drag ended: save it.
+    /// A trim drag ended: one undo step, saved (SPEC § 6.5: undo registers on drag end, not per value).
     func finishTrim() {
-        save()
+        commit()
+    }
+
+    func undo() {
+        guard canEdit, let previous = history.undo(from: project.editState) else { return }
+        restore(previous)
+    }
+
+    func redo() {
+        guard canEdit, let next = history.redo(from: project.editState) else { return }
+        restore(next)
     }
 
     /// Ignores titles that are empty after trimming whitespace.
@@ -146,6 +163,22 @@ final class EditorModel {
     private func applyTrim(_ range: TimeRangeCodable) {
         project.trimRange = range
         engine.playbackRange = range
+    }
+
+    /// Makes the current edit state an undo step if it changed since the last one, then saves.
+    private func commit() {
+        let current = project.editState
+        guard current != committedState else { return }
+        history.record(before: committedState)
+        committedState = current
+        save()
+    }
+
+    private func restore(_ state: EditState) {
+        project.editState = state
+        committedState = state
+        engine.playbackRange = state.trimRange
+        save()
     }
 
     private func save() {

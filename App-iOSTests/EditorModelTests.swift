@@ -146,4 +146,70 @@ struct EditorModelTests {
         #expect(devices.playbackActivations == 1)
         #expect(!engine.isPlaying, "close pauses")
     }
+
+    @Test func aTrimDragIsOneUndoStep() async {
+        let (model, _) = makeModel(video)
+        await model.open()
+
+        model.moveTrimStart(to: 5)
+        model.moveTrimStart(to: 8)
+        model.moveTrimStart(to: 12)
+        model.finishTrim()
+
+        #expect(model.history.undoStates.count == 1)
+        #expect(model.canUndo)
+    }
+
+    @Test func aDragThatEndsWhereItStartedAddsNoStep() async {
+        let (model, _) = makeModel(video)
+        await model.open()
+
+        model.moveTrimStart(to: 5)
+        model.moveTrimStart(to: 0)
+        model.finishTrim()
+
+        #expect(!model.canUndo)
+    }
+
+    @Test func undoAndRedoRestoreTheTrimAndPlaybackAndSave() async {
+        let (model, engine) = makeModel(video)
+        await model.open()
+        model.moveTrimStart(to: 10)
+        model.finishTrim()
+
+        model.undo()
+        #expect(model.project.trimRange == video.trimRange)
+        #expect(engine.playbackRange == video.trimRange)
+        #expect(model.canRedo)
+
+        model.redo()
+        #expect(model.project.trimRange.start == 10)
+        #expect(engine.playbackRange.start == 10)
+
+        await model.close()
+        #expect(await autosaver.scheduled.map(\.trimRange.start) == [10, 0, 10])
+    }
+
+    @Test func aNewChangeAfterUndoDiscardsRedo() async {
+        let (model, _) = makeModel(video)
+        await model.open()
+        model.moveTrimStart(to: 10)
+        model.finishTrim()
+        model.undo()
+
+        model.moveTrimEnd(to: 150)
+        model.finishTrim()
+
+        #expect(!model.canRedo)
+        #expect(model.canUndo)
+    }
+
+    @Test func readOnlyProjectsHaveNoUndo() async {
+        let (model, _) = makeModel(video, readOnly: true)
+        await model.open()
+        model.moveTrimStart(to: 10)
+        model.finishTrim()
+        #expect(!model.canUndo)
+    }
 }
+

@@ -28,7 +28,9 @@ struct TransportRow: View {
             Spacer(minLength: 12)
             HStack(spacing: 6) {
                 circleButton("arrow.uturn.backward", label: Text("Undo"), isEnabled: canUndo, action: onUndo)
+                    .keyboardShortcut("z", modifiers: .command)
                 circleButton("arrow.uturn.forward", label: Text("Redo"), isEnabled: canRedo, action: onRedo)
+                    .keyboardShortcut("z", modifiers: [.command, .shift])
             }
         }
         .environment(\.layoutDirection, .leftToRight)
