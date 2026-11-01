@@ -16,6 +16,8 @@ final class AppContainer {
     let devices: any AudioDeviceManaging
     let waveforms: any WaveformProviding
     let renders: any RenderCaching
+    let renderer: any AIChainRendering
+    let janitor: any RenderCacheJanitoring
 
     init(
         entitlements: any EntitlementProvider = FreeV1Entitlements(),
@@ -27,7 +29,9 @@ final class AppContainer {
         dateProvider: any DateProviding = SystemClock(),
         devices: any AudioDeviceManaging = IOSAudioDeviceManager(),
         waveforms: any WaveformProviding = CachedWaveformProvider(root: .waveformCacheDirectory),
-        renders: any RenderCaching = FileRenderCache(root: .renderCacheDirectory)
+        renders: any RenderCaching = FileRenderCache(root: .renderCacheDirectory),
+        renderer: (any AIChainRendering)? = nil,
+        janitor: (any RenderCacheJanitoring)? = nil
     ) {
         self.entitlements = entitlements
         self.capabilities = capabilities
@@ -39,6 +43,9 @@ final class AppContainer {
         self.devices = devices
         self.waveforms = waveforms
         self.renders = renders
+        let processor = AIProcessorRouter(processors: [.noiseSuppression: RNNoiseProcessor(), .clearVoice: ClearVoiceProcessor()])
+        self.renderer = renderer ?? AIChainRenderer(processor: processor, cache: renders)
+        self.janitor = janitor ?? RenderCacheJanitor(cache: renders, storage: storage)
     }
 
     func makeHomeModel() -> HomeModel {
@@ -54,6 +61,8 @@ final class AppContainer {
             waveforms: waveforms,
             devices: devices,
             storage: storage,
+            renderer: renderer,
+            janitor: janitor,
             makeAutosaver: { [projects] onError in ProjectAutosaver(repository: projects, onError: onError) }
         )
     }

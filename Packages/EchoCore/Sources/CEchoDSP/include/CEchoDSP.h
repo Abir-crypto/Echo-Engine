@@ -16,3 +16,4 @@
 #include "ReverbKernel.hpp"
 #include "Denoiser.h"
 #include "AudioUnitEffect.h"
+#include "SourceSwitch.h"

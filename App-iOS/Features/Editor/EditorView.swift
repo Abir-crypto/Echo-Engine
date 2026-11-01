@@ -86,6 +86,9 @@ struct EditorView: View {
             #if DEBUG
             if UserDefaults.standard.bool(forKey: DebugAutoplay.launchArgument) { model.togglePlayback() }
             if UserDefaults.standard.bool(forKey: DebugManualDemo.launchArgument) { model.adjust(DebugManualDemo.apply) }
+            if UserDefaults.standard.bool(forKey: DebugAIDemo.launchArgument), model.aiStack.isEmpty {
+                model.changeAIStack { $0.append(AIOperation(kind: .noiseSuppression, strength: 1)) }
+            }
             adjustSheet = UserDefaults.standard.string(forKey: DebugAdjustSheet.launchArgument).flatMap(AdjustSheet.init)
             #endif
         }
@@ -146,7 +149,7 @@ struct EditorView: View {
             TimelineView(.animation(minimumInterval: 1 / 30, paused: !model.engine.isPlaying)) { _ in
                 DetailWaveform(
                     original: model.peaks,
-                    processed: model.project.isProcessed ? model.peaks : nil,
+                    processed: model.renderedPeaks ?? (model.project.isProcessed ? model.peaks : nil),
                     peakLevel: model.peakLevel,
                     currentTime: model.engine.currentTime,
                     duration: model.engine.duration,
@@ -241,6 +244,7 @@ private struct EditorFailureMessage: LocalizedError {
         switch failure {
         case .cantPlay: String(localized: "This project’s audio can’t be played. Import the file again to make a new project.")
         case .cantSave: String(localized: "Changes couldn’t be saved. Free up some space, then try again.")
+        case .cantRender: String(localized: "An enhancement couldn’t be applied. Free up some space, then try again.")
         }
     }
 }
@@ -257,6 +261,8 @@ private func previewEditor(_ project: Project, readOnly: Bool = false, available
         waveforms: FakeWaveformProvider(peaks: peaks),
         devices: FakeAudioDeviceManager(),
         storage: FakeStorageEstimator(editBytes: 1_000, available: available),
+        renderer: FakeAIChainRenderer(),
+        janitor: FakeRenderCacheJanitor(),
         makeAutosaver: { _ in FakeProjectAutosaver() }
     )
     return NavigationStack { EditorView(model: model) }

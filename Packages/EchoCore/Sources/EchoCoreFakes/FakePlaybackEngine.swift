@@ -26,10 +26,21 @@ public final class FakePlaybackEngine: PlaybackEngine {
         if let loadError { throw loadError }
         loadedAudio = audio
         loadedVideo = video
+        swappedAudio.removeAll()
         isPlaying = false
         if playbackRange.duration == 0 {
             playbackRange = .full(duration: duration)
         }
+    }
+
+    /// Every `swapAudio` target, in order.
+    public private(set) var swappedAudio: [URL] = []
+    /// What is playing: the last loaded or swapped-in audio.
+    public var currentAudio: URL? { swappedAudio.last ?? loadedAudio }
+
+    public func swapAudio(to audio: URL) throws {
+        if let loadError { throw loadError }
+        swappedAudio.append(audio)
     }
 
     public func play() throws {

@@ -13,6 +13,8 @@ struct EditorModelTests {
     private let devices = FakeAudioDeviceManager()
     private let autosaver = FakeProjectAutosaver()
     private let repository = FakeProjectRepository()
+    private let renderer = FakeAIChainRenderer()
+    private let janitor = FakeRenderCacheJanitor()
 
     private func makeModel(
         _ project: Project,
@@ -28,6 +30,8 @@ struct EditorModelTests {
             waveforms: FakeWaveformProvider(peaks: WaveformPeaks(sampleRate: 48_000, sourceFrameCount: 512, peaks: [0.2, 0.5])),
             devices: devices,
             storage: storage,
+            renderer: renderer,
+            janitor: janitor,
             makeAutosaver: { [autosaver] _ in autosaver }
         )
         return (model, engine)
@@ -120,7 +124,7 @@ struct EditorModelTests {
     }
 
     private func waitUntil(_ condition: () -> Bool) async {
-        for _ in 0..<100 where !condition() {
+        for _ in 0..<200 where !condition() {
             await Task.yield()
         }
     }
@@ -313,6 +317,122 @@ struct EditorModelTests {
         model.adjust { $0.inputGainDB = 6 }
         #expect(model.manual.inputGainDB == 0)
         #expect(engine.appliedManual?.inputGainDB == 0)
+    }
+
+    // MARK: AI renders (F06.T06)
+
+    private var noise: AIOperation { AIOperation(kind: .noiseSuppression, strength: 1) }
+    private var clear: AIOperation { AIOperation(kind: .clearVoice, strength: 0.5) }
+    /// The audio sample without its AI step.
+    private var plain: Project {
+        var project = audio
+        project.clips[0].aiStack = []
+        return project
+    }
+
+    private func render(_ steps: Int, of project: Project) -> URL {
+        FakeAIChainRenderer.renderURL(source: repository.folder(for: project.id).working, steps: steps)
+    }
+
+    @Test func withoutAIStepsTheOriginalPlaysAndNothingRenders() async {
+        let (model, engine) = makeModel(plain)
+        await model.open()
+        #expect(engine.currentAudio == repository.folder(for: plain.id).working)
+        #expect(await renderer.chains.isEmpty)
+    }
+
+    @Test func openingRendersTheStackThenSwapsToIt() async {
+        var project = audio
+        project.clips[0].aiStack = [noise, clear]
+        let (model, engine) = makeModel(project)
+
+        await model.open()
+        await waitUntil { engine.currentAudio == render(2, of: project) }
+
+        #expect(engine.loadedAudio == repository.folder(for: project.id).working, "plays the original until the render is ready")
+        #expect(engine.swappedAudio == [render(2, of: project)])
+        #expect(await renderer.chains.map(\.operations.count) == [2])
+        #expect(model.renderProgress == nil)
+    }
+
+    @Test func changingTheStackIsOneStepRendersAndSweeps() async {
+        let (model, engine) = makeModel(plain)
+        await model.open()
+
+        model.changeAIStack { $0.append(noise) }
+        await waitUntil { engine.currentAudio == render(1, of: plain) }
+
+        #expect(model.aiStack.map(\.kind) == [.noiseSuppression])
+        #expect(model.history.undoStates.count == 1)
+        #expect(await janitor.sweeps.last?.current.aiStack.count == 1)
+        await model.close()
+        #expect(await autosaver.scheduled.last?.clips[0].aiStack.count == 1)
+    }
+
+    @Test func undoRendersThePreviousStack() async {
+        let (model, engine) = makeModel(plain)
+        await model.open()
+        model.changeAIStack { $0.append(noise) }
+        await waitUntil { engine.currentAudio == render(1, of: plain) }
+
+        model.undo()
+        await waitUntil { engine.currentAudio == repository.folder(for: plain.id).working }
+
+        #expect(model.aiStack.isEmpty)
+        #expect(engine.currentAudio == repository.folder(for: plain.id).working)
+    }
+
+    @Test func holdingForTheOriginalPlaysWorkingAudioUntilReleased() async {
+        var project = audio
+        project.clips[0].aiStack = [noise]
+        let (model, engine) = makeModel(project)
+        await model.open()
+        await waitUntil { engine.currentAudio == render(1, of: project) }
+
+        model.holdOriginal(true)
+        #expect(engine.currentAudio == repository.folder(for: project.id).working)
+        #expect(engine.isHoldingOriginal)
+
+        model.holdOriginal(false)
+        #expect(engine.currentAudio == render(1, of: project))
+    }
+
+    @Test func auditioningAStepPlaysItsPrefixUntilTappedAgain() async {
+        var project = audio
+        project.clips[0].aiStack = [noise, clear]
+        let (model, engine) = makeModel(project)
+        await model.open()
+        await waitUntil { engine.currentAudio == render(2, of: project) }
+
+        model.audition(step: 0)
+        #expect(model.auditionedStep == 0)
+        #expect(engine.currentAudio == render(1, of: project))
+
+        model.audition(step: 0)
+        #expect(model.auditionedStep == nil)
+        #expect(engine.currentAudio == render(2, of: project))
+    }
+
+    @Test func aFailedRenderIsReportedAndPlaybackStaysOnTheOriginal() async {
+        await renderer.setError(RenderError.cantWrite)
+        let (model, engine) = makeModel(plain)
+        await model.open()
+
+        model.changeAIStack { $0.append(noise) }
+        await waitUntil { model.failure != nil }
+
+        #expect(model.failure == .cantRender)
+        #expect(engine.currentAudio == repository.folder(for: plain.id).working)
+    }
+
+    @Test func closingPrunesToTheCurrentRenders() async {
+        let (model, _) = makeModel(plain)
+        await model.open()
+        model.changeAIStack { $0.append(noise) }
+
+        await model.close()
+
+        #expect(await janitor.prunes.map(\.aiStack.count) == [1])
     }
 
     @Test func readOnlyProjectsHaveNoUndo() async {

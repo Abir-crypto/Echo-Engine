@@ -219,8 +219,16 @@ Goal: user-ordered AI stack with per-step cached renders.
   > Done: `RenderCacheJanitoring` + `RenderCacheJanitor` actor. `sweep(current:history:)` (history = `EditHistory.allStates`, oldest first)
   > deletes unreachable renders, then over min(2 GB, 10 % free; 2 GB if unknown) evicts history states oldest first, keeping keys the
   > current or a newer state shares; current never evicted. `prune(current:)` for close. `FakeRenderCacheJanitor`; storage fake can fail to measure.
-- [ ] F06.T06 — Playback integration: keep playing previous render, swap at playhead with crossfade; per-step A/B by tapping a row.
-- [ ] F06.T06a — "Hold for original" also plays `working.caf` instead of the AI render (crossfade) on top of F05's chain bypass (§ 6.6). From F05.T05.
+- [x] F06.T06 — Playback integration: keep playing previous render, swap at playhead with crossfade; per-step A/B by tapping a row.
+  > Done: `SourceSwitchAudioUnit` (2 inputs, C++ `SourceSwitch.mm`, 20 ms fade starting at an exact render sample via scheduled parameter
+  > events) between two player nodes and the chain. `PlaybackEngine.swapAudio(to:)`: idle player starts the new file at the same source
+  > frame and render sample; playhead via a linear timeline anchor (asking a not-yet-started player for its time raises an exception —
+  > found in a live run). `EditorModel`: renders on open/stack change/undo (`changeAIStack` for T07), swaps when ready, `audition(step:)`,
+  > `renderProgress`, `renderedPeaks` (key "render-<hash>"), janitor sweep after history changes and prune on close. Debug `-debugAIDemo`.
+- [x] F06.T06a — "Hold for original" also plays `working.caf` instead of the AI render (crossfade) on top of F05's chain bypass (§ 6.6). From F05.T05.
+  > Done: with T06 — `holdOriginal` swaps to `working.caf` (crossfade) and back to the auditioned step or full render on release.
+- [ ] F06.T06b — Waveform peaks of renders ("render-<hash>" in the waveform cache) outlive their renders until project delete; remove them
+  with the janitor's sweep (or on Clear cache, F13). From F06.T06.
 - [ ] F06.T07 — Enhance UI: numbered list, strength sheet, reorder, swipe remove, Add enhancement sheet, inline progress, "Already reduces noise" hint; entitlement/capability checks.
 
 **Checkpoint test:** noisy recording: apply Noise Suppression, Clear Voice, reorder, change strength, undo/redo rapidly; confirm instant undo, correct audio, cache folder shrinks after new edits; tap rows to A/B.

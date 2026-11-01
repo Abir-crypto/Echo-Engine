@@ -74,6 +74,9 @@
     "Amount" : {
       "comment" : "De-esser: how strongly sibilance is reduced (slider)."
     },
+    "An enhancement couldn’t be applied. Free up some space, then try again." : {
+      "comment" : "Editor alert when an AI enhancement fails to render (usually no space left)."
+    },
     "Attack" : {
       "comment" : "Gate/compressor: how fast it reacts (slider, milliseconds)."
     },

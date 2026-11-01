@@ -285,6 +285,75 @@ final class AVPlaybackEngineTests {
         #expect(try renderHeard(engine, frames: 2).first == 4_800)
     }
 
+    /// A render of the same audio: sample `n` is `-n / 1_000_000`, so its frames read as negative.
+    private func makeNegatedCopy() throws -> URL {
+        let url = directory.appending(path: "render.caf")
+        try TestMedia.writeSamples([(0..<96_000).map { -Float($0) / 1_000_000 }], to: url)
+        return url
+    }
+
+    @Test func swappingWhilePlayingCrossfadesAtTheSameFrame() throws {
+        let engine = try makeEngine()
+        try engine.play()
+        let before = try renderHeard(engine, frames: 4_800)
+
+        try engine.swapAudio(to: try makeNegatedCopy())
+        let after = try renderSamples(engine, frames: 8_192)
+
+        #expect(before.last == 4_799)
+        let frames = after.map { Int((abs($0) * 1_000_000).rounded()) }
+        // Mid-fade the two cancel out (n · (1 − 2g)), so the fade starts where the output leaves the old ramp.
+        let fadeStart = try #require(frames.indices.first { frames[$0] != 4_800 + $0 })
+        let fade = fadeStart..<(fadeStart + 960)
+        let outsideFade = frames.indices.filter { !fade.contains($0) }
+        #expect(outsideFade.allSatisfy { frames[$0] == 4_800 + $0 }, "the same timeline before and after the 20 ms fade")
+        #expect(after[fade.upperBound...].allSatisfy { $0 <= 0 }, "only the new audio after the fade")
+        #expect(after[..<fadeStart].allSatisfy { $0 >= 0 }, "only the old audio before it")
+        #expect(engine.isPlaying)
+    }
+
+    @Test func thePlayheadRunsOnThroughASwap() throws {
+        let engine = try makeEngine()
+        try engine.play()
+        _ = try renderHeard(engine, frames: 4_800)
+        let before = engine.currentTime
+
+        try engine.swapAudio(to: try makeNegatedCopy())
+        for _ in 0..<4 {
+            _ = try renderSamples(engine, frames: 1_024)
+            #expect(engine.currentTime >= before)
+        }
+
+        #expect(abs(engine.currentTime - (before + 4_096 / sampleRate)) < 0.001)
+    }
+
+    @Test func swappingWhilePausedPlaysTheNewAudioNext() throws {
+        let engine = try makeEngine()
+        try engine.play()
+        _ = try renderHeard(engine, frames: 4_800)
+        engine.pause()
+
+        try engine.swapAudio(to: try makeNegatedCopy())
+        try engine.play()
+
+        let first = try renderSamples(engine, frames: engine.chainLatencyFrames + 1).last ?? 0
+        #expect(abs(first + 4_800 / 1_000_000) < 1e-7)
+    }
+
+    @Test func theRangeEndStillStopsAfterASwap() async throws {
+        let engine = try makeEngine()
+        engine.playbackRange = TimeRangeCodable(start: 0, duration: 0.2)
+        try engine.play()
+        _ = try renderHeard(engine, frames: 2_400)
+
+        try engine.swapAudio(to: try makeNegatedCopy())
+        _ = try renderSamples(engine, frames: 16_384)
+        try await waitUntilStopped(engine)
+
+        #expect(!engine.isPlaying)
+        #expect(engine.currentTime == 0.2)
+    }
+
     @Test func rangeIsClampedToTheAudio() throws {
         let engine = try makeEngine()
         engine.playbackRange = TimeRangeCodable(start: -1, duration: 10)

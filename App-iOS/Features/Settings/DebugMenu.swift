@@ -62,6 +62,11 @@ enum DebugManualDemo {
     }
 }
 
+/// `-debugAIDemo YES` adds Noise Suppression to the opened project (an undoable change), until the Enhance UI exists.
+enum DebugAIDemo {
+    static let launchArgument = "debugAIDemo"
+}
+
 /// `-debugImportPath <file>` imports that file at launch, as if chosen in Files.
 enum DebugImport {
     static let launchArgument = "debugImportPath"

@@ -79,5 +79,8 @@ public enum EchoAudioUnits {
         AUAudioUnit.registerSubclass(
             OutputLimiterAudioUnit.self, as: OutputLimiterAudioUnit.componentDescription, name: "Echo Engine: Limiter", version: 1
         )
+        AUAudioUnit.registerSubclass(
+            SourceSwitchAudioUnit.self, as: SourceSwitchAudioUnit.componentDescription, name: "Echo Engine: Source switch", version: 1
+        )
     }()
 }

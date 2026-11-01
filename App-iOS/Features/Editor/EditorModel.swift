@@ -14,6 +14,8 @@ final class EditorModel {
         /// `working.caf` can't be loaded or the session can't play.
         case cantPlay
         case cantSave
+        /// An AI step couldn't be rendered.
+        case cantRender
     }
 
     private(set) var project: Project
@@ -28,6 +30,14 @@ final class EditorModel {
     private(set) var isHoldingOriginal = false
     /// Undo/redo of `EditState` snapshots (SPEC § 6.5).
     private(set) var history = EditHistory()
+    /// The AI stack's latest render; `nil` until rendered.
+    private(set) var rendered: RenderedChain?
+    /// 0…1 while AI steps render (playback continues on the previous result, SPEC § 6.3), else `nil`.
+    private(set) var renderProgress: Double?
+    /// Per-step A/B (SPEC § 6.6): the stack row heard on its own, or `nil` for the whole stack.
+    private(set) var auditionedStep: Int?
+    /// Waveform after the AI stack (its last render); `nil` without AI steps.
+    private(set) var renderedPeaks: WaveformPeaks?
     var failure: Failure?
 
     let engine: any PlaybackEngine
@@ -36,6 +46,13 @@ final class EditorModel {
     @ObservationIgnored private let waveforms: any WaveformProviding
     @ObservationIgnored private let devices: any AudioDeviceManaging
     @ObservationIgnored private let storage: any StorageEstimating
+    @ObservationIgnored private let renderer: any AIChainRendering
+    @ObservationIgnored private let janitor: any RenderCacheJanitoring
+    @ObservationIgnored private var renderTask: Task<Void, Never>?
+    /// Counts render requests, so progress and results of superseded ones are ignored.
+    @ObservationIgnored private var renderRequest = 0
+    /// The audio the engine plays now.
+    @ObservationIgnored private var playingAudio: URL?
     /// Saves are queued in order so the newest snapshot is always scheduled last.
     @ObservationIgnored private var lastSave: Task<Void, Never>?
     /// The edit state as of the last undo step; a commit records it before moving on.
@@ -50,6 +67,8 @@ final class EditorModel {
         waveforms: any WaveformProviding,
         devices: any AudioDeviceManaging,
         storage: any StorageEstimating,
+        renderer: any AIChainRendering,
+        janitor: any RenderCacheJanitoring,
         makeAutosaver: (@escaping @Sendable (any Error) -> Void) -> any ProjectAutosaving
     ) {
         project = stored.project
@@ -60,6 +79,8 @@ final class EditorModel {
         self.waveforms = waveforms
         self.devices = devices
         self.storage = storage
+        self.renderer = renderer
+        self.janitor = janitor
         let failed = SaveFailureRelay()
         autosaver = makeAutosaver { _ in failed.report() }
         failed.onFailure = { [weak self] in self?.failure = .cantSave }
@@ -72,6 +93,14 @@ final class EditorModel {
     var sourceDuration: Double { project.sourceInfo.duration }
     /// The live manual chain (SPEC § 8).
     var manual: ManualSettings { project.editState.manual }
+    /// The clip's AI stack, in processing order (SPEC § 7).
+    var aiStack: [AIOperation] { project.editState.aiStack }
+
+    private var workingAudio: URL { repository.folder(for: project.id).working }
+
+    private var chain: AIChain {
+        AIChain(projectID: project.id, sourceRange: project.clips[0].sourceRange, operations: aiStack)
+    }
 
     var isTrimmed: Bool {
         project.trimRange.start > 0.01 || project.trimRange.end < sourceDuration - 0.01
@@ -88,8 +117,10 @@ final class EditorModel {
             try engine.load(audio: folder.working, video: isVideo ? folder.source(fileName: project.sourceFileName) : nil)
             engine.playbackRange = project.trimRange
             engine.apply(project.editState.manual)
+            playingAudio = folder.working
             isLoaded = true
             followSessionEvents()
+            renderChain()
         } catch {
             failure = .cantPlay
             return
@@ -104,9 +135,15 @@ final class EditorModel {
     func close() async {
         sessionEvents?.cancel()
         sessionEvents = nil
+        renderTask?.cancel()
+        renderTask = nil
         engine.pause()
         await lastSave?.value
         await autosaver.flush()
+        // Only the current state's renders are needed once the history is gone (SPEC § 6.4).
+        if isLoaded, !isReadOnly {
+            try? await janitor.prune(projectID: project.id, sourceRange: project.clips[0].sourceRange, current: project.editState)
+        }
     }
 
     /// Read-only projects play nothing either: all controls are disabled (SPEC § 9).
@@ -129,12 +166,33 @@ final class EditorModel {
         engine.seek(to: time)
     }
 
-    /// While held, playback bypasses the manual chain (SPEC § 6.6).
+    /// While held, playback is `working.caf` with the manual chain bypassed (SPEC § 6.6).
     func holdOriginal(_ isHolding: Bool) {
         let isHolding = isHolding && canEdit
         guard isHolding != isHoldingOriginal else { return }
         isHoldingOriginal = isHolding
         engine.holdOriginal(isHolding)
+        playCurrentSource()
+    }
+
+    /// Per-step A/B (SPEC § 6.6): plays the stack up to `step` alone; the same step again returns to the whole stack.
+    func audition(step: Int) {
+        guard aiStack.indices.contains(step) else { return }
+        auditionedStep = auditionedStep == step ? nil : step
+        playCurrentSource()
+    }
+
+    /// Changes the AI stack as one undo step, saves it and renders it; playback continues on the previous result
+    /// until the render is ready (SPEC § 6.3).
+    func changeAIStack(_ change: (inout [AIOperation]) -> Void) {
+        guard canEdit else { return }
+        var state = project.editState
+        change(&state.aiStack)
+        guard state.aiStack != aiStack else { return }
+        project.editState = state
+        auditionedStep = nil
+        commit()
+        renderChain()
     }
 
     /// Moves the trim start, keeping the end and at least `minimumTrimDuration` (or the whole source when shorter).
@@ -227,14 +285,115 @@ final class EditorModel {
         history.record(before: committedState)
         committedState = current
         save()
+        sweepRenders()
     }
 
     private func restore(_ state: EditState) {
+        let stackChanged = state.aiStack != aiStack
         project.editState = state
         committedState = state
         engine.playbackRange = state.trimRange
         engine.apply(state.manual)
         save()
+        if stackChanged {
+            auditionedStep = nil
+            renderChain()
+        } else {
+            sweepRenders()
+        }
+    }
+
+    // MARK: AI renders
+
+    /// Renders the AI stack (cached prefixes are instant) and swaps playback to it at the playhead when ready. A newer
+    /// request supersedes this one (latest change wins, SPEC § 6.3).
+    private func renderChain() {
+        renderTask?.cancel()
+        renderRequest += 1
+        let request = renderRequest
+        let chain = self.chain
+        guard !chain.operations.isEmpty else {
+            renderTask = nil
+            renderProgress = nil
+            rendered = RenderedChain(prefixes: [], output: workingAudio)
+            renderedPeaks = nil
+            playCurrentSource()
+            sweepRenders()
+            return
+        }
+        let source = workingAudio
+        let relay = RenderProgressRelay(model: self, request: request)
+        renderTask = Task { [weak self, renderer] in
+            do {
+                let result = try await renderer.render(source: source, chain: chain, progress: relay.report)
+                self?.renderFinished(result, request: request)
+            } catch is CancellationError {
+            } catch {
+                guard let self, self.renderRequest == request else { return }
+                self.renderTask = nil
+                self.renderProgress = nil
+                self.failure = .cantRender
+            }
+        }
+    }
+
+    fileprivate func renderProgressed(_ progress: Double, request: Int) {
+        guard request == renderRequest, renderTask != nil, progress < 1 else { return }
+        renderProgress = progress
+    }
+
+    private func renderFinished(_ result: RenderedChain, request: Int) {
+        guard request == renderRequest else { return }
+        renderTask = nil
+        renderProgress = nil
+        rendered = result
+        if let step = auditionedStep, !result.prefixes.indices.contains(step) { auditionedStep = nil }
+        playCurrentSource()
+        sweepRenders()
+        loadRenderedPeaks(of: result.output)
+    }
+
+    /// Hold for original → `working.caf`; an auditioned step → its prefix render; otherwise the whole stack's render.
+    private func playCurrentSource() {
+        guard isLoaded else { return }
+        let target = if isHoldingOriginal {
+            workingAudio
+        } else if let step = auditionedStep, let rendered, rendered.prefixes.indices.contains(step) {
+            rendered.prefixes[step]
+        } else {
+            rendered?.output ?? workingAudio
+        }
+        guard target != playingAudio else { return }
+        do {
+            try engine.swapAudio(to: target)
+            playingAudio = target
+        } catch {
+            failure = .cantPlay
+        }
+    }
+
+    private func loadRenderedPeaks(of output: URL) {
+        guard output != workingAudio else {
+            renderedPeaks = nil
+            return
+        }
+        let projectID = project.id
+        Task { [weak self, waveforms] in
+            let key = "render-\(output.deletingPathExtension().lastPathComponent)"
+            let peaks = try? await waveforms.peaks(of: output, projectID: projectID, key: key, progress: { _ in })
+            guard let self, self.rendered?.output == output else { return }
+            self.renderedPeaks = peaks
+        }
+    }
+
+    /// Mark and sweep after any stack or history change (SPEC § 6.4).
+    private func sweepRenders() {
+        guard isLoaded, !isReadOnly else { return }
+        let projectID = project.id, range = project.clips[0].sourceRange
+        let current = project.editState, states = history.allStates
+        Task { [janitor] in
+            try? await janitor.sweep(projectID: projectID, sourceRange: range, current: current, history: states)
+        }
     }
 
     private func save() {
@@ -255,5 +414,21 @@ private final class SaveFailureRelay {
 
     nonisolated func report() {
         Task { @MainActor in self.onFailure?() }
+    }
+}
+
+/// Carries render progress (reported off the main actor) back to the model, for one render request.
+@MainActor
+private final class RenderProgressRelay {
+    private weak var model: EditorModel?
+    private let request: Int
+
+    init(model: EditorModel, request: Int) {
+        self.model = model
+        self.request = request
+    }
+
+    nonisolated func report(_ progress: Double) {
+        Task { @MainActor in self.model?.renderProgressed(progress, request: self.request) }
     }
 }

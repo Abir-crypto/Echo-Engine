@@ -3,8 +3,11 @@ import CEchoDSP
 import EchoAudioUnits
 import Observation
 
-/// `AVAudioEngine` preview: player node → manual chain → (Auto Level gain, F07) → output limiter → main mixer, plus a
-/// muted `AVPlayer` for video projects (SPEC § 6.6).
+/// `AVAudioEngine` preview: two player nodes → source switch → manual chain → (Auto Level gain, F07) → output limiter →
+/// main mixer, plus a muted `AVPlayer` for video projects (SPEC § 6.6).
+///
+/// One player is active; `swapAudio` starts the other on the new file at the same source frame and exact render sample
+/// and crossfades to it over 20 ms (SPEC § 6.3).
 ///
 /// The trim range is played with `scheduleSegment`, followed by silence as long as the chain's latency so its tail
 /// is heard; seeking reschedules from the new frame and clears the chain. Every schedule gets a generation number so
@@ -34,7 +37,10 @@ public final class AVPlaybackEngine: PlaybackEngine {
 
     /// Internal for tests that simulate the system stopping it.
     @ObservationIgnored let engine = AVAudioEngine()
-    @ObservationIgnored private let player = AVAudioPlayerNode()
+    @ObservationIgnored private let players = [AVAudioPlayerNode(), AVAudioPlayerNode()]
+    /// Index of the player being heard.
+    @ObservationIgnored private var active = 0
+    @ObservationIgnored private let sourceSwitch: AVAudioUnitEffect
     @ObservationIgnored private let manualChain: AVAudioUnitEffect
     @ObservationIgnored private let outputLimiter: AVAudioUnitEffect
     @ObservationIgnored private let isOffline: Bool
@@ -53,12 +59,19 @@ public final class AVPlaybackEngine: PlaybackEngine {
     @ObservationIgnored private var appliedCeiling: Float?
     @ObservationIgnored private var configurationObserver: (any NSObjectProtocol)?
     @ObservationIgnored private var generation = 0
+    /// After a swap the new segment starts while earlier audio is still in the chain, so the heard time may be just
+    /// before `segmentStart`.
+    @ObservationIgnored private var isContinuation = false
+    /// The playing segment's timeline: source frame = `frame` + (engine render sample − `nodeSample`). Learned from
+    /// the first render of a segment; a swap keeps it (same timeline). Asking a player that hasn't started yet for its
+    /// time raises an exception, so swapped-in players are never asked.
+    @ObservationIgnored private var anchor: (nodeSample: AVAudioFramePosition, frame: AVAudioFramePosition)?
     @ObservationIgnored private var cachedFlush: AVAudioPCMBuffer?
     @ObservationIgnored private var driftTask: Task<Void, Never>?
 
     public init() {
         isOffline = false
-        (manualChain, outputLimiter) = Self.makeEffects()
+        (sourceSwitch, manualChain, outputLimiter) = Self.makeEffects()
         attachNodes()
         observeConfigurationChanges()
     }
@@ -66,7 +79,7 @@ public final class AVPlaybackEngine: PlaybackEngine {
     /// Renders offline instead of to the hardware, for tests (`renderOffline(frames:)`). Video never plays here.
     init(manualRenderingFormat format: AVAudioFormat) throws {
         isOffline = true
-        (manualChain, outputLimiter) = Self.makeEffects()
+        (sourceSwitch, manualChain, outputLimiter) = Self.makeEffects()
         attachNodes()
         try engine.enableManualRenderingMode(.offline, format: format, maximumFrameCount: 4_096)
         observeConfigurationChanges()
@@ -90,19 +103,24 @@ public final class AVPlaybackEngine: PlaybackEngine {
         pause()
     }
 
-    private static func makeEffects() -> (AVAudioUnitEffect, AVAudioUnitEffect) {
+    private static func makeEffects() -> (AVAudioUnitEffect, AVAudioUnitEffect, AVAudioUnitEffect) {
         EchoAudioUnits.register()
         return (
+            AVAudioUnitEffect(audioComponentDescription: SourceSwitchAudioUnit.componentDescription),
             AVAudioUnitEffect(audioComponentDescription: ManualChainAudioUnit.componentDescription),
             AVAudioUnitEffect(audioComponentDescription: OutputLimiterAudioUnit.componentDescription)
         )
     }
 
     private func attachNodes() {
-        for node in [player, manualChain, outputLimiter] {
+        for node in players + [sourceSwitch, manualChain, outputLimiter] {
             engine.attach(node)
         }
     }
+
+    private var player: AVAudioPlayerNode { players[active] }
+
+    private var switchUnit: SourceSwitchAudioUnit? { sourceSwitch.auAudioUnit as? SourceSwitchAudioUnit }
 
     private var effectUnits: [EchoEffectAudioUnit] {
         [manualChain, outputLimiter].compactMap { $0.auAudioUnit as? EchoEffectAudioUnit }
@@ -134,13 +152,18 @@ public final class AVPlaybackEngine: PlaybackEngine {
         let format = file.processingFormat
         if self.file?.processingFormat != format {
             if engine.isRunning { engine.stop() }
-            for node in [player, manualChain, outputLimiter] {
+            for node in players + [sourceSwitch, manualChain, outputLimiter] {
                 engine.disconnectNodeOutput(node)
             }
-            engine.connect(player, to: manualChain, format: format)
+            for (bus, node) in players.enumerated() {
+                engine.connect(node, to: sourceSwitch, fromBus: 0, toBus: bus, format: format)
+            }
+            engine.connect(sourceSwitch, to: manualChain, format: format)
             engine.connect(manualChain, to: outputLimiter, format: format)
             engine.connect(outputLimiter, to: engine.mainMixerNode, format: format)
         }
+        active = 0
+        switchUnit?.select(0)
         self.file = file
         duration = Double(file.length) / format.sampleRate
         videoPlayer = videoURL.map(Self.makeVideoPlayer)
@@ -229,6 +252,66 @@ public final class AVPlaybackEngine: PlaybackEngine {
         outputLimiter.auAudioUnit.parameterTree?.parameter(withAddress: EEOutputLimiterParameter.bypass.rawValue)?.value = value
     }
 
+    public func swapAudio(to url: URL) throws {
+        let newFile = try AVAudioFile(forReading: url)
+        guard let file, newFile.processingFormat == file.processingFormat else {
+            // Can't crossfade between formats (not expected: renders match `working.caf`); restart at the playhead.
+            let wasPlaying = isPlaying, time = currentTime
+            stopPlayback()
+            self.file = nil
+            let video = videoPlayer
+            try load(audio: url, video: nil)
+            videoPlayer = video
+            pausedTime = time
+            if wasPlaying { try play() }
+            return
+        }
+        guard isPlaying, let nodeTime = player.lastRenderTime, nodeTime.isSampleTimeValid,
+              let switchFrame = sourceFrame(atNodeSample: nodeTime.sampleTime + Self.swapLead) else {
+            self.file = newFile
+            if isPlaying {
+                let time = currentTime
+                stopPlayer()
+                pausedTime = time
+                if schedule(from: time) { player.play() }
+            }
+            return
+        }
+        let sampleRate = file.processingFormat.sampleRate
+        let switchTime = nodeTime.sampleTime + Self.swapLead
+        let startNode = AVAudioTime(sampleTime: switchTime, atRate: sampleRate)
+        let startFrame = switchFrame
+        let endFrame = min(newFile.length, rangeEndFrame)
+        self.file = newFile
+        guard endFrame > startFrame else { return }
+
+        let old = active
+        let next = 1 - active
+        generation += 1
+        let scheduled = generation
+        players[next].stop()
+        players[next].scheduleSegment(newFile, startingFrame: startFrame, frameCount: AVAudioFrameCount(endFrame - startFrame), at: nil)
+        players[next].scheduleBuffer(flushBuffer(for: newFile.processingFormat), at: nil, completionCallbackType: .dataRendered) { [weak self] _ in
+            Task { @MainActor in self?.segmentFinished(scheduled) }
+        }
+        players[next].play(at: startNode)
+        switchUnit?.crossfade(to: next, at: switchTime)
+        active = next
+        segmentStart = Double(startFrame) / sampleRate
+        scheduledEndFrame = endFrame
+        isContinuation = true
+        anchor = (switchTime, startFrame)
+        // The old player is silent once the 20 ms fade is over.
+        Task { [weak self] in
+            try? await Task.sleep(for: .milliseconds(150))
+            guard let self, self.generation == scheduled, self.active == next else { return }
+            self.players[old].stop()
+        }
+    }
+
+    /// How far ahead a swap starts, so both players are scheduled before the render thread gets there.
+    private static let swapLead: AVAudioFramePosition = 2_048
+
     /// Renders `frames` frames in manual rendering mode (tests only).
     func renderOffline(frames: AVAudioFrameCount) throws -> AVAudioPCMBuffer {
         if !engine.isRunning {
@@ -254,6 +337,8 @@ public final class AVPlaybackEngine: PlaybackEngine {
         segmentStart = Double(startFrame) / sampleRate
         pausedTime = segmentStart
         scheduledEndFrame = endFrame
+        isContinuation = false
+        anchor = nil
         guard endFrame > startFrame else { return false }
         generation += 1
         let scheduled = generation
@@ -298,10 +383,10 @@ public final class AVPlaybackEngine: PlaybackEngine {
         isPlaying = false
     }
 
-    /// Stops the player node and clears the chain; pending completion callbacks become stale.
+    /// Stops both player nodes and clears the chain; pending completion callbacks become stale.
     private func stopPlayer() {
         generation += 1
-        player.stop()
+        players.forEach { $0.stop() }
         effectUnits.forEach { $0.requestReset() }
     }
 
@@ -319,12 +404,32 @@ public final class AVPlaybackEngine: PlaybackEngine {
 
     /// The source time that last left the chain, and the host time (seconds) it was rendered at.
     private var renderedTime: (time: Double, hostSeconds: Double)? {
-        guard let nodeTime = player.lastRenderTime, let playerTime = player.playerTime(forNodeTime: nodeTime) else {
+        // Players' render times share one timeline (the switch's runs later by the chain's latency).
+        guard let file, let nodeTime = player.lastRenderTime, nodeTime.isSampleTimeValid,
+              let frame = sourceFrame(atNodeSample: nodeTime.sampleTime) else {
             return nil
         }
-        let frames = max(0, Double(playerTime.sampleTime) - Double(chainLatencyFrames))
-        let time = segmentStart + frames / playerTime.sampleRate
+        let sampleRate = file.processingFormat.sampleRate
+        let segmentStartFrame = (segmentStart * sampleRate).rounded()
+        let offset = Double(frame) - segmentStartFrame - Double(chainLatencyFrames)
+        let time = segmentStart + (isContinuation ? offset : max(0, offset)) / sampleRate
         return (time, nodeTime.isHostTimeValid ? AVAudioTime.seconds(forHostTime: nodeTime.hostTime) : Self.now())
+    }
+
+    /// The source frame the playing segment feeds into the chain at engine render sample `nodeSample`; `nil` until
+    /// the segment has rendered once.
+    private func sourceFrame(atNodeSample nodeSample: AVAudioFramePosition) -> AVAudioFramePosition? {
+        if let anchor {
+            return anchor.frame + (nodeSample - anchor.nodeSample)
+        }
+        guard let file, let nodeTime = player.lastRenderTime, nodeTime.isSampleTimeValid,
+              let playerTime = player.playerTime(forNodeTime: nodeTime), playerTime.sampleTime >= 0 else {
+            return nil
+        }
+        let segmentStartFrame = AVAudioFramePosition((segmentStart * file.processingFormat.sampleRate).rounded())
+        let learned = (nodeSample: nodeTime.sampleTime - playerTime.sampleTime, frame: segmentStartFrame)
+        anchor = learned
+        return learned.frame + (nodeSample - learned.nodeSample)
     }
 
     /// Hardware output latency: rendered audio is heard this much later.
