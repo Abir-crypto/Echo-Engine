@@ -241,7 +241,7 @@ Goal: user-ordered AI stack with per-step cached renders.
 
 ---
 
-## F07 — Voice Leveler & Auto Level  [IN PROGRESS]
+## F07 — Voice Leveler & Auto Level  [DONE]
 Goal: leveling and loudness targeting.
 
 - [x] F07.T01 — `VoiceLevelerProcessor` (§ 7.1) as an AI-stack op. Tests on 2-speaker sample.
@@ -272,7 +272,7 @@ Goal: leveling and loudness targeting.
 
 ---
 
-## F08 — Export  [TODO]
+## F08 — Export  [IN PROGRESS]
 Goal: final render and delivery.
 
 - [ ] F08.T01 — Offline final render (manual rendering mode) over trim range, Auto Level recomputed (§ 11.2).
