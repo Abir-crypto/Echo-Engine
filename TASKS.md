@@ -156,6 +156,8 @@ Goal: real-time manual controls as C++ DSP in Audio Units.
 - [ ] F05.T01 — `CEchoDSP` kernels: gain, biquad EQ (6 bands), gate, compressor, de-esser, limiter. Golden-file tests + render-thread allocation guard.
 - [ ] F05.T02 — Kernels: reverb, formant-preserving pitch shift (PSOLA; shared with auto-tune later). Tests.
 - [ ] F05.T03 — `EchoAudioUnits`: AUAudioUnit subclasses + `AUParameterTree` with ramping; chain assembly in `AVPlaybackEngine` in § 8 order.
+- [ ] F05.T03a — Playback resilience: on `AVAudioEngineConfigurationChange` (route change, e.g. headphones unplugged) and session
+  interruptions (calls), pause cleanly (keep the playhead, `isPlaying` false, video paused) and restart the engine on next play. From F04.
 - [ ] F05.T04 — Adjust UI: Equalizer screen (interactive curve, bands, reset), Gain and dynamics, Effects, Loudness row placeholder (§ 8, § 18.5).
 - [ ] F05.T05 — Persist `ManualSettings`, undo on drag end, "Hold for original" bypass.
 
