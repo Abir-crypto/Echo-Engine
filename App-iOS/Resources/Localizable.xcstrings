@@ -1,8 +1,87 @@
 {
   "sourceLanguage": "en",
   "strings": {
+    "%@ LUFS": {
+      "comment": "A loudness target, e.g. -14 LUFS."
+    },
+    "%@ dB": {
+      "comment": "A level in decibels, e.g. +2.5 dB."
+    },
+    "%@:1": {
+      "comment": "A compression ratio, e.g. 3:1."
+    },
+    "%lld semitones higher": {
+      "comment": "VoiceOver value of the pitch slider. %lld = semitones.",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld semitone higher"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld semitones higher"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "%lld semitones lower": {
+      "comment": "VoiceOver value of the pitch slider. %lld = semitones.",
+      "localizations": {
+        "en": {
+          "variations": {
+            "plural": {
+              "one": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld semitone lower"
+                }
+              },
+              "other": {
+                "stringUnit": {
+                  "state": "translated",
+                  "value": "%lld semitones lower"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Adds the sound of a room.": {
+      "comment": "Effects: explanation under the Reverb switch."
+    },
+    "Adjust": {
+      "comment": "Editor section title for the live manual controls."
+    },
+    "Adjusted": {
+      "comment": "VoiceOver value of the Equalizer row when any band is boosted or cut."
+    },
+    "Advanced": {
+      "comment": "Row that reveals timing and range controls of a dynamics section."
+    },
+    "Always on: peaks never go above the ceiling.": {
+      "comment": "Gain and dynamics: caption under the limiter ceiling slider."
+    },
+    "Amount": {
+      "comment": "De-esser: how strongly sibilance is reduced (slider)."
+    },
+    "Attack": {
+      "comment": "Gate/compressor: how fast it reacts (slider, milliseconds)."
+    },
     "Audio": {
       "comment": "Accessibility label of the audio badge on a project card."
+    },
+    "Band %lld, %@": {
+      "comment": "VoiceOver label of an EQ band. %1$lld = band number, %2$@ = its frequency, e.g. Band 3, 1 kHz."
     },
     "Cancel": {
       "comment": "Cancel button."
@@ -13,6 +92,18 @@
     "Changes couldn’t be saved. Free up some space, then try again.": {
       "comment": "Editor error."
     },
+    "Collapsed": {
+      "comment": "VoiceOver value of the closed Advanced row."
+    },
+    "Compressor": {
+      "comment": "Gain and dynamics: section and switch title."
+    },
+    "Damping": {
+      "comment": "Reverb: how quickly high frequencies fade in the room (slider)."
+    },
+    "De-esser": {
+      "comment": "Gain and dynamics: section and switch title (reduces harsh s sounds)."
+    },
     "Delete": {
       "comment": "Delete action for a project."
     },
@@ -22,14 +113,47 @@
     "Delete “%@”?": {
       "comment": "Delete confirmation title. %@ = project title."
     },
+    "Done": {
+      "comment": "Closes a sheet; changes are already applied."
+    },
     "Edited today": {
       "comment": "Project card date when the project changed today."
+    },
+    "Effects": {
+      "comment": "Editor Adjust row and sheet title: pitch shift and reverb."
+    },
+    "Equalizer": {
+      "comment": "Editor Adjust row and sheet title."
+    },
+    "Evens out loud and quiet parts.": {
+      "comment": "Gain and dynamics: explanation under the Compressor switch."
+    },
+    "Expanded": {
+      "comment": "VoiceOver value of the open Advanced row."
     },
     "Export": {
       "comment": "Editor toolbar button that opens the export sheet."
     },
     "Files": {
       "comment": "Import source: the Files app."
+    },
+    "Flat": {
+      "comment": "VoiceOver value of the Equalizer row when no band is changed."
+    },
+    "Frequency": {
+      "comment": "EQ band / de-esser frequency slider."
+    },
+    "Gain": {
+      "comment": "EQ band gain slider (boost or cut in dB)."
+    },
+    "Gain and dynamics": {
+      "comment": "Editor Adjust row and sheet title: input gain, gate, compressor, de-esser, limiter."
+    },
+    "High": {
+      "comment": "EQ band chip: the high shelf band."
+    },
+    "High shelf": {
+      "comment": "EQ band type shown above its sliders."
     },
     "Hold for original": {
       "comment": "Editor: press and hold to hear the original audio."
@@ -43,8 +167,32 @@
     "Importing": {
       "comment": "Title of the import progress sheet."
     },
+    "In semitones. The voice keeps its natural character.": {
+      "comment": "Effects: caption under the pitch slider (formant-preserving pitch shift)."
+    },
+    "Input gain": {
+      "comment": "Gain and dynamics: level going into the chain (slider, dB)."
+    },
     "It can’t be undone.": {
       "comment": "Delete confirmation message when the size is unknown."
+    },
+    "Limiter ceiling": {
+      "comment": "Gain and dynamics: the limiter's maximum level (slider, dB)."
+    },
+    "Loudness": {
+      "comment": "Editor Adjust row: Auto Level loudness target."
+    },
+    "Low": {
+      "comment": "EQ band chip: the low shelf band."
+    },
+    "Low shelf": {
+      "comment": "EQ band type shown above its sliders."
+    },
+    "Makeup gain": {
+      "comment": "Compressor: level added after compression (slider, dB)."
+    },
+    "Mix": {
+      "comment": "Reverb: how much room sound is mixed in (slider, percent)."
     },
     "Need %@ more to edit this project. Free up space on your iPad, then come back. Your import is saved.": {
       "comment": "Editor blocked by storage on iPad (SPEC § 9). %@ = missing space."
@@ -58,17 +206,41 @@
     "Needs %@ to export": {
       "comment": "Project card warning. %@ = missing space, e.g. 0.2 GB (SPEC § 15)."
     },
+    "Noise gate": {
+      "comment": "Gain and dynamics: section and switch title."
+    },
+    "Not available in this version": {
+      "comment": "EQ band type made by a newer app version; the band is bypassed."
+    },
     "OK": {
       "comment": "Dismisses an alert."
     },
+    "Off": {
+      "comment": "Value of an Adjust row when nothing in it is on."
+    },
+    "Original pitch": {
+      "comment": "VoiceOver value of the pitch slider at 0."
+    },
     "Pause": {
       "comment": "Accessibility label of the pause button."
+    },
+    "Peak": {
+      "comment": "EQ band type (peaking filter) shown above its sliders."
     },
     "Photos": {
       "comment": "Import source: the Photos library."
     },
     "Pinch to zoom": {
       "comment": "Caption on the editor waveform."
+    },
+    "Pitch": {
+      "comment": "Effects: pitch shift slider (semitones)."
+    },
+    "Pitch %@": {
+      "comment": "Effects row value when only pitch is on. %@ = signed semitones, e.g. +2."
+    },
+    "Pitch %@ · Reverb": {
+      "comment": "Effects row value when pitch and reverb are on. %@ = signed semitones, e.g. +2."
     },
     "Play": {
       "comment": "Accessibility label of the play button."
@@ -85,11 +257,26 @@
     "Projects couldn’t be loaded. Restart Echo Engine to try again.": {
       "comment": "Error alert."
     },
+    "Q": {
+      "comment": "EQ band width (Q) slider; keep the letter Q if your language uses it."
+    },
+    "Quiets the audio between words.": {
+      "comment": "Gain and dynamics: explanation under the Noise gate switch."
+    },
+    "Range": {
+      "comment": "Noise gate: how much it turns down while closed (slider, dB)."
+    },
+    "Ratio": {
+      "comment": "Compressor ratio slider, e.g. 3:1."
+    },
     "Record": {
       "comment": "Tab bar item and title of the record screen."
     },
     "Redo": {
       "comment": "Accessibility label of the redo button."
+    },
+    "Release": {
+      "comment": "Gate/compressor: how fast it lets go (slider, milliseconds)."
     },
     "Rename": {
       "comment": "Rename action for a project."
@@ -97,8 +284,20 @@
     "Rename project": {
       "comment": "Title of the rename dialog."
     },
+    "Reset": {
+      "comment": "Equalizer: returns every band to flat."
+    },
+    "Reverb": {
+      "comment": "Effects: switch title and Effects row value."
+    },
+    "Room size": {
+      "comment": "Reverb: size of the simulated room (slider, percent)."
+    },
     "Settings": {
       "comment": "Settings button and screen title."
+    },
+    "Softens harsh “s” sounds.": {
+      "comment": "Gain and dynamics: explanation under the De-esser switch."
     },
     "The import couldn’t finish. Try again.": {
       "comment": "Import error."
@@ -129,6 +328,9 @@
     },
     "This video has no audio. Choose a video with sound.": {
       "comment": "Import error (SPEC § 10)."
+    },
+    "Threshold": {
+      "comment": "Gate/compressor: level where it starts working (slider, dB)."
     },
     "Title": {
       "comment": "Placeholder of the project title field."

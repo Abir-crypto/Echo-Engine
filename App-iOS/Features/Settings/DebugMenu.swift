@@ -39,6 +39,29 @@ enum DebugAutoplay {
     static let launchArgument = "debugAutoplay"
 }
 
+/// `-debugAdjustSheet equalizer|gainDynamics|effects` opens that Adjust sheet when the editor opens.
+enum DebugAdjustSheet {
+    static let launchArgument = "debugAdjustSheet"
+}
+
+/// `-debugManualDemo YES` turns on a sample of every Adjust control when the editor opens (not saved).
+enum DebugManualDemo {
+    static let launchArgument = "debugManualDemo"
+
+    static func apply(_ manual: inout ManualSettings) {
+        manual.inputGainDB = 2.5
+        manual.eq[0].gainDB = 3
+        manual.eq[2].gainDB = -4
+        manual.eq[4].gainDB = 5
+        manual.gate.isEnabled = true
+        manual.compressor.isEnabled = true
+        manual.compressor.makeupDB = 2
+        manual.deEsser.isEnabled = true
+        manual.pitchSemitones = 2
+        manual.reverb.isEnabled = true
+    }
+}
+
 /// `-debugImportPath <file>` imports that file at launch, as if chosen in Files.
 enum DebugImport {
     static let launchArgument = "debugImportPath"

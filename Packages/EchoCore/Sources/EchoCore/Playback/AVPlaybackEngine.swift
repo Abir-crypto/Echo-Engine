@@ -49,6 +49,8 @@ public final class AVPlaybackEngine: PlaybackEngine {
     /// render time.
     @ObservationIgnored private var segmentStartHostSeconds: Double = 0
     @ObservationIgnored private var lastRendered: (time: Double, hostSeconds: Double, generation: Int)?
+    @ObservationIgnored private var appliedChainValues: [AUParameterAddress: AUValue] = [:]
+    @ObservationIgnored private var appliedCeiling: Float?
     @ObservationIgnored private var configurationObserver: (any NSObjectProtocol)?
     @ObservationIgnored private var generation = 0
     @ObservationIgnored private var cachedFlush: AVAudioPCMBuffer?
@@ -207,13 +209,18 @@ public final class AVPlaybackEngine: PlaybackEngine {
     }
 
     public func apply(_ manual: ManualSettings) {
+        // Sliders call this on every step; only changed parameters are sent.
         if let tree = manualChain.auAudioUnit.parameterTree {
-            for (address, value) in manual.manualChainParameterValues {
+            for (address, value) in manual.manualChainParameterValues where appliedChainValues[address] != value {
                 tree.parameter(withAddress: address)?.value = value
+                appliedChainValues[address] = value
             }
         }
-        outputLimiter.auAudioUnit.parameterTree?
-            .parameter(withAddress: EEOutputLimiterParameter.ceiling.rawValue)?.value = manual.limiter.ceilingDB
+        if appliedCeiling != manual.limiter.ceilingDB {
+            outputLimiter.auAudioUnit.parameterTree?
+                .parameter(withAddress: EEOutputLimiterParameter.ceiling.rawValue)?.value = manual.limiter.ceilingDB
+            appliedCeiling = manual.limiter.ceilingDB
+        }
     }
 
     /// Renders `frames` frames in manual rendering mode (tests only).

@@ -29,6 +29,7 @@ struct EditorView: View {
     @Environment(\.deviceFamily) private var deviceFamily
     @State private var visibleDuration: Double = 20
     @State private var isRenaming = false
+    @State private var adjustSheet: AdjustSheet?
     @State private var newTitle = ""
 
     var body: some View {
@@ -84,6 +85,8 @@ struct EditorView: View {
             visibleDuration = min(20, max(model.engine.duration, DetailWaveform.minimumVisibleDuration))
             #if DEBUG
             if UserDefaults.standard.bool(forKey: DebugAutoplay.launchArgument) { model.togglePlayback() }
+            if UserDefaults.standard.bool(forKey: DebugManualDemo.launchArgument) { model.adjust(DebugManualDemo.apply) }
+            adjustSheet = UserDefaults.standard.string(forKey: DebugAdjustSheet.launchArgument).flatMap(AdjustSheet.init)
             #endif
         }
         .flushesAutosave(model.autosaver)
@@ -112,11 +115,20 @@ struct EditorView: View {
                 .disabled(!model.canEdit)
                 overview
                     .disabled(!model.canEdit)
+                AdjustSection(model: model) { adjustSheet = $0 }
+                    .padding(.top, 4)
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 32)
             .frame(maxWidth: 700)
             .frame(maxWidth: .infinity)
+        }
+        .sheet(item: $adjustSheet) { sheet in
+            switch sheet {
+            case .equalizer: EqualizerSheet(model: model)
+            case .gainDynamics: GainDynamicsSheet(model: model)
+            case .effects: EffectsSheet(model: model)
+            }
         }
     }
 

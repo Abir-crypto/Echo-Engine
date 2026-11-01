@@ -179,7 +179,11 @@ Goal: real-time manual controls as C++ DSP in Audio Units.
   > `.oldDeviceUnavailable`); `IOSAudioDeviceManager` maps `AVAudioSession` notifications; `EditorModel` pauses on began/removed, never
   > auto-resumes. `AVPlaybackEngine` pauses on `AVAudioEngineConfigurationChange`; with no render time left the playhead continues from the
   > last read render time by the clock; `play` restarts a stopped engine. Not testable in the simulator (no calls/route changes): device check.
-- [ ] F05.T04 — Adjust UI: Equalizer screen (interactive curve, bands, reset), Gain and dynamics, Effects, Loudness row placeholder (§ 8, § 18.5).
+- [x] F05.T04 — Adjust UI: Equalizer screen (interactive curve, bands, reset), Gain and dynamics, Effects, Loudness row placeholder (§ 8, § 18.5).
+  > Done: native from § 18 (user: no Sleek). `AdjustSection` (Equalizer mini curve, Gain and dynamics, Effects — SPEC § 9 row the mockup
+  > lacks —, Loudness placeholder) opens sheets `EqualizerSheet` (draggable `EQCurveView` + band chips + Frequency/Gain/Q), `GainDynamicsSheet`
+  > (essentials + "Advanced" disclosure), `EffectsSheet`. `ValueSlider` (log scales, VoiceOver steps), `EQResponse` (C++ filter math). Edits
+  > go through `EditorModel.adjust` (live) + `finishAdjusting` (existing commit: one undo step + autosave), so persistence/undo already work.
 - [ ] F05.T05 — Persist `ManualSettings`, undo on drag end, "Hold for original" bypass.
 
 **Checkpoint test:** adjust each control during playback with no clicks/dropouts; hold for original; undo/redo; reopen project and settings persist.

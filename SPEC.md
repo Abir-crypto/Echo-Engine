@@ -419,6 +419,11 @@ Order inside the chain: input gain → gate → EQ → de-esser → compressor �
 - UI grouping (Editor "Adjust"): **Equalizer**, **Gain and dynamics** (gain, gate, compressor, de-esser, limiter),
   **Effects** (pitch shift, reverb), **Loudness** (Auto Level target).
 - EQ screen: interactive curve (drag band handles), list of bands, reset. Graph is left-to-right in all locales.
+  Bands are a row of six chips under the curve; the selected band shows Frequency, Gain and Q sliders; dragging a
+  handle on the curve selects its band.
+- Gain and dynamics screen: sections Input gain, Noise gate, Compressor, De-esser, Limiter. Each shows its toggle
+  and essentials (gate threshold; compressor threshold, ratio, makeup; de-esser amount; limiter ceiling); attack,
+  release, gate range and de-esser frequency sit under an "Advanced" disclosure.
 - Speed change is NOT in v1 (breaks video sync).
 
 ---
@@ -824,6 +829,7 @@ enum Appearance: String, CaseIterable { case system, dark, light }
 - Detail screens not on canvas (EQ, Gain and dynamics, Effects, Loudness, strength slider, Add enhancement,
   device/channel picker, auto-tune, backing track, presets): follow § 18.1–18.4; grouped rows, segmented controls,
   sliders with value labels; present as sheets with detents where short. If layout is unclear, ask the user.
+  Equalizer, Gain and dynamics and Effects are built natively from § 18 without Sleek (user decision).
   These screens may be designed in Sleek through the `design-mobile-apps` project skill (paid external service,
   user's account and API key): offer it when such a screen comes up and run it only after the user approves.
   Implement any Sleek design natively in SwiftUI with § 18 tokens; never use the skill's React Native/HTML
@@ -883,3 +889,6 @@ Record new user decisions here (date, decision, section updated).
 - 2026-11-01: Undo/redo uses an own `EditHistory` instead of Foundation `UndoManager`, so the janitor can list
   every state; ⌘Z / ⇧⌘Z, no shake-to-undo (§ 6.5).
 - 2026-11-01: The not-enough-space message names the device: "iPad" on iPad, "iPhone" on iPhone (§ 9).
+- 2026-11-01: Adjust detail screens (Equalizer, Gain and dynamics, Effects) are built natively from § 18, not in
+  Sleek. EQ: band chips + Frequency/Gain/Q sliders for the selected band. Gain and dynamics: essentials visible,
+  attack/release/range/frequency under "Advanced" (§ 8, § 18.5).

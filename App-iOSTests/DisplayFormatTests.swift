@@ -6,6 +6,28 @@ struct DisplayFormatTests {
     private let english = Locale(identifier: "en_US")
     private let german = Locale(identifier: "de_DE")
 
+    @Test func adjustValuesUseUnitsAndLocaleNumbers() {
+        #expect(DisplayFormat.decibels(2.5, locale: english) == "+2.5 dB")
+        #expect(DisplayFormat.decibels(-6, locale: english) == "-6.0 dB")
+        #expect(DisplayFormat.decibels(0, locale: english) == "0.0 dB")
+        #expect(DisplayFormat.decibels(2.5, locale: german) == "+2,5 dB")
+        #expect(DisplayFormat.frequency(80, locale: english) == "80 Hz")
+        #expect(DisplayFormat.frequency(1_234, locale: english) == "1.2 kHz")
+        #expect(DisplayFormat.frequency(12_000, locale: english) == "12 kHz")
+        #expect(DisplayFormat.compactFrequency(250, locale: english) == "250")
+        #expect(DisplayFormat.compactFrequency(1_000, locale: english) == "1K")
+        #expect(DisplayFormat.compactFrequency(12_000, locale: english) == "12K")
+        #expect(DisplayFormat.milliseconds(0.54, locale: english) == "0.5 ms")
+        #expect(DisplayFormat.milliseconds(150.4, locale: english) == "150 ms")
+        #expect(DisplayFormat.ratio(3, locale: english) == "3:1")
+        #expect(DisplayFormat.ratio(2.5, locale: english) == "2.5:1")
+        #expect(DisplayFormat.percent(0.5, locale: english) == "50%")
+        #expect(DisplayFormat.quality(0.71, locale: english) == "0.71")
+        #expect(DisplayFormat.semitones(2, locale: english) == "+2")
+        #expect(DisplayFormat.semitones(-3, locale: english) == "-3")
+        #expect(DisplayFormat.semitones(0, locale: english) == "0")
+    }
+
     @Test func fileSizeUsesDecimalUnitsAndLocaleSeparators() {
         #expect(DisplayFormat.fileSize(2_400_000_000, locale: english) == "2.4 GB")
         #expect(DisplayFormat.fileSize(2_400_000_000, locale: german) == "2,4\u{00A0}GB")

@@ -31,7 +31,18 @@ struct ManualChainParameterTests {
         #expect(fits(ManualSettings.pitchRange, P.pitchSemitones.rawValue))
         #expect(fits(ManualSettings.Gate.thresholdRange, P.gateThreshold.rawValue))
         #expect(fits(ManualSettings.DeEsser.frequencyRange, P.deEsserFrequency.rawValue))
+        #expect(fits(ManualSettings.Gate.attenuationRange, P.gateRange.rawValue))
+        #expect(fits(ManualSettings.Gate.attackRange, P.gateAttack.rawValue))
+        #expect(fits(ManualSettings.Gate.releaseRange, P.gateRelease.rawValue))
+        #expect(fits(ManualSettings.unitRange, P.deEsserAmount.rawValue))
         #expect(fits(ManualSettings.Compressor.ratioRange, P.compressorRatio.rawValue))
+        #expect(fits(ManualSettings.Compressor.thresholdRange, P.compressorThreshold.rawValue))
+        #expect(fits(ManualSettings.Compressor.attackRange, P.compressorAttack.rawValue))
+        #expect(fits(ManualSettings.Compressor.releaseRange, P.compressorRelease.rawValue))
+        #expect(fits(ManualSettings.Compressor.makeupRange, P.compressorMakeup.rawValue))
+        for address in [P.reverbRoomSize, .reverbDamping, .reverbMix] {
+            #expect(fits(ManualSettings.unitRange, address.rawValue))
+        }
         #expect(fits(EQBand.frequencyRange, ManualChainAudioUnit.eqAddress(band: 3, field: .frequency)))
         #expect(fits(EQBand.gainRange, ManualChainAudioUnit.eqAddress(band: 3, field: .gain)))
         #expect(fits(EQBand.qRange, ManualChainAudioUnit.eqAddress(band: 3, field: .Q)))

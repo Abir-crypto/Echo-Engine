@@ -70,6 +70,8 @@ final class EditorModel {
     var canUndo: Bool { canEdit && history.canUndo }
     var canRedo: Bool { canEdit && history.canRedo }
     var sourceDuration: Double { project.sourceInfo.duration }
+    /// The live manual chain (SPEC § 8).
+    var manual: ManualSettings { project.editState.manual }
 
     var isTrimmed: Bool {
         project.trimRange.start > 0.01 || project.trimRange.end < sourceDuration - 0.01
@@ -160,6 +162,28 @@ final class EditorModel {
     func redo() {
         guard canEdit, let next = history.redo(from: project.editState) else { return }
         restore(next)
+    }
+
+    /// Changes the manual chain and hears it at once (the chain ramps). Slider drags call this per step and
+    /// `finishAdjusting` once at the end.
+    func adjust(_ change: (inout ManualSettings) -> Void) {
+        guard canEdit else { return }
+        var state = project.editState
+        change(&state.manual)
+        guard state.manual != project.editState.manual else { return }
+        project.editState = state
+        engine.apply(state.manual)
+    }
+
+    /// A slider drag or toggle ended: one undo step, saved (SPEC § 6.5).
+    func finishAdjusting() {
+        commit()
+    }
+
+    /// Back to a flat equalizer, as one undo step.
+    func resetEqualizer() {
+        adjust { $0.eq = EQBand.defaultBands }
+        commit()
     }
 
     /// Ignores titles that are empty after trimming whitespace.

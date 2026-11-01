@@ -3,6 +3,8 @@
 public struct ManualSettings: Codable, Equatable, Sendable {
     public static let inputGainRange: ClosedRange<Float> = -24...24
     public static let pitchRange: ClosedRange<Float> = -12...12
+    /// Amounts, room size, damping and mix.
+    public static let unitRange: ClosedRange<Float> = 0...1
 
     public var inputGainDB: Float = 0
     public var gate = Gate()
@@ -19,6 +21,10 @@ public struct ManualSettings: Codable, Equatable, Sendable {
 extension ManualSettings {
     public struct Gate: Codable, Equatable, Sendable {
         public static let thresholdRange: ClosedRange<Float> = -80...0
+        /// Limits of `rangeDB`.
+        public static let attenuationRange: ClosedRange<Float> = -80...0
+        public static let attackRange: ClosedRange<Float> = 0.1...100
+        public static let releaseRange: ClosedRange<Float> = 5...2_000
 
         public var isEnabled = false
         public var thresholdDB: Float = -50
@@ -43,6 +49,10 @@ extension ManualSettings {
 
     public struct Compressor: Codable, Equatable, Sendable {
         public static let ratioRange: ClosedRange<Float> = 1...20
+        public static let thresholdRange: ClosedRange<Float> = -60...0
+        public static let attackRange: ClosedRange<Float> = 0.1...200
+        public static let releaseRange: ClosedRange<Float> = 5...2_000
+        public static let makeupRange: ClosedRange<Float> = 0...24
 
         public var isEnabled = false
         public var thresholdDB: Float = -18

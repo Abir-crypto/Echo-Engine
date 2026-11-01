@@ -264,6 +264,45 @@ struct EditorModelTests {
         #expect(model.canUndo)
     }
 
+    @Test func adjustingIsHeardAtOnceAndOneUndoStepWhenFinished() async {
+        let (model, engine) = makeModel(audio)
+        await model.open()
+
+        model.adjust { $0.inputGainDB = 1 }
+        model.adjust { $0.inputGainDB = 2.5 }
+        #expect(engine.appliedManual?.inputGainDB == 2.5)
+        #expect(!model.canUndo, "nothing is recorded mid-drag")
+
+        model.finishAdjusting()
+        #expect(model.history.undoStates.count == 1)
+        await model.close()
+        #expect(await autosaver.scheduled.last?.clips[0].manual.inputGainDB == 2.5)
+
+        model.undo()
+        #expect(model.manual.inputGainDB == 0)
+        #expect(engine.appliedManual?.inputGainDB == 0, "undo is heard too")
+    }
+
+    @Test func resettingTheEqualizerIsOneStep() async {
+        let (model, _) = makeModel(audio)
+        await model.open()
+        model.adjust { $0.eq[2].gainDB = 6 }
+        model.finishAdjusting()
+
+        model.resetEqualizer()
+
+        #expect(model.manual.eq == EQBand.defaultBands)
+        #expect(model.history.undoStates.count == 2)
+    }
+
+    @Test func readOnlyProjectsCannotBeAdjusted() async {
+        let (model, engine) = makeModel(audio, readOnly: true)
+        await model.open()
+        model.adjust { $0.inputGainDB = 6 }
+        #expect(model.manual.inputGainDB == 0)
+        #expect(engine.appliedManual?.inputGainDB == 0)
+    }
+
     @Test func readOnlyProjectsHaveNoUndo() async {
         let (model, _) = makeModel(video, readOnly: true)
         await model.open()
