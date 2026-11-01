@@ -25,6 +25,13 @@ void CompressorKernel::prepare(double sampleRate) noexcept {
     envelope_ = 0;
 }
 
+void CompressorKernel::reset() noexcept {
+    for (SmoothedValue* value : {&mix_, &thresholdDB_, &ratio_, &makeupDB_}) {
+        value->reset(value->target());
+    }
+    envelope_ = 0;
+}
+
 void CompressorKernel::setEnabled(bool enabled) noexcept { mix_.setTarget(enabled ? 1 : 0, rampFrames_); }
 void CompressorKernel::setThresholdDB(float db) noexcept { thresholdDB_.setTarget(std::clamp(db, -60.0f, 0.0f), rampFrames_); }
 void CompressorKernel::setRatio(float ratio) noexcept { ratio_.setTarget(std::clamp(ratio, 1.0f, 20.0f), rampFrames_); }

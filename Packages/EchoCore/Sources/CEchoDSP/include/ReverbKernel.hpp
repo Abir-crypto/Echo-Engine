@@ -23,6 +23,8 @@ public:
     void setDamping(float damping) noexcept;
     void setMix(float mix) noexcept;
     void process(float* const* channels, int channelCount, int frameCount) noexcept;
+    /// Clears the signal state (envelopes, delay lines) and finishes parameter ramps; keeps the settings. Real-time safe.
+    void reset() noexcept;
 
 private:
     void clear() noexcept;

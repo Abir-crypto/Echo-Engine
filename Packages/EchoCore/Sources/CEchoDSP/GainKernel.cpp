@@ -11,6 +11,8 @@ void GainKernel::prepare(double sampleRate) noexcept {
     gain_.reset(gain_.target());
 }
 
+void GainKernel::reset() noexcept { gain_.reset(gain_.target()); }
+
 void GainKernel::setGainDB(float db) noexcept {
     gain_.setTarget(dbToLinear(std::clamp(db, -24.0f, 24.0f)), rampFrames_);
 }

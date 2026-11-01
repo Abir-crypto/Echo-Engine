@@ -22,6 +22,8 @@ public:
     void prepare(double sampleRate);
     void setSemitones(float semitones) noexcept;
     void process(float* const* channels, int channelCount, int frameCount) noexcept;
+    /// Clears the signal state (envelopes, delay lines) and finishes parameter ramps; keeps the settings. Real-time safe.
+    void reset() noexcept;
     int latencyFrames() const noexcept { return latency_; }
 
 private:

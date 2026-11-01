@@ -13,6 +13,8 @@ public final class FakePlaybackEngine: PlaybackEngine {
     public private(set) var videoPlayer: AVPlayer?
     public private(set) var loadedAudio: URL?
     public private(set) var loadedVideo: URL?
+    /// The last settings passed to `apply`.
+    public private(set) var appliedManual: ManualSettings?
     @ObservationIgnored public var loadError: (any Error)?
 
     public init(duration: Double = 60) {
@@ -39,5 +41,9 @@ public final class FakePlaybackEngine: PlaybackEngine {
 
     public func seek(to time: Double) {
         currentTime = min(max(time, playbackRange.start), playbackRange.end)
+    }
+
+    public func apply(_ manual: ManualSettings) {
+        appliedManual = manual
     }
 }

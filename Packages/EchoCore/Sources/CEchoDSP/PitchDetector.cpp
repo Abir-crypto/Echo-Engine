@@ -29,6 +29,13 @@ void PitchDetector::prepare(double sampleRate) {
     phase_ = 0;
 }
 
+void PitchDetector::reset() noexcept {
+    for (BiquadState& stage : antiAliasStages_) { stage.reset(); }
+    std::fill(history_.begin(), history_.end(), 0.0f);
+    written_ = 0;
+    phase_ = 0;
+}
+
 void PitchDetector::push(float sample) noexcept {
     const float filtered = antiAliasStages_[1].process(antiAlias_, antiAliasStages_[0].process(antiAlias_, sample, 0), 0);
     if (++phase_ < decimation_) { return; }

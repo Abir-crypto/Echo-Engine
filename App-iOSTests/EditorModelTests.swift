@@ -46,6 +46,14 @@ struct EditorModelTests {
         #expect(model.peakLevel == 0.5)
     }
 
+    @Test func openingAppliesTheProjectsManualSettings() async {
+        var project = audio
+        project.clips[0].manual.inputGainDB = 4
+        let (model, engine) = makeModel(project)
+        await model.open()
+        #expect(engine.appliedManual?.inputGainDB == 4)
+    }
+
     @Test func openingAudioLoadsNoVideo() async {
         let (model, engine) = makeModel(audio)
         await model.open()

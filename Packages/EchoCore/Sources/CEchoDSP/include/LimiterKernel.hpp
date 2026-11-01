@@ -24,6 +24,8 @@ public:
     /// −6…0 dB.
     void setCeilingDB(float db) noexcept;
     void process(float* const* channels, int channelCount, int frameCount) noexcept;
+    /// Clears the signal state (envelopes, delay lines) and finishes parameter ramps; keeps the settings. Real-time safe.
+    void reset() noexcept;
     int latencyFrames() const noexcept { return window_ - 1; }
 
 private:

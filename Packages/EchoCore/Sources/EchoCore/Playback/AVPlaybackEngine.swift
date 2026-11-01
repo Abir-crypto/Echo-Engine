@@ -1,12 +1,16 @@
 import AVFoundation
+import CEchoDSP
+import EchoAudioUnits
 import Observation
 
-/// `AVAudioEngine` preview: player node → chain input → main mixer → output, plus a muted `AVPlayer` for video
-/// projects (SPEC § 6.6).
+/// `AVAudioEngine` preview: player node → manual chain → (Auto Level gain, F07) → output limiter → main mixer, plus a
+/// muted `AVPlayer` for video projects (SPEC § 6.6).
 ///
-/// The trim range is played with `scheduleSegment`; seeking reschedules from the new frame. Every schedule gets a
-/// generation number so completion callbacks from segments stopped by a seek or pause are ignored. With video,
-/// both start from a shared host time, and audio is rescheduled onto the video's timeline when they drift apart.
+/// The trim range is played with `scheduleSegment`, followed by silence as long as the chain's latency so its tail
+/// is heard; seeking reschedules from the new frame and clears the chain. Every schedule gets a generation number so
+/// completion callbacks from schedules stopped by a seek or pause are ignored. The playhead is what leaves the chain.
+/// With video, both start from a shared host time (audio earlier by the chain and output latency), and audio is
+/// rescheduled onto the video's timeline when they drift apart.
 @MainActor
 @Observable
 public final class AVPlaybackEngine: PlaybackEngine {
@@ -30,8 +34,8 @@ public final class AVPlaybackEngine: PlaybackEngine {
 
     @ObservationIgnored private let engine = AVAudioEngine()
     @ObservationIgnored private let player = AVAudioPlayerNode()
-    /// Where the manual chain (F05), Auto Level gain and limiter (F07) are inserted.
-    @ObservationIgnored private let chainInput = AVAudioMixerNode()
+    @ObservationIgnored private let manualChain: AVAudioUnitEffect
+    @ObservationIgnored private let outputLimiter: AVAudioUnitEffect
     @ObservationIgnored private let isOffline: Bool
     @ObservationIgnored private var file: AVAudioFile?
     /// Source seconds where the current schedule starts.
@@ -41,20 +45,44 @@ public final class AVPlaybackEngine: PlaybackEngine {
     /// Observed, so seeking while paused updates the UI; while playing, `currentTime` reads the player node.
     private var pausedTime: Double = 0
     @ObservationIgnored private var generation = 0
+    @ObservationIgnored private var cachedFlush: AVAudioPCMBuffer?
     @ObservationIgnored private var driftTask: Task<Void, Never>?
 
     public init() {
         isOffline = false
-        engine.attach(player)
-        engine.attach(chainInput)
+        (manualChain, outputLimiter) = Self.makeEffects()
+        attachNodes()
     }
 
     /// Renders offline instead of to the hardware, for tests (`renderOffline(frames:)`). Video never plays here.
     init(manualRenderingFormat format: AVAudioFormat) throws {
         isOffline = true
-        engine.attach(player)
-        engine.attach(chainInput)
+        (manualChain, outputLimiter) = Self.makeEffects()
+        attachNodes()
         try engine.enableManualRenderingMode(.offline, format: format, maximumFrameCount: 4_096)
+    }
+
+    private static func makeEffects() -> (AVAudioUnitEffect, AVAudioUnitEffect) {
+        EchoAudioUnits.register()
+        return (
+            AVAudioUnitEffect(audioComponentDescription: ManualChainAudioUnit.componentDescription),
+            AVAudioUnitEffect(audioComponentDescription: OutputLimiterAudioUnit.componentDescription)
+        )
+    }
+
+    private func attachNodes() {
+        for node in [player, manualChain, outputLimiter] {
+            engine.attach(node)
+        }
+    }
+
+    private var effectUnits: [EchoEffectAudioUnit] {
+        [manualChain, outputLimiter].compactMap { $0.auAudioUnit as? EchoEffectAudioUnit }
+    }
+
+    /// Frames the chain delays audio by (pitch shift look-ahead + limiter look-ahead); valid while the engine runs.
+    var chainLatencyFrames: Int {
+        effectUnits.reduce(0) { $0 + $1.latencyFrames }
     }
 
     public var currentTime: Double {
@@ -68,10 +96,12 @@ public final class AVPlaybackEngine: PlaybackEngine {
         let format = file.processingFormat
         if self.file?.processingFormat != format {
             if engine.isRunning { engine.stop() }
-            engine.disconnectNodeOutput(player)
-            engine.disconnectNodeOutput(chainInput)
-            engine.connect(player, to: chainInput, format: format)
-            engine.connect(chainInput, to: engine.mainMixerNode, format: format)
+            for node in [player, manualChain, outputLimiter] {
+                engine.disconnectNodeOutput(node)
+            }
+            engine.connect(player, to: manualChain, format: format)
+            engine.connect(manualChain, to: outputLimiter, format: format)
+            engine.connect(outputLimiter, to: engine.mainMixerNode, format: format)
         }
         self.file = file
         duration = Double(file.length) / format.sampleRate
@@ -97,7 +127,7 @@ public final class AVPlaybackEngine: PlaybackEngine {
             // Start both from one host time; audio starts earlier by the output latency so what is heard matches
             // what is shown.
             let start = Self.now() + VideoSync.startDelay
-            player.play(at: AVAudioTime(hostTime: AVAudioTime.hostTime(forSeconds: start - outputLatency)))
+            player.play(at: AVAudioTime(hostTime: AVAudioTime.hostTime(forSeconds: start - outputLatency - chainLatency)))
             video.setRate(1, time: Self.cmTime(pausedTime), atHostTime: Self.cmHostTime(start))
             startDriftCorrection()
         } else {
@@ -133,6 +163,16 @@ public final class AVPlaybackEngine: PlaybackEngine {
         }
     }
 
+    public func apply(_ manual: ManualSettings) {
+        if let tree = manualChain.auAudioUnit.parameterTree {
+            for (address, value) in manual.manualChainParameterValues {
+                tree.parameter(withAddress: address)?.value = value
+            }
+        }
+        outputLimiter.auAudioUnit.parameterTree?
+            .parameter(withAddress: EEOutputLimiterParameter.ceiling.rawValue)?.value = manual.limiter.ceilingDB
+    }
+
     /// Renders `frames` frames in manual rendering mode (tests only).
     func renderOffline(frames: AVAudioFrameCount) throws -> AVAudioPCMBuffer {
         if !engine.isRunning {
@@ -161,12 +201,10 @@ public final class AVPlaybackEngine: PlaybackEngine {
         guard endFrame > startFrame else { return false }
         generation += 1
         let scheduled = generation
-        // `.dataRendered`, not `.dataPlayedBack`: the latter never fires in offline rendering (tests), and stopping the
-        // player once the last frame is rendered can't cut audio that is already on its way to the output.
-        player.scheduleSegment(
-            file, startingFrame: startFrame, frameCount: AVAudioFrameCount(endFrame - startFrame), at: nil,
-            completionCallbackType: .dataRendered
-        ) { [weak self] _ in
+        player.scheduleSegment(file, startingFrame: startFrame, frameCount: AVAudioFrameCount(endFrame - startFrame), at: nil)
+        // Silence pushes the range's last frames out of the chain. `.dataRendered`, not `.dataPlayedBack`: the latter
+        // never fires in offline rendering (tests), and stopping once rendered can't cut audio already on its way out.
+        player.scheduleBuffer(flushBuffer(for: file.processingFormat), at: nil, completionCallbackType: .dataRendered) { [weak self] _ in
             Task { @MainActor in self?.segmentFinished(scheduled) }
         }
         return true
@@ -204,23 +242,43 @@ public final class AVPlaybackEngine: PlaybackEngine {
         isPlaying = false
     }
 
-    /// Stops the player node; its pending completion callbacks become stale.
+    /// Stops the player node and clears the chain; pending completion callbacks become stale.
     private func stopPlayer() {
         generation += 1
         player.stop()
+        effectUnits.forEach { $0.requestReset() }
     }
 
-    /// The source time last rendered by the player node, and the host time (seconds) it was rendered at.
+    /// Chain-latency frames of silence (at least one), reused while the format and latency stay the same.
+    private func flushBuffer(for format: AVAudioFormat) -> AVAudioPCMBuffer {
+        let frames = AVAudioFrameCount(max(1, chainLatencyFrames))
+        if let cachedFlush, cachedFlush.format == format, cachedFlush.frameLength == frames {
+            return cachedFlush
+        }
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames)!
+        buffer.frameLength = frames
+        cachedFlush = buffer
+        return buffer
+    }
+
+    /// The source time that last left the chain, and the host time (seconds) it was rendered at.
     private var renderedTime: (time: Double, hostSeconds: Double)? {
         guard let nodeTime = player.lastRenderTime, let playerTime = player.playerTime(forNodeTime: nodeTime) else {
             return nil
         }
-        let time = segmentStart + max(0, Double(playerTime.sampleTime) / playerTime.sampleRate)
+        let frames = max(0, Double(playerTime.sampleTime) - Double(chainLatencyFrames))
+        let time = segmentStart + frames / playerTime.sampleRate
         return (time, nodeTime.isHostTimeValid ? AVAudioTime.seconds(forHostTime: nodeTime.hostTime) : Self.now())
     }
 
+    /// Hardware output latency: rendered audio is heard this much later.
     private var outputLatency: Double {
         engine.outputNode.presentationLatency
+    }
+
+    private var chainLatency: Double {
+        guard let file else { return 0 }
+        return Double(chainLatencyFrames) / file.processingFormat.sampleRate
     }
 
     // MARK: Video
@@ -268,7 +326,7 @@ public final class AVPlaybackEngine: PlaybackEngine {
             finishAtEnd()
             return
         }
-        player.play(at: AVAudioTime(hostTime: AVAudioTime.hostTime(forSeconds: start - outputLatency)))
+        player.play(at: AVAudioTime(hostTime: AVAudioTime.hostTime(forSeconds: start - outputLatency - chainLatency)))
     }
 
     // MARK: Time

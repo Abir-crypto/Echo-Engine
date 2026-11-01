@@ -27,6 +27,13 @@ void GateKernel::prepare(double sampleRate) noexcept {
     gain_ = 1;
 }
 
+void GateKernel::reset() noexcept {
+    mix_.reset(mix_.target());
+    threshold_.reset(threshold_.target());
+    envelope_ = 0;
+    gain_ = 1;
+}
+
 void GateKernel::setEnabled(bool enabled) noexcept { mix_.setTarget(enabled ? 1 : 0, rampFrames_); }
 
 void GateKernel::setThresholdDB(float db) noexcept {

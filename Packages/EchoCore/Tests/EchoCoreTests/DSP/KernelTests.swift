@@ -52,6 +52,10 @@ struct KernelTests {
 
     @Test func flatEqualizerPassesAudioUnchanged() {
         var kernel = echo.dsp.EQKernel()
+        // The default bands: shapes set, all at 0 dB.
+        kernel.setBand(0, .lowShelf, 80, 0, 0.71)
+        kernel.setBand(2, .peaking, 1_000, 0, 1)
+        kernel.setBand(5, .highShelf, 12_000, 0, 0.71)
         kernel.prepare(sampleRate)
         let input = TestSignal.speechLike()
         let buffers = ChannelBuffers([input])
@@ -166,8 +170,7 @@ struct KernelTests {
             compressor.process(channels, 1, frames)
         }
 
-        let error = zip(buffers.output[0], input).map { abs($0 - $1) }.max() ?? 0
-        #expect(error < 1e-6, "a 0 dB shelf is flat")
+        #expect(buffers.output[0] == input, "bit-exact while off")
     }
 
     // MARK: Limiter

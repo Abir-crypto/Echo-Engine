@@ -26,6 +26,8 @@ public:
     void prepare(double sampleRate);
     /// Feeds one mono input frame.
     void push(float sample) noexcept;
+    /// Forgets the input so far. Real-time safe.
+    void reset() noexcept;
     /// Analyses the most recent `windowFrames()` frames.
     PitchEstimate detect() noexcept;
     /// Input frames one analysis covers.

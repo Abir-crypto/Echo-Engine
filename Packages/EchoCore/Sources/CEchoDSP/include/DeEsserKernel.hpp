@@ -7,7 +7,7 @@ namespace echo::dsp {
 
 /// De-esser (SPEC § 8): a dynamic high shelf. A band-pass detector at `frequency` follows the sibilance; while it is
 /// above `kThresholdDB`, a high shelf with its midpoint at `frequency` turns the highs down by the overshoot × amount,
-/// up to `kMaxReductionDB`. At 0 dB the shelf is exactly flat. Off by default.
+/// up to `kMaxReductionDB`. Without reduction the shelf is skipped, so the audio is untouched. Off by default.
 class DeEsserKernel {
 public:
     static constexpr float kThresholdDB = -30;
@@ -22,6 +22,8 @@ public:
     /// 0…1.
     void setAmount(float amount) noexcept;
     void process(float* const* channels, int channelCount, int frameCount) noexcept;
+    /// Clears the signal state (envelopes, delay lines) and finishes parameter ramps; keeps the settings. Real-time safe.
+    void reset() noexcept;
 
 private:
     /// The shelf follows the detector at this block size (0.33 ms at 48 kHz).

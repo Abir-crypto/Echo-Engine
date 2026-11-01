@@ -13,10 +13,14 @@ LimiterKernel::LimiterKernel() noexcept {
 
 void LimiterKernel::prepare(double sampleRate) noexcept {
     rampFrames_ = rampFrames(sampleRate);
-    ceiling_.reset(ceiling_.target());
     const int lookahead = std::clamp(static_cast<int>(kLookaheadSeconds * sampleRate), 1, kMaxWindow - 1);
     window_ = lookahead + 1;
     releaseCoefficient_ = onePoleCoefficient(kReleaseMs, sampleRate);
+    reset();
+}
+
+void LimiterKernel::reset() noexcept {
+    ceiling_.reset(ceiling_.target());
     for (auto& channel : delay_) {
         std::fill(std::begin(channel), std::end(channel), 0.0f);
     }

@@ -13,14 +13,14 @@ let package = Package(
     ],
     targets: [
         .target(name: "CEchoDSP"),
-        .target(name: "EchoCore", dependencies: ["CEchoDSP"], swiftSettings: cxxInterop),
+        .target(name: "EchoCore", dependencies: ["CEchoDSP", "EchoAudioUnits"], swiftSettings: cxxInterop),
         .target(name: "EchoAudioUnits", dependencies: ["CEchoDSP"], swiftSettings: cxxInterop),
         .target(name: "EchoCoreFakes", dependencies: ["EchoCore"], swiftSettings: cxxInterop),
         // Test-only: replaces `operator new` in the test binary to prove kernels don't allocate. Not a product.
         .target(name: "CEchoDSPTestSupport", path: "Tests/CEchoDSPTestSupport"),
         .testTarget(
             name: "EchoCoreTests",
-            dependencies: ["EchoCore", "EchoCoreFakes", "CEchoDSP", "CEchoDSPTestSupport"],
+            dependencies: ["EchoCore", "EchoCoreFakes", "EchoAudioUnits", "CEchoDSP", "CEchoDSPTestSupport"],
             resources: [.copy("Resources")],
             swiftSettings: cxxInterop
         ),

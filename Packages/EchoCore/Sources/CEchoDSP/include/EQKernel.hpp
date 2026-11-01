@@ -14,7 +14,7 @@ public:
     /// Frequency 20 Hz–20 kHz, gain ±18 dB, Q 0.3–8. Parameter changes glide; a shape change applies at once.
     void setBand(int band, FilterShape shape, float frequency, float gainDB, float q) noexcept;
     void process(float* const* channels, int channelCount, int frameCount) noexcept;
-    /// Clears filter memory (e.g. after a seek).
+    /// Clears the signal state (envelopes, delay lines) and finishes parameter ramps; keeps the settings. Real-time safe.
     void reset() noexcept;
     /// Combined response of all bands at `frequency`, from the target parameters (for the EQ curve).
     double magnitudeDB(double frequency) const noexcept;

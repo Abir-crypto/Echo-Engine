@@ -23,4 +23,7 @@ public protocol PlaybackEngine: AnyObject, Observable {
     func pause()
     /// Moves the playhead, clamped to `playbackRange`; keeps playing if playing.
     func seek(to time: Double)
+    /// Sets the live manual chain and the output limiter (SPEC § 8) through their parameters; changes ramp, so this
+    /// can be called on every slider step.
+    func apply(_ manual: ManualSettings)
 }

@@ -38,6 +38,21 @@ void PitchShiftKernel::prepare(double sampleRate) {
     needsEngage_ = isActive_;
 }
 
+void PitchShiftKernel::reset() noexcept {
+    semitones_.reset(semitones_.target());
+    wet_.reset(wet_.target());
+    detector_.reset();
+    std::fill(input_.begin(), input_.end(), 0.0f);
+    std::fill(output_.begin(), output_.end(), 0.0f);
+    std::fill(mono_.begin(), mono_.end(), 0.0f);
+    std::fill(weight_.begin(), weight_.end(), 0.0f);
+    hopCounter_ = 0;
+    isVoiced_ = isMarkAligned_ = false;
+    period_ = baseUnvoicedPeriod_;
+    isActive_ = wet_.target() > 0;
+    needsEngage_ = isActive_;
+}
+
 void PitchShiftKernel::setSemitones(float semitones) noexcept {
     const float clamped = std::clamp(semitones, -12.0f, 12.0f);
     semitones_.setTarget(clamped, rampFrames_);

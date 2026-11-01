@@ -1,6 +1,7 @@
 #pragma once
 
-// Umbrella header for CEchoDSP. C++ only: Swift modules importing it must enable C++ interop.
+// Umbrella header for CEchoDSP. C++ (and Objective-C++ for the Audio Unit glue): Swift modules importing it must
+// enable C++ interop.
 #include "DSPMath.hpp"
 #include "SmoothedValue.hpp"
 #include "Biquad.hpp"
@@ -13,3 +14,4 @@
 #include "PitchDetector.hpp"
 #include "PitchShiftKernel.hpp"
 #include "ReverbKernel.hpp"
+#include "AudioUnitEffect.h"

@@ -61,6 +61,13 @@ void ReverbKernel::clear() noexcept {
     needsClear_ = false;
 }
 
+void ReverbKernel::reset() noexcept {
+    for (SmoothedValue* value : {&enabled_, &roomSize_, &damping_, &mix_}) {
+        value->reset(value->target());
+    }
+    clear();
+}
+
 void ReverbKernel::setEnabled(bool enabled) noexcept { enabled_.setTarget(enabled ? 1 : 0, rampFrames_); }
 void ReverbKernel::setRoomSize(float roomSize) noexcept { roomSize_.setTarget(std::clamp(roomSize, 0.0f, 1.0f), rampFrames_); }
 void ReverbKernel::setDamping(float damping) noexcept { damping_.setTarget(std::clamp(damping, 0.0f, 1.0f), rampFrames_); }

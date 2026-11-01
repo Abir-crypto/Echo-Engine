@@ -83,6 +83,7 @@ final class EditorModel {
         do {
             try engine.load(audio: folder.working, video: isVideo ? folder.source(fileName: project.sourceFileName) : nil)
             engine.playbackRange = project.trimRange
+            engine.apply(project.editState.manual)
             isLoaded = true
         } catch {
             failure = .cantPlay
@@ -184,6 +185,7 @@ final class EditorModel {
         project.editState = state
         committedState = state
         engine.playbackRange = state.trimRange
+        engine.apply(state.manual)
         save()
     }
 

@@ -18,6 +18,8 @@ public:
     void setReleaseMs(float ms) noexcept;
     void setMakeupDB(float db) noexcept;
     void process(float* const* channels, int channelCount, int frameCount) noexcept;
+    /// Clears the signal state (envelopes, delay lines) and finishes parameter ramps; keeps the settings. Real-time safe.
+    void reset() noexcept;
 
 private:
     SmoothedValue mix_, thresholdDB_, ratio_, makeupDB_;

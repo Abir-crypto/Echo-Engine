@@ -44,6 +44,12 @@ void EQKernel::process(float* const* channels, int channelCount, int frameCount)
         const int length = std::min(kCoefficientBlock, frameCount - start);
         for (Band& band : bands_) {
             if (band.shape == FilterShape::bypass) { continue; }
+            // A shelf or peak at 0 dB is flat. Skipping it keeps neutral settings bit-exact (fused multiply-adds
+            // would otherwise leave a small error near DC); it restarts from a clear state, where 0 dB is consistent.
+            if (band.gainDB.current() == 0 && !band.gainDB.isSmoothing()) {
+                band.state.reset();
+                continue;
+            }
             if (band.log2Frequency.isSmoothing() || band.gainDB.isSmoothing() || band.q.isSmoothing()) {
                 band.log2Frequency.advance(length);
                 band.gainDB.advance(length);
@@ -62,7 +68,11 @@ void EQKernel::process(float* const* channels, int channelCount, int frameCount)
 
 void EQKernel::reset() noexcept {
     for (Band& band : bands_) {
+        band.log2Frequency.reset(band.log2Frequency.target());
+        band.gainDB.reset(band.gainDB.target());
+        band.q.reset(band.q.target());
         band.state.reset();
+        updateCoefficients(band);
     }
 }
 

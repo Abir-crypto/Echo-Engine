@@ -166,7 +166,13 @@ Goal: real-time manual controls as C++ DSP in Audio Units.
   > constant latency 2.5 × 70 Hz period (1,715 frames @ 48 kHz) even at 0 st (then exactly the delayed input) — F05.T03 must report and
   > compensate it. `ReverbKernel` = Freeverb (8 combs + 4 allpasses, skips work and clears its tail while off). Buffers allocate in
   > `prepare` (off the render thread); scenarios guard only the render loop. Golden tolerance now SPEC § 19's −50 dB (relative).
-- [ ] F05.T03 — `EchoAudioUnits`: AUAudioUnit subclasses + `AUParameterTree` with ramping; chain assembly in `AVPlaybackEngine` in § 8 order.
+- [x] F05.T03 — `EchoAudioUnits`: AUAudioUnit subclasses + `AUParameterTree` with ramping; chain assembly in `AVPlaybackEngine` in § 8 order.
+  > Done: `ManualChainAudioUnit` (gain → gate → EQ → de-esser → compressor → pitch → reverb) and `OutputLimiterAudioUnit` (last, per § 6.6/6.7;
+  > F07 inserts the Auto Level gain between them), base `EchoEffectAudioUnit`, registered in-process (`EchoAudioUnits.register()`). Real-time side is
+  > `CEchoDSP/AudioUnitEffect.mm`: ObjC++ render block capturing a raw pointer, lock-free atomic parameter mailbox, render-thread reset flag.
+  > Engine: player → chain → limiter; `apply(ManualSettings)` sets tree values (`manualChainParameterValues`); latency 1,787 frames @ 48 kHz is
+  > compensated (playhead = what left the chain, video start/resync, silence flush at range end); seek/stop clears the chain. Flat EQ bands and an
+  > idle de-esser shelf are skipped so neutral settings are bit-exact (FMA contraction broke exact identity biquads). Editor applies settings on open/undo.
 - [ ] F05.T03a — Playback resilience: on `AVAudioEngineConfigurationChange` (route change, e.g. headphones unplugged) and session
   interruptions (calls), pause cleanly (keep the playhead, `isPlaying` false, video paused) and restart the engine on next play. From F04.
 - [ ] F05.T04 — Adjust UI: Equalizer screen (interactive curve, bands, reset), Gain and dynamics, Effects, Loudness row placeholder (§ 8, § 18.5).
