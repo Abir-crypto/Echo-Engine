@@ -12,7 +12,13 @@ let package = Package(
         .library(name: "EchoCoreFakes", targets: ["EchoCoreFakes"]),
     ],
     targets: [
-        .target(name: "CEchoDSP"),
+        .target(
+            name: "CEchoDSP",
+            // RNNoise's license and provenance travel with its sources (SPEC § 4.9).
+            exclude: ["rnnoise/COPYING", "rnnoise/AUTHORS", "rnnoise/VENDORED.md"],
+            // Vendored RNNoise stays unmodified; its one warning (a long → int narrowing in denoise.c) is silenced.
+            cSettings: [.disableWarning("shorten-64-to-32")]
+        ),
         .target(name: "EchoCore", dependencies: ["CEchoDSP", "EchoAudioUnits"], swiftSettings: cxxInterop),
         .target(name: "EchoAudioUnits", dependencies: ["CEchoDSP"], swiftSettings: cxxInterop),
         .target(name: "EchoCoreFakes", dependencies: ["EchoCore"], swiftSettings: cxxInterop),

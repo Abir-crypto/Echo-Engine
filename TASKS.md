@@ -196,7 +196,11 @@ Goal: real-time manual controls as C++ DSP in Audio Units.
 ## F06 — AI stack & render cache  [IN PROGRESS]
 Goal: user-ordered AI stack with per-step cached renders.
 
-- [ ] F06.T01 — Vendor RNNoise into `CEchoDSP` (license file), C API, Swift wrapper; 48 kHz mono 480-frame processing with `AVAudioConverter`. Golden-file test (fan noise).
+- [x] F06.T01 — Vendor RNNoise into `CEchoDSP` (license file), C API, Swift wrapper; 48 kHz mono 480-frame processing with `AVAudioConverter`. Golden-file test (fan noise).
+  > Done: RNNoise v0.2 + standard model (user decision, SPEC § 4.9/§ 20) in `CEchoDSP/rnnoise/` with COPYING, AUTHORS, VENDORED.md
+  > (provenance; upstream fix 372f7b4 applied: v0.2 doesn't build on arm64). C API `Denoiser.h` (`EEDenoiser*`, −1…1 floats). Swift
+  > `RNNoiseDenoiser` (streaming, removes RNNoise's 960-sample delay, output length = input) + `RNNoiseDenoiser.denoise(buffer)` via
+  > `AudioChannels` (`AVAudioConverter` → 48 kHz float, per channel). Tests on generated speech (`TestAudio/voice.caf`) + fan noise: −26 dB in pauses, speech ±0.2 dB.
 - [ ] F06.T02 — `AIProcessing` + `RNNoiseProcessor` (wet/dry strength), `ClearVoiceProcessor` (§ 7), `AIProcessorRouter` (`.unknown` pass-through).
 - [ ] F06.T03 — `FileRenderCache` (ALAC 24-bit, chain-hash keys § 6.3). Tests.
 - [ ] F06.T04 — `AIChainRenderer`: prefix walk, progress, cancellation, latest-change-wins; `firstChangedIndex`. Tests with fake processor.

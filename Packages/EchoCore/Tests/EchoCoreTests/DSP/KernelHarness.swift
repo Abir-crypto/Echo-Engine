@@ -1,5 +1,7 @@
+import AVFoundation
 import CEchoDSP
 import Foundation
+import Testing
 
 /// Non-interleaved float channels in the layout the kernels' `process(float* const*, channels, frames)` expects.
 /// Pointer storage is allocated up front, so processing through it never allocates.
@@ -98,6 +100,56 @@ enum TestSignal {
         return raw.map { $0 * 0.5 / peak }
     }
 
+    /// A voice with irregular pulse spacing (260–380 samples), so delays can be measured without a period's
+    /// ambiguity. Peaks at 0.5.
+    static func irregularVoice(frames: Int, seed: UInt32 = 7) -> [Float] {
+        var seed = seed
+        var pulses = [Float](repeating: 0, count: frames)
+        var position = 0
+        while position < frames {
+            pulses[position] = 1
+            seed = seed &* 1_664_525 &+ 1_013_904_223
+            position += 260 + Int(seed >> 24) % 120
+        }
+        var resonators = [700.0, 1_200.0].map { (echo.dsp.makeBiquad(.bandPass, sampleRate, $0, 0, 5), echo.dsp.BiquadState()) }
+        let raw = pulses.map { pulse -> Float in
+            var output: Float = 0
+            for index in resonators.indices {
+                output += resonators[index].1.process(resonators[index].0, pulse, 0)
+            }
+            return output
+        }
+        let peak = raw.map(abs).max() ?? 1
+        return raw.map { $0 * 0.5 / peak }
+    }
+
+    /// Deterministic fan noise at `rmsDB`: low rumble, a 180 Hz blade tone with two harmonics, and soft hiss
+    /// (SPEC § 19 "fan", generated).
+    static func fanNoise(frames: Int, rmsDB: Float) -> [Float] {
+        var seed: UInt32 = 0xFA_0001
+        var rumble: Float = 0
+        let raw = (0..<frames).map { frame -> Float in
+            seed = seed &* 1_664_525 &+ 1_013_904_223
+            let white = Float(seed >> 8) / Float(1 << 23) - 1
+            rumble += (white - rumble) * 0.05
+            let time = Double(frame) / sampleRate
+            let blade = (0.5 * sin(2 * .pi * 180 * time) + 0.25 * sin(2 * .pi * 360 * time) + 0.12 * sin(2 * .pi * 540 * time))
+                * (1 + 0.1 * sin(2 * .pi * 0.7 * time))
+            return 4 * rumble + 0.1 * white + Float(blade) * 0.3
+        }
+        let scale = echo.dsp.dbToLinear(rmsDB) / rms(raw)
+        return raw.map { $0 * scale }
+    }
+
+    /// `Resources/TestAudio/voice.caf`: 6 s of generated speech, 48 kHz mono.
+    static func voice() throws -> [Float] {
+        let url = try #require(Bundle.module.url(forResource: "voice", withExtension: "caf", subdirectory: "Resources/TestAudio"))
+        let file = try AVAudioFile(forReading: url)
+        let buffer = try #require(AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: AVAudioFrameCount(file.length)))
+        try file.read(into: buffer)
+        return Array(UnsafeBufferPointer(start: try #require(buffer.floatChannelData)[0], count: Int(buffer.frameLength)))
+    }
+
     /// Deterministic white noise in −amplitude…amplitude.
     static func noise(amplitude: Float, frames: Int) -> [Float] {
         var seed: UInt32 = 0xC0FF_EE11
@@ -139,6 +191,19 @@ enum TestSignal {
         return weighted / total
     }
 
+    /// Lag (in −range…range) at which `output` best matches `input`.
+    static func bestLag(of output: [Float], against input: [Float], in range: ClosedRange<Int>, over frames: Range<Int>) -> Int {
+        var best = (lag: 0, score: -Float.infinity)
+        for lag in range {
+            var score: Float = 0
+            for index in frames where index + lag >= 0 && index + lag < output.count {
+                score += input[index] * output[index + lag]
+            }
+            if score > best.score { best = (lag, score) }
+        }
+        return best.lag
+    }
+
     static func rms<C: Collection<Float>>(_ samples: C) -> Float {
         guard !samples.isEmpty else { return 0 }
         return (samples.reduce(0) { $0 + $1 * $1 } / Float(samples.count)).squareRoot()
@@ -146,5 +211,52 @@ enum TestSignal {
 
     static func rmsDB<C: Collection<Float>>(_ samples: C) -> Float {
         echo.dsp.linearToDb(rms(samples))
+    }
+}
+
+/// Reference outputs in `Resources/TestAudio/Golden/<name>.f32` (raw little-endian Float32 mono). Re-record after an
+/// intended DSP change with `ECHO_UPDATE_GOLDEN=1 swift test`.
+enum GoldenFile {
+    /// SPEC § 19: the RMS of the difference stays below −50 dB (relative to the reference).
+    static let toleranceDB: Float = -50
+
+    static var isUpdating: Bool { ProcessInfo.processInfo.environment["ECHO_UPDATE_GOLDEN"] == "1" }
+
+    /// The difference to the reference in dB relative to it; records `output` instead when updating (then `nil`).
+    static func differenceDB(of output: [Float], name: String) throws -> Float? {
+        if isUpdating {
+            try write(output, to: sourceURL(name))
+            return nil
+        }
+        let url = try #require(
+            Bundle.module.url(forResource: name, withExtension: "f32", subdirectory: "Resources/TestAudio/Golden"),
+            "No golden file for \(name); record it with ECHO_UPDATE_GOLDEN=1"
+        )
+        let reference = try read(url)
+        try #require(reference.count == output.count)
+        let difference = zip(output, reference).map { $0 - $1 }
+        return TestSignal.rmsDB(difference) - TestSignal.rmsDB(reference)
+    }
+
+    private static func sourceURL(_ name: String, file: String = #filePath) -> URL {
+        URL(filePath: file)
+            .deletingLastPathComponent()
+            .deletingLastPathComponent()
+            .appending(path: "Resources/TestAudio/Golden/\(name).f32")
+    }
+
+    private static func write(_ samples: [Float], to url: URL) throws {
+        let data = samples.map(\.bitPattern.littleEndian).withUnsafeBufferPointer { Data(buffer: $0) }
+        try data.write(to: url, options: .atomic)
+    }
+
+    private static func read(_ url: URL) throws -> [Float] {
+        let data = try Data(contentsOf: url)
+        return stride(from: 0, to: data.count - 3, by: 4).map { offset in
+            let bits = data[data.startIndex + offset..<data.startIndex + offset + 4]
+                .enumerated()
+                .reduce(UInt32(0)) { $0 | UInt32($1.element) << (8 * UInt32($1.offset)) }
+            return Float(bitPattern: bits)
+        }
     }
 }

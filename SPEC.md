@@ -173,7 +173,9 @@ final class AppContainer {
 ### 4.9 Dependencies (allowed)
 
 - Apple frameworks only, plus:
-  - **RNNoise** (BSD-3-Clause) vendored as C source in `CEchoDSP`; license text included.
+  - **RNNoise** (BSD-3-Clause) vendored as C source in `CEchoDSP`; license text included. Version: v0.2 with its
+    standard model `0b50c45` (adds ~5.5 MB to the app), plus upstream's build fix 372f7b4; provenance in
+    `CEchoDSP/rnnoise/VENDORED.md`.
   - **Firebase iOS SDK** via SPM: products `FirebaseAnalytics`, `FirebaseCrashlytics` only.
 - No AudioKit, no Combine-based libs, no DI frameworks. Ask before adding anything.
 
@@ -892,3 +894,5 @@ Record new user decisions here (date, decision, section updated).
 - 2026-11-01: Adjust detail screens (Equalizer, Gain and dynamics, Effects) are built natively from § 18, not in
   Sleek. EQ: band chips + Frequency/Gain/Q sliders for the selected band. Gain and dynamics: essentials visible,
   attack/release/range/frequency under "Advanced" (§ 8, § 18.5).
+- 2026-11-01: RNNoise v0.2 with the standard model (best quality; ~5.5 MB in the app, 29 MB weights source in the
+  repo), not the "little" model or v0.1.1 (§ 4.9).

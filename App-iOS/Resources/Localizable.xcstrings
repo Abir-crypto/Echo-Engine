@@ -1,31 +1,31 @@
 {
-  "sourceLanguage": "en",
-  "strings": {
-    "%@ LUFS": {
-      "comment": "A loudness target, e.g. -14 LUFS."
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ dB" : {
+      "comment" : "A level in decibels, e.g. +2.5 dB."
     },
-    "%@ dB": {
-      "comment": "A level in decibels, e.g. +2.5 dB."
+    "%@ LUFS" : {
+      "comment" : "A loudness target, e.g. -14 LUFS."
     },
-    "%@:1": {
-      "comment": "A compression ratio, e.g. 3:1."
+    "%@:1" : {
+      "comment" : "A compression ratio, e.g. 3:1."
     },
-    "%lld semitones higher": {
-      "comment": "VoiceOver value of the pitch slider. %lld = semitones.",
-      "localizations": {
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld semitone higher"
+    "%lld semitones higher" : {
+      "comment" : "VoiceOver value of the pitch slider.",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld semitone higher"
                 }
               },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld semitones higher"
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld semitones higher"
                 }
               }
             }
@@ -33,22 +33,22 @@
         }
       }
     },
-    "%lld semitones lower": {
-      "comment": "VoiceOver value of the pitch slider. %lld = semitones.",
-      "localizations": {
-        "en": {
-          "variations": {
-            "plural": {
-              "one": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld semitone lower"
+    "%lld semitones lower" : {
+      "comment" : "VoiceOver value of the pitch slider.",
+      "localizations" : {
+        "en" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld semitone lower"
                 }
               },
-              "other": {
-                "stringUnit": {
-                  "state": "translated",
-                  "value": "%lld semitones lower"
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld semitones lower"
                 }
               }
             }
@@ -56,315 +56,315 @@
         }
       }
     },
-    "Adds the sound of a room.": {
-      "comment": "Effects: explanation under the Reverb switch."
+    "Adds the sound of a room." : {
+      "comment" : "Effects: explanation under the Reverb switch."
     },
-    "Adjust": {
-      "comment": "Editor section title for the live manual controls."
+    "Adjust" : {
+      "comment" : "Editor section title for the live manual controls."
     },
-    "Adjusted": {
-      "comment": "VoiceOver value of the Equalizer row when any band is boosted or cut."
+    "Adjusted" : {
+      "comment" : "VoiceOver value of the Equalizer row when any band is boosted or cut."
     },
-    "Advanced": {
-      "comment": "Row that reveals timing and range controls of a dynamics section."
+    "Advanced" : {
+      "comment" : "Row that reveals timing and range controls of a dynamics section."
     },
-    "Always on: peaks never go above the ceiling.": {
-      "comment": "Gain and dynamics: caption under the limiter ceiling slider."
+    "Always on: peaks never go above the ceiling." : {
+      "comment" : "Gain and dynamics: caption under the limiter ceiling slider."
     },
-    "Amount": {
-      "comment": "De-esser: how strongly sibilance is reduced (slider)."
+    "Amount" : {
+      "comment" : "De-esser: how strongly sibilance is reduced (slider)."
     },
-    "Attack": {
-      "comment": "Gate/compressor: how fast it reacts (slider, milliseconds)."
+    "Attack" : {
+      "comment" : "Gate/compressor: how fast it reacts (slider, milliseconds)."
     },
-    "Audio": {
-      "comment": "Accessibility label of the audio badge on a project card."
+    "Audio" : {
+      "comment" : "Accessibility label of the audio badge on a project card."
     },
-    "Band %lld, %@": {
-      "comment": "VoiceOver label of an EQ band. %1$lld = band number, %2$@ = its frequency, e.g. Band 3, 1 kHz."
+    "Band %lld, %@" : {
+      "comment" : "VoiceOver label of an EQ band. %1$lld = band number, %2$@ = its frequency, e.g. Band 3, 1 kHz."
     },
-    "Cancel": {
-      "comment": "Cancel button."
+    "Can’t import" : {
+      "comment" : "Title of the import sheet when an import fails."
     },
-    "Can’t import": {
-      "comment": "Title of the import sheet when an import fails."
+    "Cancel" : {
+      "comment" : "Cancel button."
     },
-    "Changes couldn’t be saved. Free up some space, then try again.": {
-      "comment": "Editor error."
+    "Changes couldn’t be saved. Free up some space, then try again." : {
+      "comment" : "Editor error."
     },
-    "Collapsed": {
-      "comment": "VoiceOver value of the closed Advanced row."
+    "Collapsed" : {
+      "comment" : "VoiceOver value of the closed Advanced row."
     },
-    "Compressor": {
-      "comment": "Gain and dynamics: section and switch title."
+    "Compressor" : {
+      "comment" : "Gain and dynamics: section and switch title."
     },
-    "Damping": {
-      "comment": "Reverb: how quickly high frequencies fade in the room (slider)."
+    "Damping" : {
+      "comment" : "Reverb: how quickly high frequencies fade in the room (slider)."
     },
-    "De-esser": {
-      "comment": "Gain and dynamics: section and switch title (reduces harsh s sounds)."
+    "De-esser" : {
+      "comment" : "Gain and dynamics: section and switch title (reduces harsh s sounds)."
     },
-    "Delete": {
-      "comment": "Delete action for a project."
+    "Delete" : {
+      "comment" : "Delete action for a project."
     },
-    "Delete project": {
-      "comment": "Destructive confirmation button."
+    "Delete “%@”?" : {
+      "comment" : "Delete confirmation title. %@ = project title."
     },
-    "Delete “%@”?": {
-      "comment": "Delete confirmation title. %@ = project title."
+    "Delete project" : {
+      "comment" : "Destructive confirmation button."
     },
-    "Done": {
-      "comment": "Closes a sheet; changes are already applied."
+    "Done" : {
+      "comment" : "Closes a sheet; changes are already applied."
     },
-    "Edited today": {
-      "comment": "Project card date when the project changed today."
+    "Edited today" : {
+      "comment" : "Project card date when the project changed today."
     },
-    "Effects": {
-      "comment": "Editor Adjust row and sheet title: pitch shift and reverb."
+    "Effects" : {
+      "comment" : "Editor Adjust row and sheet title: pitch shift and reverb."
     },
-    "Equalizer": {
-      "comment": "Editor Adjust row and sheet title."
+    "Equalizer" : {
+      "comment" : "Editor Adjust row and sheet title."
     },
-    "Evens out loud and quiet parts.": {
-      "comment": "Gain and dynamics: explanation under the Compressor switch."
+    "Evens out loud and quiet parts." : {
+      "comment" : "Gain and dynamics: explanation under the Compressor switch."
     },
-    "Expanded": {
-      "comment": "VoiceOver value of the open Advanced row."
+    "Expanded" : {
+      "comment" : "VoiceOver value of the open Advanced row."
     },
-    "Export": {
-      "comment": "Editor toolbar button that opens the export sheet."
+    "Export" : {
+      "comment" : "Editor toolbar button that opens the export sheet."
     },
-    "Files": {
-      "comment": "Import source: the Files app."
+    "Files" : {
+      "comment" : "Import source: the Files app."
     },
-    "Flat": {
-      "comment": "VoiceOver value of the Equalizer row when no band is changed."
+    "Flat" : {
+      "comment" : "VoiceOver value of the Equalizer row when no band is changed."
     },
-    "Frequency": {
-      "comment": "EQ band / de-esser frequency slider."
+    "Frequency" : {
+      "comment" : "EQ band / de-esser frequency slider."
     },
-    "Gain": {
-      "comment": "EQ band gain slider (boost or cut in dB)."
+    "Gain" : {
+      "comment" : "EQ band gain slider (boost or cut in dB)."
     },
-    "Gain and dynamics": {
-      "comment": "Editor Adjust row and sheet title: input gain, gate, compressor, de-esser, limiter."
+    "Gain and dynamics" : {
+      "comment" : "Editor Adjust row and sheet title: input gain, gate, compressor, de-esser, limiter."
     },
-    "High": {
-      "comment": "EQ band chip: the high shelf band."
+    "High" : {
+      "comment" : "EQ band chip: the high shelf band."
     },
-    "High shelf": {
-      "comment": "EQ band type shown above its sliders."
+    "High shelf" : {
+      "comment" : "EQ band type shown above its sliders."
     },
-    "Hold for original": {
-      "comment": "Editor: press and hold to hear the original audio."
+    "Hold for original" : {
+      "comment" : "Editor: press and hold to hear the original audio."
     },
-    "Import a video or audio file, or record something new.": {
-      "comment": "Empty projects screen."
+    "Import a video or audio file, or record something new." : {
+      "comment" : "Empty projects screen."
     },
-    "Import audio or video": {
-      "comment": "Primary button on the projects screen."
+    "Import audio or video" : {
+      "comment" : "Primary button on the projects screen."
     },
-    "Importing": {
-      "comment": "Title of the import progress sheet."
+    "Importing" : {
+      "comment" : "Title of the import progress sheet."
     },
-    "In semitones. The voice keeps its natural character.": {
-      "comment": "Effects: caption under the pitch slider (formant-preserving pitch shift)."
+    "In semitones. The voice keeps its natural character." : {
+      "comment" : "Effects: caption under the pitch slider (formant-preserving pitch shift)."
     },
-    "Input gain": {
-      "comment": "Gain and dynamics: level going into the chain (slider, dB)."
+    "Input gain" : {
+      "comment" : "Gain and dynamics: level going into the chain (slider, dB)."
     },
-    "It can’t be undone.": {
-      "comment": "Delete confirmation message when the size is unknown."
+    "It can’t be undone." : {
+      "comment" : "Delete confirmation message when the size is unknown."
     },
-    "Limiter ceiling": {
-      "comment": "Gain and dynamics: the limiter's maximum level (slider, dB)."
+    "Limiter ceiling" : {
+      "comment" : "Gain and dynamics: the limiter's maximum level (slider, dB)."
     },
-    "Loudness": {
-      "comment": "Editor Adjust row: Auto Level loudness target."
+    "Loudness" : {
+      "comment" : "Editor Adjust row: Auto Level loudness target."
     },
-    "Low": {
-      "comment": "EQ band chip: the low shelf band."
+    "Low" : {
+      "comment" : "EQ band chip: the low shelf band."
     },
-    "Low shelf": {
-      "comment": "EQ band type shown above its sliders."
+    "Low shelf" : {
+      "comment" : "EQ band type shown above its sliders."
     },
-    "Makeup gain": {
-      "comment": "Compressor: level added after compression (slider, dB)."
+    "Makeup gain" : {
+      "comment" : "Compressor: level added after compression (slider, dB)."
     },
-    "Mix": {
-      "comment": "Reverb: how much room sound is mixed in (slider, percent)."
+    "Mix" : {
+      "comment" : "Reverb: how much room sound is mixed in (slider, percent)."
     },
-    "Need %@ more to edit this project. Free up space on your iPad, then come back. Your import is saved.": {
-      "comment": "Editor blocked by storage on iPad (SPEC § 9). %@ = missing space."
+    "Need %@ more to edit this project. Free up space on your iPad, then come back. Your import is saved." : {
+      "comment" : "Editor blocked by storage on iPad (SPEC § 9). %@ = missing space."
     },
-    "Need %@ more to edit this project. Free up space on your iPhone, then come back. Your import is saved.": {
-      "comment": "Editor blocked by storage on iPhone (SPEC § 9). %@ = missing space."
+    "Need %@ more to edit this project. Free up space on your iPhone, then come back. Your import is saved." : {
+      "comment" : "Editor blocked by storage on iPhone (SPEC § 9). %@ = missing space."
     },
-    "Needs %@ to edit": {
-      "comment": "Project card warning. %@ = missing space, e.g. 0.2 GB (SPEC § 14.1, § 15)."
+    "Needs %@ to edit" : {
+      "comment" : "Project card warning. %@ = missing space, e.g. 0.2 GB (SPEC § 14.1, § 15)."
     },
-    "Needs %@ to export": {
-      "comment": "Project card warning. %@ = missing space, e.g. 0.2 GB (SPEC § 15)."
+    "Needs %@ to export" : {
+      "comment" : "Project card warning. %@ = missing space, e.g. 0.2 GB (SPEC § 15)."
     },
-    "Noise gate": {
-      "comment": "Gain and dynamics: section and switch title."
+    "Noise gate" : {
+      "comment" : "Gain and dynamics: section and switch title."
     },
-    "Not available in this version": {
-      "comment": "EQ band type made by a newer app version; the band is bypassed."
+    "Not available in this version" : {
+      "comment" : "EQ band type made by a newer app version; the band is bypassed."
     },
-    "OK": {
-      "comment": "Dismisses an alert."
+    "Off" : {
+      "comment" : "Value of an Adjust row when nothing in it is on."
     },
-    "Off": {
-      "comment": "Value of an Adjust row when nothing in it is on."
+    "OK" : {
+      "comment" : "Dismisses an alert."
     },
-    "Original pitch": {
-      "comment": "VoiceOver value of the pitch slider at 0."
+    "Original pitch" : {
+      "comment" : "VoiceOver value of the pitch slider at 0."
     },
-    "Pause": {
-      "comment": "Accessibility label of the pause button."
+    "Pause" : {
+      "comment" : "Accessibility label of the pause button."
     },
-    "Peak": {
-      "comment": "EQ band type (peaking filter) shown above its sliders."
+    "Peak" : {
+      "comment" : "EQ band type (peaking filter) shown above its sliders."
     },
-    "Photos": {
-      "comment": "Import source: the Photos library."
+    "Photos" : {
+      "comment" : "Import source: the Photos library."
     },
-    "Pinch to zoom": {
-      "comment": "Caption on the editor waveform."
+    "Pinch to zoom" : {
+      "comment" : "Caption on the editor waveform."
     },
-    "Pitch": {
-      "comment": "Effects: pitch shift slider (semitones)."
+    "Pitch" : {
+      "comment" : "Effects: pitch shift slider (semitones)."
     },
-    "Pitch %@": {
-      "comment": "Effects row value when only pitch is on. %@ = signed semitones, e.g. +2."
+    "Pitch %@" : {
+      "comment" : "Effects row value when only pitch is on. %@ = signed semitones, e.g. +2."
     },
-    "Pitch %@ · Reverb": {
-      "comment": "Effects row value when pitch and reverb are on. %@ = signed semitones, e.g. +2."
+    "Pitch %@ · Reverb" : {
+      "comment" : "Effects row value when pitch and reverb are on. %@ = signed semitones, e.g. +2."
     },
-    "Play": {
-      "comment": "Accessibility label of the play button."
+    "Play" : {
+      "comment" : "Accessibility label of the play button."
     },
-    "Playhead": {
-      "comment": "Accessibility label of the playhead on the overview strip."
+    "Playhead" : {
+      "comment" : "Accessibility label of the playhead on the overview strip."
     },
-    "Preparing…": {
-      "comment": "Import progress before copying starts."
+    "Preparing…" : {
+      "comment" : "Import progress before copying starts."
     },
-    "Projects": {
-      "comment": "Tab bar item and title of the projects screen."
+    "Projects" : {
+      "comment" : "Tab bar item and title of the projects screen."
     },
-    "Projects couldn’t be loaded. Restart Echo Engine to try again.": {
-      "comment": "Error alert."
+    "Projects couldn’t be loaded. Restart Echo Engine to try again." : {
+      "comment" : "Error alert."
     },
-    "Q": {
-      "comment": "EQ band width (Q) slider; keep the letter Q if your language uses it."
+    "Q" : {
+      "comment" : "EQ band width (Q) slider; keep the letter Q if your language uses it."
     },
-    "Quiets the audio between words.": {
-      "comment": "Gain and dynamics: explanation under the Noise gate switch."
+    "Quiets the audio between words." : {
+      "comment" : "Gain and dynamics: explanation under the Noise gate switch."
     },
-    "Range": {
-      "comment": "Noise gate: how much it turns down while closed (slider, dB)."
+    "Range" : {
+      "comment" : "Noise gate: how much it turns down while closed (slider, dB)."
     },
-    "Ratio": {
-      "comment": "Compressor ratio slider, e.g. 3:1."
+    "Ratio" : {
+      "comment" : "Compressor ratio slider, e.g. 3:1."
     },
-    "Record": {
-      "comment": "Tab bar item and title of the record screen."
+    "Record" : {
+      "comment" : "Tab bar item and title of the record screen."
     },
-    "Redo": {
-      "comment": "Accessibility label of the redo button."
+    "Redo" : {
+      "comment" : "Accessibility label of the redo button."
     },
-    "Release": {
-      "comment": "Gate/compressor: how fast it lets go (slider, milliseconds)."
+    "Release" : {
+      "comment" : "Gate/compressor: how fast it lets go (slider, milliseconds)."
     },
-    "Rename": {
-      "comment": "Rename action for a project."
+    "Rename" : {
+      "comment" : "Rename action for a project."
     },
-    "Rename project": {
-      "comment": "Title of the rename dialog."
+    "Rename project" : {
+      "comment" : "Title of the rename dialog."
     },
-    "Reset": {
-      "comment": "Equalizer: returns every band to flat."
+    "Reset" : {
+      "comment" : "Equalizer: returns every band to flat."
     },
-    "Reverb": {
-      "comment": "Effects: switch title and Effects row value."
+    "Reverb" : {
+      "comment" : "Effects: switch title and Effects row value."
     },
-    "Room size": {
-      "comment": "Reverb: size of the simulated room (slider, percent)."
+    "Room size" : {
+      "comment" : "Reverb: size of the simulated room (slider, percent)."
     },
-    "Settings": {
-      "comment": "Settings button and screen title."
+    "Settings" : {
+      "comment" : "Settings button and screen title."
     },
-    "Softens harsh “s” sounds.": {
-      "comment": "Gain and dynamics: explanation under the De-esser switch."
+    "Softens harsh “s” sounds." : {
+      "comment" : "Gain and dynamics: explanation under the De-esser switch."
     },
-    "The import couldn’t finish. Try again.": {
-      "comment": "Import error."
+    "The import couldn’t finish. Try again." : {
+      "comment" : "Import error."
     },
-    "The project couldn’t be deleted. Try again.": {
-      "comment": "Error alert."
+    "The project couldn’t be deleted. Try again." : {
+      "comment" : "Error alert."
     },
-    "The project couldn’t be renamed. Try again.": {
-      "comment": "Error alert."
+    "The project couldn’t be renamed. Try again." : {
+      "comment" : "Error alert."
     },
-    "The video couldn’t be loaded from Photos. Make sure it’s downloaded from iCloud, then try again.": {
-      "comment": "Import error."
+    "The video couldn’t be loaded from Photos. Make sure it’s downloaded from iCloud, then try again." : {
+      "comment" : "Import error."
     },
-    "This file can’t be read. Export it again from the app that made it, then import the new file.": {
-      "comment": "Import error."
+    "This file can’t be read. Export it again from the app that made it, then import the new file." : {
+      "comment" : "Import error."
     },
-    "This file type isn’t supported. Import MOV, MP4 or M4V video, or M4A, AAC, MP3, WAV, AIFF, CAF or FLAC audio.": {
-      "comment": "Import error."
+    "This file type isn’t supported. Import MOV, MP4 or M4V video, or M4A, AAC, MP3, WAV, AIFF, CAF or FLAC audio." : {
+      "comment" : "Import error."
     },
-    "This frees %@. It can’t be undone.": {
-      "comment": "Delete confirmation message. %@ = size, e.g. 1.4 GB."
+    "This frees %@. It can’t be undone." : {
+      "comment" : "Delete confirmation message. %@ = size, e.g. 1.4 GB."
     },
-    "This project needs about %@. You have %@ free. Free up space, then import again.": {
-      "comment": "Import blocked by storage. %1$@ = needed size, %2$@ = free space (SPEC § 15)."
+    "This project needs about %@. You have %@ free. Free up space, then import again." : {
+      "comment" : "Import blocked by storage. %1$@ = needed size, %2$@ = free space (SPEC § 15)."
     },
-    "This project’s audio can’t be played. Import the file again to make a new project.": {
-      "comment": "Editor error."
+    "This project’s audio can’t be played. Import the file again to make a new project." : {
+      "comment" : "Editor error."
     },
-    "This video has no audio. Choose a video with sound.": {
-      "comment": "Import error (SPEC § 10)."
+    "This video has no audio. Choose a video with sound." : {
+      "comment" : "Import error (SPEC § 10)."
     },
-    "Threshold": {
-      "comment": "Gate/compressor: level where it starts working (slider, dB)."
+    "Threshold" : {
+      "comment" : "Gate/compressor: level where it starts working (slider, dB)."
     },
-    "Title": {
-      "comment": "Placeholder of the project title field."
+    "Title" : {
+      "comment" : "Placeholder of the project title field."
     },
-    "Touch and hold to hear the original audio.": {
-      "comment": "VoiceOver hint for Hold for original."
+    "Touch and hold to hear the original audio." : {
+      "comment" : "VoiceOver hint for Hold for original."
     },
-    "Trim end": {
-      "comment": "Accessibility label of the trim end handle."
+    "Trim end" : {
+      "comment" : "Accessibility label of the trim end handle."
     },
-    "Trim start": {
-      "comment": "Accessibility label of the trim start handle."
+    "Trim start" : {
+      "comment" : "Accessibility label of the trim start handle."
     },
-    "Trimmed to %@ of %@": {
-      "comment": "Below the overview strip. %1$@ = trimmed length, %2$@ = full length, e.g. 2:51 of 3:18."
+    "Trimmed to %@ of %@" : {
+      "comment" : "Below the overview strip. %1$@ = trimmed length, %2$@ = full length, e.g. 2:51 of 3:18."
     },
-    "Undo": {
-      "comment": "Accessibility label of the undo button."
+    "Undo" : {
+      "comment" : "Accessibility label of the undo button."
     },
-    "Update Echo Engine to edit this project.": {
-      "comment": "Shown for projects made with a newer app version (SPEC § 5.3)."
+    "Update Echo Engine to edit this project." : {
+      "comment" : "Shown for projects made with a newer app version (SPEC § 5.3)."
     },
-    "Video": {
-      "comment": "Accessibility label of the video badge on a project card."
+    "Video" : {
+      "comment" : "Accessibility label of the video badge on a project card."
     },
-    "Video preview": {
-      "comment": "Accessibility label of the editor video preview."
+    "Video preview" : {
+      "comment" : "Accessibility label of the editor video preview."
     },
-    "Waveform": {
-      "comment": "Accessibility label of the editor waveform."
+    "Waveform" : {
+      "comment" : "Accessibility label of the editor waveform."
     },
-    "Yesterday": {
-      "comment": "Project card date when the project changed yesterday."
+    "Yesterday" : {
+      "comment" : "Project card date when the project changed yesterday."
     }
   },
-  "version": "1.0"
+  "version" : "1.0"
 }
