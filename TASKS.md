@@ -173,8 +173,12 @@ Goal: real-time manual controls as C++ DSP in Audio Units.
   > Engine: player → chain → limiter; `apply(ManualSettings)` sets tree values (`manualChainParameterValues`); latency 1,787 frames @ 48 kHz is
   > compensated (playhead = what left the chain, video start/resync, silence flush at range end); seek/stop clears the chain. Flat EQ bands and an
   > idle de-esser shelf are skipped so neutral settings are bit-exact (FMA contraction broke exact identity biquads). Editor applies settings on open/undo.
-- [ ] F05.T03a — Playback resilience: on `AVAudioEngineConfigurationChange` (route change, e.g. headphones unplugged) and session
+- [x] F05.T03a — Playback resilience: on `AVAudioEngineConfigurationChange` (route change, e.g. headphones unplugged) and session
   interruptions (calls), pause cleanly (keep the playhead, `isPlaying` false, video paused) and restart the engine on next play. From F04.
+  > Done: `AudioDeviceManaging.sessionEvents()` (`AudioSessionEvent`: interruption began/ended, output removed = route change
+  > `.oldDeviceUnavailable`); `IOSAudioDeviceManager` maps `AVAudioSession` notifications; `EditorModel` pauses on began/removed, never
+  > auto-resumes. `AVPlaybackEngine` pauses on `AVAudioEngineConfigurationChange`; with no render time left the playhead continues from the
+  > last read render time by the clock; `play` restarts a stopped engine. Not testable in the simulator (no calls/route changes): device check.
 - [ ] F05.T04 — Adjust UI: Equalizer screen (interactive curve, bands, reset), Gain and dynamics, Effects, Loudness row placeholder (§ 8, § 18.5).
 - [ ] F05.T05 — Persist `ManualSettings`, undo on drag end, "Hold for original" bypass.
 

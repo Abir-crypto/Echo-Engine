@@ -250,6 +250,23 @@ final class AVPlaybackEngineTests {
         #expect(samples.map(abs).max()! > 0.4)
     }
 
+    @Test func aStoppedEnginePausesWithThePlayheadKeptAndRestartsOnPlay() throws {
+        let engine = try makeEngine()
+        try engine.play()
+        _ = try renderHeard(engine, frames: 4_800)
+        _ = engine.currentTime   // the editor reads the playhead every frame
+
+        // What the system does on a route change: stop the engine, then notify.
+        engine.engine.stop()
+        engine.handleConfigurationChange()
+
+        #expect(!engine.isPlaying)
+        #expect(abs(engine.currentTime - 0.1) < 0.001)
+        try engine.play()
+        #expect(engine.engine.isRunning)
+        #expect(try renderHeard(engine, frames: 2).first == 4_800)
+    }
+
     @Test func rangeIsClampedToTheAudio() throws {
         let engine = try makeEngine()
         engine.playbackRange = TimeRangeCodable(start: -1, duration: 10)

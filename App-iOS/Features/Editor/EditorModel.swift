@@ -40,6 +40,8 @@ final class EditorModel {
     @ObservationIgnored private var lastSave: Task<Void, Never>?
     /// The edit state as of the last undo step; a commit records it before moving on.
     @ObservationIgnored private var committedState: EditState
+    /// Pauses playback on interruptions and lost outputs while the editor is open.
+    @ObservationIgnored private var sessionEvents: Task<Void, Never>?
 
     init(
         stored: StoredProject,
@@ -85,6 +87,7 @@ final class EditorModel {
             engine.playbackRange = project.trimRange
             engine.apply(project.editState.manual)
             isLoaded = true
+            followSessionEvents()
         } catch {
             failure = .cantPlay
             return
@@ -97,6 +100,8 @@ final class EditorModel {
 
     /// Leaving the editor: stop playback and write pending changes.
     func close() async {
+        sessionEvents?.cancel()
+        sessionEvents = nil
         engine.pause()
         await lastSave?.value
         await autosaver.flush()
@@ -163,6 +168,21 @@ final class EditorModel {
         guard canEdit, !title.isEmpty, title != project.title else { return }
         project.title = title
         save()
+    }
+
+    /// A call or a lost output pauses playback with the playhead kept; nothing resumes on its own, the next Play
+    /// restarts the engine.
+    private func followSessionEvents() {
+        let events = devices.sessionEvents()
+        sessionEvents = Task { [weak self] in
+            for await event in events {
+                guard let self else { return }
+                switch event {
+                case .interruptionBegan, .outputDeviceRemoved: self.engine.pause()
+                case .interruptionEnded: break
+                }
+            }
+        }
     }
 
     private func applyTrim(_ range: TimeRangeCodable) {

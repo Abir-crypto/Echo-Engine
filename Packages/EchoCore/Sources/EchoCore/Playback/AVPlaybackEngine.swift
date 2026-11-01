@@ -32,7 +32,8 @@ public final class AVPlaybackEngine: PlaybackEngine {
         }
     }
 
-    @ObservationIgnored private let engine = AVAudioEngine()
+    /// Internal for tests that simulate the system stopping it.
+    @ObservationIgnored let engine = AVAudioEngine()
     @ObservationIgnored private let player = AVAudioPlayerNode()
     @ObservationIgnored private let manualChain: AVAudioUnitEffect
     @ObservationIgnored private let outputLimiter: AVAudioUnitEffect
@@ -44,6 +45,11 @@ public final class AVPlaybackEngine: PlaybackEngine {
     @ObservationIgnored private var scheduledEndFrame: AVAudioFramePosition = 0
     /// Observed, so seeking while paused updates the UI; while playing, `currentTime` reads the player node.
     private var pausedTime: Double = 0
+    /// Host seconds at which `segmentStart` leaves the chain; estimates the playhead when the stopped engine has no
+    /// render time.
+    @ObservationIgnored private var segmentStartHostSeconds: Double = 0
+    @ObservationIgnored private var lastRendered: (time: Double, hostSeconds: Double, generation: Int)?
+    @ObservationIgnored private var configurationObserver: (any NSObjectProtocol)?
     @ObservationIgnored private var generation = 0
     @ObservationIgnored private var cachedFlush: AVAudioPCMBuffer?
     @ObservationIgnored private var driftTask: Task<Void, Never>?
@@ -52,6 +58,7 @@ public final class AVPlaybackEngine: PlaybackEngine {
         isOffline = false
         (manualChain, outputLimiter) = Self.makeEffects()
         attachNodes()
+        observeConfigurationChanges()
     }
 
     /// Renders offline instead of to the hardware, for tests (`renderOffline(frames:)`). Video never plays here.
@@ -60,6 +67,25 @@ public final class AVPlaybackEngine: PlaybackEngine {
         (manualChain, outputLimiter) = Self.makeEffects()
         attachNodes()
         try engine.enableManualRenderingMode(.offline, format: format, maximumFrameCount: 4_096)
+        observeConfigurationChanges()
+    }
+
+    isolated deinit {
+        if let configurationObserver { NotificationCenter.default.removeObserver(configurationObserver) }
+    }
+
+    /// The system stops the engine when the output's format changes (a route change such as unplugged headphones).
+    private func observeConfigurationChanges() {
+        configurationObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.handleConfigurationChange() }
+        }
+    }
+
+    /// Pauses with the playhead kept; the next `play` restarts the engine.
+    func handleConfigurationChange() {
+        pause()
     }
 
     private static func makeEffects() -> (AVAudioUnitEffect, AVAudioUnitEffect) {
@@ -86,8 +112,18 @@ public final class AVPlaybackEngine: PlaybackEngine {
     }
 
     public var currentTime: Double {
-        guard isPlaying, let rendered = renderedTime else { return pausedTime }
-        return min(playbackRange.end, rendered.time)
+        guard isPlaying else { return pausedTime }
+        if let rendered = renderedTime {
+            lastRendered = (rendered.time, rendered.hostSeconds, generation)
+            return min(playbackRange.end, rendered.time)
+        }
+        // A stopped engine (route change, interruption) has no render time: continue from the last one the editor
+        // read (it reads every frame), else from the schedule's start, by the clock (offline renders have none).
+        let elapsed: (Double) -> Double = { [isOffline] since in isOffline ? 0 : max(0, Self.now() - since) }
+        if let lastRendered, lastRendered.generation == generation {
+            return min(playbackRange.end, lastRendered.time + elapsed(lastRendered.hostSeconds))
+        }
+        return min(playbackRange.end, segmentStart + elapsed(segmentStartHostSeconds))
     }
 
     public func load(audio url: URL, video videoURL: URL?) throws {
@@ -128,10 +164,12 @@ public final class AVPlaybackEngine: PlaybackEngine {
             // what is shown.
             let start = Self.now() + VideoSync.startDelay
             player.play(at: AVAudioTime(hostTime: AVAudioTime.hostTime(forSeconds: start - outputLatency - chainLatency)))
+            segmentStartHostSeconds = start
             video.setRate(1, time: Self.cmTime(pausedTime), atHostTime: Self.cmHostTime(start))
             startDriftCorrection()
         } else {
             player.play()
+            segmentStartHostSeconds = Self.now() + chainLatency
         }
         isPlaying = true
     }
@@ -159,7 +197,12 @@ public final class AVPlaybackEngine: PlaybackEngine {
             try? play()
         } else {
             stopPlayer()
-            if schedule(from: target) { player.play() } else { finishAtEnd() }
+            if schedule(from: target) {
+                player.play()
+                segmentStartHostSeconds = Self.now() + chainLatency
+            } else {
+                finishAtEnd()
+            }
         }
     }
 
@@ -327,6 +370,7 @@ public final class AVPlaybackEngine: PlaybackEngine {
             return
         }
         player.play(at: AVAudioTime(hostTime: AVAudioTime.hostTime(forSeconds: start - outputLatency - chainLatency)))
+        segmentStartHostSeconds = start
     }
 
     // MARK: Time

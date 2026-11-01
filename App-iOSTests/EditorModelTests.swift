@@ -90,6 +90,41 @@ struct EditorModelTests {
         #expect(!engine.isPlaying)
     }
 
+    @Test(arguments: [AudioSessionEvent.interruptionBegan, .outputDeviceRemoved])
+    func interruptionsAndLostOutputsPause(_ event: AudioSessionEvent) async {
+        let (model, engine) = makeModel(audio)
+        await model.open()
+        model.togglePlayback()
+
+        devices.send(event)
+        await waitUntil { !engine.isPlaying }
+
+        #expect(!engine.isPlaying)
+        await model.close()
+    }
+
+    @Test func theEndOfAnInterruptionDoesNotResume() async {
+        let (model, engine) = makeModel(audio)
+        await model.open()
+        model.togglePlayback()
+        devices.send(.interruptionBegan)
+        await waitUntil { !engine.isPlaying }
+
+        devices.send(.interruptionEnded)
+        for _ in 0..<10 { await Task.yield() }
+
+        #expect(!engine.isPlaying)
+        model.togglePlayback()
+        #expect(engine.isPlaying, "the next Play starts again")
+        await model.close()
+    }
+
+    private func waitUntil(_ condition: () -> Bool) async {
+        for _ in 0..<100 where !condition() {
+            await Task.yield()
+        }
+    }
+
     @Test func trimKeepsOneSecondBetweenTheHandles() async {
         let (model, engine) = makeModel(video)
         await model.open()
