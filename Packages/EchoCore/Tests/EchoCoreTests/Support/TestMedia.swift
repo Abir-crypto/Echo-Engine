@@ -38,6 +38,25 @@ enum TestMedia {
         try file.write(from: buffer)
     }
 
+    /// Writes exact 32-bit float samples, one array per channel (all the same length).
+    static func writeSamples(_ channels: [[Float]], to url: URL, sampleRate: Double = 48_000) throws {
+        let settings: [String: Any] = [
+            AVFormatIDKey: kAudioFormatLinearPCM, AVSampleRateKey: sampleRate, AVNumberOfChannelsKey: channels.count,
+            AVLinearPCMBitDepthKey: 32, AVLinearPCMIsFloatKey: true, AVLinearPCMIsBigEndianKey: false,
+        ]
+        let file = try AVAudioFile(forWriting: url, settings: settings, commonFormat: .pcmFormatFloat32, interleaved: false)
+        let frames = AVAudioFrameCount(channels[0].count)
+        let buffer = try #require(AVAudioPCMBuffer(pcmFormat: file.processingFormat, frameCapacity: frames))
+        buffer.frameLength = frames
+        for (index, samples) in channels.enumerated() {
+            let destination = try #require(buffer.floatChannelData?[index])
+            for frame in 0..<Int(frames) {
+                destination[frame] = samples[frame]
+            }
+        }
+        try file.write(from: buffer)
+    }
+
     /// A 64×64 H.264 QuickTime movie, with an AAC stereo track when `withAudio`.
     static func writeMovie(to url: URL, seconds: Double, withAudio: Bool) async throws {
         let videoOnly = withAudio ? url.deletingLastPathComponent().appending(path: "video-only-\(UUID().uuidString).mov") : url
