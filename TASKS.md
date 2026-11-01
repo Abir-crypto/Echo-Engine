@@ -117,7 +117,7 @@ Goal: import audio/video into a project with exact storage messaging.
 
 ---
 
-## F04 — Editor shell & playback  [IN PROGRESS]
+## F04 — Editor shell & playback  [DONE]
 Goal: play projects with video sync, waveforms, trim.
 
 - [x] F04.T01 — Waveform data generation (downsampled peaks cache per project) in EchoCore. Tests.
@@ -150,7 +150,7 @@ Goal: play projects with video sync, waveforms, trim.
 
 ---
 
-## F05 — Manual effects chain  [TODO]
+## F05 — Manual effects chain  [IN PROGRESS]
 Goal: real-time manual controls as C++ DSP in Audio Units.
 
 - [ ] F05.T01 — `CEchoDSP` kernels: gain, biquad EQ (6 bands), gate, compressor, de-esser, limiter. Golden-file tests + render-thread allocation guard.
