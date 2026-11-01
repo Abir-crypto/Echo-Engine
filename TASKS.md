@@ -150,7 +150,7 @@ Goal: play projects with video sync, waveforms, trim.
 
 ---
 
-## F05 — Manual effects chain  [IN PROGRESS]
+## F05 — Manual effects chain  [DONE]
 Goal: real-time manual controls as C++ DSP in Audio Units.
 
 - [x] F05.T01 — `CEchoDSP` kernels: gain, biquad EQ (6 bands), gate, compressor, de-esser, limiter. Golden-file tests + render-thread allocation guard.
@@ -193,7 +193,7 @@ Goal: real-time manual controls as C++ DSP in Audio Units.
 
 ---
 
-## F06 — AI stack & render cache  [TODO]
+## F06 — AI stack & render cache  [IN PROGRESS]
 Goal: user-ordered AI stack with per-step cached renders.
 
 - [ ] F06.T01 — Vendor RNNoise into `CEchoDSP` (license file), C API, Swift wrapper; 48 kHz mono 480-frame processing with `AVAudioConverter`. Golden-file test (fan noise).
