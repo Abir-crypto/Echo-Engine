@@ -15,6 +15,7 @@ final class AppContainer {
     let dateProvider: any DateProviding
     let devices: any AudioDeviceManaging
     let waveforms: any WaveformProviding
+    let renders: any RenderCaching
 
     init(
         entitlements: any EntitlementProvider = FreeV1Entitlements(),
@@ -25,7 +26,8 @@ final class AppContainer {
         storage: any StorageEstimating = StorageEstimator(volume: .documentsDirectory),
         dateProvider: any DateProviding = SystemClock(),
         devices: any AudioDeviceManaging = IOSAudioDeviceManager(),
-        waveforms: any WaveformProviding = CachedWaveformProvider(root: .waveformCacheDirectory)
+        waveforms: any WaveformProviding = CachedWaveformProvider(root: .waveformCacheDirectory),
+        renders: any RenderCaching = FileRenderCache(root: .renderCacheDirectory)
     ) {
         self.entitlements = entitlements
         self.capabilities = capabilities
@@ -36,10 +38,11 @@ final class AppContainer {
         self.dateProvider = dateProvider
         self.devices = devices
         self.waveforms = waveforms
+        self.renders = renders
     }
 
     func makeHomeModel() -> HomeModel {
-        HomeModel(repository: projects, storage: storage, waveforms: waveforms)
+        HomeModel(repository: projects, storage: storage, waveforms: waveforms, renders: renders)
     }
 
     /// Each editor gets its own playback engine and autosaver.

@@ -9,9 +9,10 @@ import UIKit
 struct HomeModelTests {
     private let samples = PreviewProjects.all(now: Date(timeIntervalSince1970: 1_800_000_000))
     private let waveforms = FakeWaveformProvider()
+    private let renders = FakeRenderCache()
 
     private func makeModel(_ repository: FakeProjectRepository, storage: FakeStorageEstimator = FakeStorageEstimator()) -> HomeModel {
-        HomeModel(repository: repository, storage: storage, waveforms: waveforms)
+        HomeModel(repository: repository, storage: storage, waveforms: waveforms, renders: renders)
     }
 
     @Test func loadsProjectsMostRecentFirst() async {
@@ -67,6 +68,7 @@ struct HomeModelTests {
         #expect(!model.projects.contains { $0.project.id == samples[1].id })
         #expect(await repository.list().count == samples.count - 1)
         #expect(await waveforms.removedProjectIDs == [samples[1].id], "its waveform cache goes too")
+        #expect(await renders.removedAllProjectIDs == [samples[1].id], "and its renders")
     }
 
     @Test func deletingAMissingProjectReportsFailure() async {

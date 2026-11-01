@@ -206,7 +206,10 @@ Goal: user-ordered AI stack with per-step cached renders.
   > progress per chunk; failed/cancelled renders leave no file; typed `RenderError`). `WetDryMix` keeps dry aligned with delayed wet.
   > Clear Voice = RNNoise → HPF 80 / −2 dB@250 / +2.5 dB shelf@3k → compressor 3:1 @ −20 (strength scales EQ, ratio, mix). Router
   > passes `.unknown` and features without a processor (Voice Leveler until F07) through. `FakeAIProcessor` for F06.T04.
-- [ ] F06.T03 — `FileRenderCache` (ALAC 24-bit, chain-hash keys § 6.3). Tests.
+- [x] F06.T03 — `FileRenderCache` (ALAC 24-bit, chain-hash keys § 6.3). Tests.
+  > Done: `RenderKey` (SHA-256 of "projectID|start,duration|kind:strength;…", POSIX-formatted, op IDs excluded; `prefixes`; pinned hash
+  > test). `RenderCaching` + `FileRenderCache` actor: `Library/Caches/Renders/<project>/<key>.m4a`, hidden `.render-<UUID>.m4a` temp files
+  > on the same volume, `store` = move/replace, `entries` (key + bytes) for the janitor. Project delete now removes renders. `FakeRenderCache`.
 - [ ] F06.T04 — `AIChainRenderer`: prefix walk, progress, cancellation, latest-change-wins; `firstChangedIndex`. Tests with fake processor.
 - [ ] F06.T05 — `RenderCacheJanitor`: reachability from history + current prefixes, budget eviction, close-time pruning (§ 6.4). Tests.
 - [ ] F06.T06 — Playback integration: keep playing previous render, swap at playhead with crossfade; per-step A/B by tapping a row.
