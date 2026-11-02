@@ -1,3 +1,4 @@
+import EchoCore
 import SwiftUI
 
 /// The import sheet: progress with Cancel, then either closes (success) or explains a failure (SPEC § 10).

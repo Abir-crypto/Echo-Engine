@@ -1,3 +1,4 @@
+import EchoCore
 import SwiftUI
 
 @main
@@ -7,8 +8,6 @@ struct EchoEngineApp: App {
     /// tint changes.
     @State private var homeModel: HomeModel
     @State private var importModel: ImportModel
-    @AppStorage(AppSettingsKey.appearance) private var appearance = Appearance.default
-    @AppStorage(AppSettingsKey.tint) private var tint = AppTint.default
 
     init() {
         let container = AppContainer()
@@ -21,12 +20,13 @@ struct EchoEngineApp: App {
 
     var body: some Scene {
         WindowGroup {
+            let tint = container.settings.tint
             RootView(container: container, homeModel: homeModel, importModel: importModel)
                 .environment(\.appTint, tint)
                 .environment(\.deviceFamily, .current)
                 // System-tinted controls are mostly text and icons on Ground, so they use the text role.
                 .tint(tint.text)
-                .preferredColorScheme(appearance.colorScheme)
+                .preferredColorScheme(container.settings.appearance.colorScheme)
         }
     }
 }

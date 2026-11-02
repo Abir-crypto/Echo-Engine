@@ -7,17 +7,15 @@ import SwiftUI
 /// Debug builds only, so its labels are verbatim and stay out of the String Catalog.
 struct DebugMenu: View {
     @Environment(AppContainer.self) private var container
-    @AppStorage(AppSettingsKey.appearance) private var appearance = Appearance.default
-    @AppStorage(AppSettingsKey.tint) private var tint = AppTint.default
 
     var body: some View {
         Menu {
-            Picker(selection: $appearance) {
+            Picker(selection: Binding(get: { container.settings.appearance }, set: { container.settings.appearance = $0 })) {
                 ForEach(Appearance.allCases, id: \.self) { Text(verbatim: $0.rawValue).tag($0) }
             } label: {
                 Text(verbatim: "Appearance")
             }
-            Picker(selection: $tint) {
+            Picker(selection: Binding(get: { container.settings.tint }, set: { container.settings.tint = $0 })) {
                 ForEach(AppTint.allCases, id: \.self) { Text(verbatim: $0.rawValue).tag($0) }
             } label: {
                 Text(verbatim: "Tint")

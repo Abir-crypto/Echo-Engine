@@ -1,3 +1,4 @@
+import EchoCore
 import SwiftUI
 #if DEBUG
 import EchoCoreFakes

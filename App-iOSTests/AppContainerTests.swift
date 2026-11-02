@@ -10,6 +10,7 @@ struct AppContainerTests {
         #expect(container.entitlements is FreeV1Entitlements)
         #expect(container.capabilities is DefaultCapabilities)
         #expect(container.projects is FileProjectRepository)
+        #expect(container.settings is UserDefaultsSettingsStore)
     }
 
     @Test func everyOfferedEnhancementHasAProcessor() {
@@ -29,8 +30,11 @@ struct AppContainerTests {
     @Test func usesInjectedServices() {
         let container = AppContainer(
             entitlements: FakeEntitlements(locked: [.clearVoice]),
-            capabilities: FakeCapabilities(unsupported: [.exportVideo])
+            capabilities: FakeCapabilities(unsupported: [.exportVideo]),
+            settings: FakeAppSettingsStore(appearance: .dark, tint: .violet)
         )
+        #expect(container.settings.appearance == .dark)
+        #expect(container.settings.tint == .violet)
         #expect(!container.entitlements.isUnlocked(.clearVoice))
         #expect(!container.capabilities.supports(.exportVideo))
     }

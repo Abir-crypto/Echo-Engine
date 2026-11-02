@@ -1,3 +1,4 @@
+import EchoCore
 import SwiftUI
 
 /// A slider row: title and current value on one line, the slider below (SPEC § 18.3, § 18.4). Ranges spanning

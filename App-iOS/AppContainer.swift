@@ -23,6 +23,7 @@ final class AppContainer {
     /// Shows Files and Share deliveries (SPEC § 11.2 step 5).
     let deliveryPresenter: DeliveryPresenter
     let destinations: [DestinationKind: any ExportDestination]
+    let settings: any AppSettingsStore
 
     init(
         entitlements: any EntitlementProvider = FreeV1Entitlements(),
@@ -39,7 +40,8 @@ final class AppContainer {
         janitor: (any RenderCacheJanitoring)? = nil,
         autoLevel: any AutoLevelAnalyzing = AutoLevelAnalyzer(),
         exportWorkspace: ExportWorkspace = ExportWorkspace(root: .exportTemporaryDirectory),
-        photoLibrary: any PhotoLibraryAdding = SystemPhotoLibrary()
+        photoLibrary: any PhotoLibraryAdding = SystemPhotoLibrary(),
+        settings: (any AppSettingsStore)? = nil
     ) {
         self.entitlements = entitlements
         self.capabilities = capabilities
@@ -55,6 +57,7 @@ final class AppContainer {
         self.janitor = janitor ?? RenderCacheJanitor(cache: renders, storage: storage, waveforms: waveforms)
         self.autoLevel = autoLevel
         self.exportWorkspace = exportWorkspace
+        self.settings = settings ?? UserDefaultsSettingsStore(defaults: .standard)
         let presenter = DeliveryPresenter()
         deliveryPresenter = presenter
         destinations = [

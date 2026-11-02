@@ -295,7 +295,11 @@ Goal: final render and delivery.
   > add-only, `shouldMoveFile`), `ExportWorkspace` (`tmp/Exports/<id>/`, safe title file names, `removeAll()` at launch). App `DeliveryPresenter` +
   > `InteractiveDestination` (Files/Share wait for the person; newer request or task cancel → `.cancelled`); `.presentsDeliveries(_:)` = `fileExporter`
   > (`ExportedFile` Transferable) + `UIActivityViewController` sheet — T05 must attach it. `AppContainer.destinations`. Fakes for both protocols.
-- [ ] F08.T04a — `AppSettingsStore` protocol + `UserDefaults`-backed impl + fake (§ 4.3): appearance, tint, last export settings. Route `EchoEngineApp` and `DebugAppearanceMenu` through it (they repeat the `@AppStorage` keys and defaults today). From the F01 code review.
+- [x] F08.T04a — `AppSettingsStore` protocol + `UserDefaults`-backed impl + fake (§ 4.3): appearance, tint, last export settings. Route `EchoEngineApp` and `DebugAppearanceMenu` through it (they repeat the `@AppStorage` keys and defaults today). From the F01 code review.
+  > Done: EchoCore `Settings/`: `@MainActor` `AppSettingsStore: Observable` → `UserDefaultsSettingsStore` (same keys as the old `@AppStorage`, unknown
+  > values → defaults) + `FakeAppSettingsStore`; `Appearance`/`AppTint` enums moved to EchoCore (app keeps the SwiftUI extensions; files naming them
+  > `import EchoCore`). `ExportChoices` (`ExportKind`, `AudioQuality`, custom settings, destination) per media type; defaults from the mockup:
+  > High, video → Photos, audio → Files; "After export" not remembered. `container.settings` drives the app; `AppSettingsKey` removed.
 - [ ] F08.T05 — Export sheet UI per canvas; last-used settings; storage line; post-export actions after confirmed delivery.
 - [ ] F08.T06 — `BGContinuedProcessingTask`, progress, cancellation, failure handling.
 

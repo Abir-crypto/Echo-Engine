@@ -1,3 +1,4 @@
+import EchoCore
 @testable import EchoEngine
 import Testing
 import UIKit
