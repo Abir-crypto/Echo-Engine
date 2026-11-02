@@ -31,6 +31,8 @@ targets:
       path: App-iOS/Info.plist
       properties:
         UIBackgroundModes: [audio]
+        # Exports continue in the background as BGContinuedProcessingTasks (SPEC § 11.2 step 7).
+        BGTaskSchedulerPermittedIdentifiers: [akumatech.Echo-Engine.export.*]
     dependencies:
       - package: EchoCore
         product: EchoCore

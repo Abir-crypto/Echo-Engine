@@ -250,6 +250,9 @@
         }
       }
     },
+    "Exporting “%@”" : {
+      "comment" : "Title of the system's background progress for an export; the project title."
+    },
     "Exporting…" : {
       "comment" : "Export sheet title while rendering and encoding."
     },
@@ -508,8 +511,14 @@
     "Target" : {
       "comment" : "Slider for the custom loudness target, in LUFS."
     },
+    "The export continues if you leave Echo Engine." : {
+      "comment" : "Export progress caption when iOS lets the export run in the background."
+    },
     "The export couldn’t be finished. Free up some space, then try again." : {
       "comment" : "Export alert when rendering, encoding or combining with the video failed."
+    },
+    "The export stopped before it finished. Try again, and keep Echo Engine open if it stops again." : {
+      "comment" : "Export alert when iOS, or the person in the system progress, stopped a background export."
     },
     "The file couldn’t be saved there. Try again, or choose another place." : {
       "comment" : "Export alert when saving to Photos or Files failed."
@@ -579,6 +588,9 @@
     },
     "Video" : {
       "comment" : "Accessibility label of the video badge on a project card."
+    },
+    "Video and audio file" : {
+      "comment" : "Subtitle of the background export progress: a video and an audio file."
     },
     "Video preview" : {
       "comment" : "Accessibility label of the editor video preview."

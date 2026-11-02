@@ -17,6 +17,11 @@ struct AppConfigurationTests {
         #expect(text?.isEmpty == false)
     }
 
+    @Test func exportsMayContinueInTheBackground() {
+        let identifiers = Bundle.main.object(forInfoDictionaryKey: "BGTaskSchedulerPermittedIdentifiers") as? [String]
+        #expect(identifiers == ["akumatech.Echo-Engine.export.*"])
+    }
+
     @Test func backgroundAudioIsEnabled() {
         let modes = Bundle.main.object(forInfoDictionaryKey: "UIBackgroundModes") as? [String]
         #expect(modes == ["audio"])

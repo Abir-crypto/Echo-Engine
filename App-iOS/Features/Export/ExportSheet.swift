@@ -367,6 +367,12 @@ private struct ExportProgressView: View {
             } else {
                 ProgressView()
             }
+            if model.continuesInBackground {
+                Text("The export continues if you leave Echo Engine.")
+                    .font(.footnote)
+                    .foregroundStyle(.token(.textSecondary))
+                    .multilineTextAlignment(.center)
+            }
             Button("Cancel", role: .cancel) { model.cancel() }
                 .buttonStyle(.secondary)
             Spacer()
@@ -413,6 +419,8 @@ private struct ExportFailureMessage: LocalizedError {
             String(localized: "The file couldn’t be saved there. Try again, or choose another place.")
         case .couldNotDelete:
             String(localized: "Your export is saved, but the project couldn’t be deleted. You can delete it in Projects.")
+        case .stoppedInBackground:
+            String(localized: "The export stopped before it finished. Try again, and keep Echo Engine open if it stops again.")
         }
     }
 }

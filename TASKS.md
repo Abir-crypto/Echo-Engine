@@ -305,7 +305,11 @@ Goal: final render and delivery.
   > + remux, and/or the audio file; work files in `.work/`), destinations take `[URL]`. App `ExportModel` (+ `ExportEditor` hooks; `EditorModel.audioForExport`
   > refuses a stale render) and `ExportSheet` (native segmented, tiles, radio list, progress + Cancel, `-debugExportSheet YES`). User decisions in
   > SPEC § 11.1/§ 20. Quality "High" uses key `export.quality.high` (the EQ's "High" differs). Not yet tapped through on a device: checkpoint.
-- [ ] F08.T06 — `BGContinuedProcessingTask`, progress, cancellation, failure handling.
+- [x] F08.T06 — `BGContinuedProcessingTask`, progress, cancellation, failure handling.
+  > Done: EchoCore `BackgroundProcessing`/`BackgroundActivity` + fakes; app `ContinuedProcessingScheduler` (one wildcard handler
+  > `<bundle>.export.*`, registered on first export; `.fail` strategy; progress/finish buffered until the task launches). `ExportModel` runs
+  > render→encode→remux as the activity, ends it before delivery (needs the person), system stop → cancel + "stopped" alert; no background
+  > time → foreground only. Info.plist `BGTaskSchedulerPermittedIdentifiers`. Real background behaviour is device-only (checkpoint).
 
 **Checkpoint test:** export 4K HDR video to Photos and verify identical video quality/metadata and new audio; export audio-only in each format; video→audio conversion with no effects; delete-after-export removes project only after save.
 

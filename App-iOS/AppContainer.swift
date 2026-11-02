@@ -25,6 +25,7 @@ final class AppContainer {
     let destinations: [DestinationKind: any ExportDestination]
     let settings: any AppSettingsStore
     let exportService: any ExportService
+    let background: any BackgroundProcessing
 
     init(
         entitlements: any EntitlementProvider = FreeV1Entitlements(),
@@ -43,7 +44,8 @@ final class AppContainer {
         exportWorkspace: ExportWorkspace = ExportWorkspace(root: .exportTemporaryDirectory),
         photoLibrary: any PhotoLibraryAdding = SystemPhotoLibrary(),
         settings: (any AppSettingsStore)? = nil,
-        exportService: (any ExportService)? = nil
+        exportService: (any ExportService)? = nil,
+        background: (any BackgroundProcessing)? = nil
     ) {
         self.entitlements = entitlements
         self.capabilities = capabilities
@@ -63,6 +65,7 @@ final class AppContainer {
         self.exportService = exportService ?? AVExportService(
             renderer: FinalRenderer(autoLevel: autoLevel), encoder: AudioEncoder(), remuxer: VideoRemuxer()
         )
+        self.background = background ?? ContinuedProcessingScheduler()
         let presenter = DeliveryPresenter()
         deliveryPresenter = presenter
         destinations = [
@@ -119,6 +122,7 @@ final class AppContainer {
             repository: projects,
             renders: renders,
             waveforms: waveforms,
+            background: background,
             fallbackTitle: String(localized: "Echo Engine export", comment: "File name of an export whose project has no title.")
         )
     }

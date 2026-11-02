@@ -43,6 +43,8 @@ final class ExportModel: Identifiable {
         case couldNotSave
         /// The export was delivered, but deleting the project afterwards failed.
         case couldNotDelete
+        /// iOS, or the person in its progress UI, stopped the export while the app was in the background.
+        case stoppedInBackground
     }
 
     let project: Project
@@ -55,6 +57,8 @@ final class ExportModel: Identifiable {
     private(set) var bytesFreedByClearingCache: Int64?
     /// What "Delete project" frees: its folder and its renders.
     private(set) var bytesFreedByDeleting: Int64?
+    /// The system lets the export go on in the background (until its files are ready).
+    private(set) var continuesInBackground = false
 
     private var storedChoices: ExportChoices
     @ObservationIgnored private let editor: ExportEditor
@@ -66,8 +70,12 @@ final class ExportModel: Identifiable {
     @ObservationIgnored private let repository: any ProjectRepository
     @ObservationIgnored private let renders: any RenderCaching
     @ObservationIgnored private let waveforms: any WaveformProviding
+    @ObservationIgnored private let background: any BackgroundProcessing
     @ObservationIgnored private let fallbackTitle: String
     @ObservationIgnored private var exportTask: Task<Void, Never>?
+    /// Keeps the export running in the background until its files are ready (SPEC § 11.2 step 7).
+    @ObservationIgnored private var activity: (any BackgroundActivity)?
+    @ObservationIgnored private var wasStoppedInBackground = false
 
     init(
         editor: ExportEditor,
@@ -79,6 +87,7 @@ final class ExportModel: Identifiable {
         repository: any ProjectRepository,
         renders: any RenderCaching,
         waveforms: any WaveformProviding,
+        background: any BackgroundProcessing,
         fallbackTitle: String
     ) {
         project = editor.project
@@ -91,6 +100,7 @@ final class ExportModel: Identifiable {
         self.repository = repository
         self.renders = renders
         self.waveforms = waveforms
+        self.background = background
         self.fallbackTitle = fallbackTitle
         let mediaType = editor.project.mediaType
         storedChoices = Self.normalized(settings.lastExportChoices(for: mediaType) ?? .defaults(for: mediaType), for: mediaType)
@@ -151,6 +161,7 @@ final class ExportModel: Identifiable {
     func export() async {
         guard phase == .choosing else { return }
         failure = nil
+        wasStoppedInBackground = false
         settings.setLastExportChoices(choices, for: project.mediaType)
         let output = self.output
         if let available = try? storage.availableBytes() {
@@ -161,6 +172,16 @@ final class ExportModel: Identifiable {
             }
         }
         editor.pausePlayback()
+        activity = background.begin(title: activityTitle, subtitle: activitySubtitle(output)) { [weak self] in
+            self?.stoppedInBackground()
+        }
+        continuesInBackground = activity != nil
+        defer {
+            // Only reached here when the export didn't get to its files: success ends it earlier.
+            activity?.finish(success: false)
+            activity = nil
+            continuesInBackground = false
+        }
 
         phase = .waitingForEnhancements
         let audio: URL
@@ -188,6 +209,12 @@ final class ExportModel: Identifiable {
         do {
             let files = try await service.export(job, into: folder, progress: relay.report)
             try Task.checkCancellation()
+            // The files are ready: delivery needs the person, so the background activity ends here.
+            phase = .exporting(1)
+            activity?.report(progress: 1)
+            activity?.finish(success: true)
+            activity = nil
+            continuesInBackground = false
             phase = .delivering
             guard try await deliver(files) == .delivered else {
                 end(nil)
@@ -202,13 +229,34 @@ final class ExportModel: Identifiable {
 
     fileprivate func exportProgressed(_ fraction: Double) {
         guard case .exporting(let current) = phase else { return }
-        phase = .exporting(max(current, min(max(fraction, 0), 1)))
+        let fraction = max(current, min(max(fraction, 0), 1))
+        phase = .exporting(fraction)
+        activity?.report(progress: fraction)
     }
 
-    /// Back to the choices, with the failure to show (none when cancelled).
+    private func stoppedInBackground() {
+        wasStoppedInBackground = true
+        activity = nil
+        continuesInBackground = false
+        exportTask?.cancel()
+    }
+
+    /// Back to the choices, with the failure to show (none when the person cancelled).
     private func end(_ failure: Failure?) {
         phase = .choosing
-        self.failure = failure
+        self.failure = wasStoppedInBackground ? .stoppedInBackground : failure
+    }
+
+    private var activityTitle: String {
+        String(localized: "Exporting “\(project.title)”", comment: "Title of the system's background progress for an export; the project title.")
+    }
+
+    private func activitySubtitle(_ output: ExportOutput) -> String {
+        switch output {
+        case .video: String(localized: "Video", comment: "Subtitle of the background export progress: a video is being made.")
+        case .audioOnly: String(localized: "Audio", comment: "Subtitle of the background export progress: an audio file is being made.")
+        case .both: String(localized: "Video and audio file", comment: "Subtitle of the background export progress: a video and an audio file.")
+        }
     }
 
     /// Photos takes the video; with "Both" the audio file then goes to Files (user decision, SPEC § 11.1). Files and

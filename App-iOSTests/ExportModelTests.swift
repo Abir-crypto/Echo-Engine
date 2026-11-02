@@ -13,6 +13,11 @@ private final class EditorHooks {
 }
 
 @MainActor
+private final class PhaseRecorder {
+    var phase: ExportModel.Phase?
+}
+
+@MainActor
 final class ExportModelTests {
     private let video = PreviewProjects.all()[0]
     private let audio = PreviewProjects.all()[1]
@@ -24,6 +29,7 @@ final class ExportModelTests {
     private let renders = FakeRenderCache()
     private let waveforms = FakeWaveformProvider()
     private let hooks = EditorHooks()
+    private let background = FakeBackgroundProcessing()
     private let workspaceRoot = FileManager.default.temporaryDirectory.appending(path: "ExportModelTests-\(UUID().uuidString)")
     private let renderedAudio = URL(filePath: "/tmp/render-2.m4a")
     private var repository: FakeProjectRepository!
@@ -61,6 +67,7 @@ final class ExportModelTests {
             repository: repository,
             renders: renders,
             waveforms: waveforms,
+            background: background,
             fallbackTitle: "Echo Engine export"
         )
     }
@@ -281,6 +288,56 @@ final class ExportModelTests {
         #expect(await service.jobs.isEmpty)
     }
 
+    // MARK: Background
+
+    @Test func theExportRunsAsABackgroundActivityUntilItsFilesAreReady() async throws {
+        let model = makeModel(video)
+        let ended = PhaseRecorder()
+        background.onActivityFinished = { _ in ended.phase = model.phase }
+
+        await model.export()
+
+        let activity = try #require(background.activities.first)
+        #expect(background.activities.count == 1)
+        #expect(!activity.title.isEmpty)
+        #expect(activity.progress.last == 1)
+        #expect(activity.result == true)
+        #expect(ended.phase == .exporting(1), "it ends before delivery: Photos, Files and Share need the person")
+    }
+
+    @Test func aFailedExportEndsTheActivityUnsuccessfully() async throws {
+        await service.setError(ExportError.cantWrite)
+        let model = makeModel(audio)
+
+        await model.export()
+
+        #expect(try #require(background.activities.first).result == false)
+    }
+
+    @Test func whenTheSystemStopsTheExportItIsCancelledAndExplained() async throws {
+        await service.setDelay(.seconds(10))
+        let model = makeModel(audio)
+
+        model.start()
+        while await service.jobs.isEmpty { await Task.yield() }
+        try #require(background.activities.first).stop()
+        while model.phase != .choosing { await Task.yield() }
+
+        #expect(model.failure == .stoppedInBackground)
+        #expect(try #require(background.activities.first).result == false)
+        #expect(await files.delivered.isEmpty)
+    }
+
+    @Test func withoutBackgroundTimeTheExportRunsInTheForeground() async {
+        background.allowsBackground = false
+        let model = makeModel(audio)
+
+        await model.export()
+
+        #expect(model.phase == .finished(closesEditor: false))
+        #expect(background.activities.isEmpty)
+    }
+
     @Test func cancellingStopsTheExportQuietly() async {
         await service.setDelay(.seconds(10))
         let model = makeModel(audio)
@@ -292,5 +349,6 @@ final class ExportModelTests {
 
         #expect(model.failure == nil)
         #expect(await files.delivered.isEmpty)
+        #expect(background.activities.first?.result == false)
     }
 }
