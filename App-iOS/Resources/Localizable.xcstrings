@@ -167,6 +167,9 @@
     "Built-in" : {
       "comment" : "Apply preset: the presets that come with the app."
     },
+    "Built-in presets can’t be changed. Apply one, then save it as your own." : {
+      "comment" : "Settings → Presets footer under the built-in presets."
+    },
     "Can’t import" : {
       "comment" : "Title of the import sheet when an import fails."
     },
@@ -460,11 +463,20 @@
     "Presets" : {
       "comment" : "Accessibility label of the Enhance menu button (apply, save and update presets)."
     },
+    "Presets couldn’t be read. Try again later." : {
+      "comment" : "Settings → Presets alert when the list can't be read."
+    },
+    "Presets you save in the editor appear here. Use Save as preset in the Enhance menu." : {
+      "comment" : "Settings → Presets when there are no user presets."
+    },
     "Projects" : {
       "comment" : "Tab bar item and title of the projects screen."
     },
     "Projects couldn’t be loaded. Restart Echo Engine to try again." : {
       "comment" : "Error alert."
+    },
+    "Projects made with it keep their settings." : {
+      "comment" : "Message when deleting a preset."
     },
     "Q" : {
       "comment" : "EQ band width (Q) slider; keep the letter Q if your language uses it."
@@ -498,6 +510,9 @@
     },
     "Rename" : {
       "comment" : "Rename action for a project."
+    },
+    "Rename preset" : {
+      "comment" : "Title of the alert that renames a preset."
     },
     "Rename project" : {
       "comment" : "Title of the rename dialog."
@@ -573,6 +588,12 @@
     },
     "The import couldn’t finish. Try again." : {
       "comment" : "Import error."
+    },
+    "The preset couldn’t be deleted. Try again." : {
+      "comment" : "Settings → Presets alert when deleting fails."
+    },
+    "The preset couldn’t be renamed. Free up some space, then try again." : {
+      "comment" : "Settings → Presets alert when renaming fails."
     },
     "The preset couldn’t be saved. Free up some space, then try again." : {
       "comment" : "Editor alert when a preset can't be written."

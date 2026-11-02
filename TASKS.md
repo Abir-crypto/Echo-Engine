@@ -330,7 +330,10 @@ Goal: built-in and user presets with iCloud sync.
   > (`-debugEnhanceSheet presets`), "Based on: X (modified)" under the editor title, Save as preset alert.
 - [ ] F09.T03 — `SyncedPresetRepository` with `NSUbiquitousKeyValueStore`, merge by `updatedAt`, deletes. Tests with fake store.
   **On hold (user, 2026-11-02):** the Personal Team has no iCloud; skip until the user resumes it (SPEC § 12, § 20).
-- [ ] F09.T04 — Settings → Presets management (rename, delete).
+- [x] F09.T04 — Settings → Presets management (rename, delete).
+  > Done: `PresetsModel` (built-ins and user presets apart; rename trims and ignores empty; delete; failures) + `PresetsScreen`/`PresetsView`
+  > (inset-grouped `List` on tokens: swipe and context menu Rename/Delete, delete confirmation, empty state, built-ins read-only with a footer).
+  > Placeholder `SettingsView` now links to it; F13.T01 replaces the screen per mockup and keeps the Presets row. Not screenshotted (needs taps).
 
 **Checkpoint test:** create preset on iPhone simulator, apply to another project, edit and update it; (two-device sync: when F09.T03 resumes).
 
