@@ -342,7 +342,14 @@ Goal: built-in and user presets with iCloud sync.
 ## F10 — Recording core  [IN PROGRESS]
 Goal: reliable capture from any input with recovery.
 
-- [ ] F10.T01 — `IOSAudioDeviceManager`: session config, input list with hints, channel enumeration, built-in mono/stereo, latency values, route-change stream (§ 13.2).
+> Handoff (2026-11-02, end of session): next task F10.T02. Waiting on the user: device runs of the F07–F09 checkpoint tests;
+> F09.T03 (iCloud presets) on hold. The F10 checkpoint needs a real device (signing team L9B6N63T2Q, free: 7-day profiles).
+
+- [x] F10.T01 — `IOSAudioDeviceManager`: session config, input list with hints, channel enumeration, built-in mono/stereo, latency values, route-change stream (§ 13.2).
+  > Done: `AudioDeviceManaging` + `activateForRecording` (`.playAndRecord`, HFP/A2DP, speaker, 48 kHz), `availableInputs()` → `AudioInput` (kind,
+  > channels, `supportsStereo`, `hasHigherDelay` = Bluetooth hint), `selectInput(id:builtInMode:)` (stereo polar pattern data source, else mono),
+  > `latency` (`AudioLatency.roundTripSeconds` for § 13.6), `selectedInputChannelCount`; events `.inputDeviceRemoved` (a used input left the
+  > route) and `.availableInputsChanged`; editor ignores both. Fake extended. AVAudioSession behaviour is device-only: check at the F10 checkpoint.
 - [ ] F10.T02 — `AVRecordingEngine`: continuous CAF writing (raw mixdown, processed, per-channel), locked config, level metering.
 - [ ] F10.T03 — Interruptions + route changes: pause, flush, markers, manual Resume (§ 13.7).
 - [ ] F10.T04 — Background audio mode, idle timer, Live Activity widget extension (timer, level, Stop).

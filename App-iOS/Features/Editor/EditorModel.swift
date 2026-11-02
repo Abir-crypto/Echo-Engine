@@ -454,7 +454,7 @@ final class EditorModel {
                 guard let self else { return }
                 switch event {
                 case .interruptionBegan, .outputDeviceRemoved: self.engine.pause()
-                case .interruptionEnded: break
+                case .interruptionEnded, .inputDeviceRemoved, .availableInputsChanged: break
                 }
             }
         }

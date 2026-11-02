@@ -129,7 +129,7 @@
       "comment" : "Gate/compressor: how fast it reacts (slider, milliseconds)."
     },
     "Audio" : {
-      "comment" : "Accessibility label of the audio badge on a project card."
+      "comment" : "Subtitle of the background export progress: an audio file is being made."
     },
     "Audio only" : {
       "comment" : "Export as: only the audio, as a file."
@@ -662,7 +662,7 @@
       "comment" : "Description of a step made by a newer app version."
     },
     "Video" : {
-      "comment" : "Accessibility label of the video badge on a project card."
+      "comment" : "Subtitle of the background export progress: a video is being made."
     },
     "Video and audio file" : {
       "comment" : "Subtitle of the background export progress: a video and an audio file."
