@@ -12,6 +12,8 @@ struct EchoEngineApp: App {
 
     init() {
         let container = AppContainer()
+        // Temporary files of exports the app never finished (it was quit or killed).
+        container.exportWorkspace.removeAll()
         _container = State(initialValue: container)
         _homeModel = State(initialValue: container.makeHomeModel())
         _importModel = State(initialValue: container.makeImportModel())

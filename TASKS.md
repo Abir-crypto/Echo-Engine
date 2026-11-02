@@ -290,7 +290,11 @@ Goal: final render and delivery.
   > audio only, passthrough export, file metadata copied; progress via `states` (session in an `@unchecked Sendable` box). Keep the audio
   > `AVURLAsset` alive: tracks weakly reference it (insert fails −12780). Tests prove same frames, edit list at a mid-GOP trim, colour tags.
   > Timed-metadata tracks (e.g. Cinematic) are dropped — check real iPhone HDR/Cinematic clips at the checkpoint. `FakeVideoRemuxer`.
-- [ ] F08.T04 — Destinations: Photos (`shouldMoveFile`), Files, Share; temp cleanup.
+- [x] F08.T04 — Destinations: Photos (`shouldMoveFile`), Files, Share; temp cleanup.
+  > Done: EchoCore `ExportDestination` (`DestinationKind`, `DeliveryOutcome`), `PhotosDestination` over `PhotoLibraryAdding` (app: `SystemPhotoLibrary`,
+  > add-only, `shouldMoveFile`), `ExportWorkspace` (`tmp/Exports/<id>/`, safe title file names, `removeAll()` at launch). App `DeliveryPresenter` +
+  > `InteractiveDestination` (Files/Share wait for the person; newer request or task cancel → `.cancelled`); `.presentsDeliveries(_:)` = `fileExporter`
+  > (`ExportedFile` Transferable) + `UIActivityViewController` sheet — T05 must attach it. `AppContainer.destinations`. Fakes for both protocols.
 - [ ] F08.T04a — `AppSettingsStore` protocol + `UserDefaults`-backed impl + fake (§ 4.3): appearance, tint, last export settings. Route `EchoEngineApp` and `DebugAppearanceMenu` through it (they repeat the `@AppStorage` keys and defaults today). From the F01 code review.
 - [ ] F08.T05 — Export sheet UI per canvas; last-used settings; storage line; post-export actions after confirmed delivery.
 - [ ] F08.T06 — `BGContinuedProcessingTask`, progress, cancellation, failure handling.

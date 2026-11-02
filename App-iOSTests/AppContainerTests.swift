@@ -17,6 +17,15 @@ struct AppContainerTests {
         #expect(AppContainer.aiProcessors[.voiceLeveler] is VoiceLevelerProcessor)
     }
 
+    @Test func everyExportDestinationIsThere() {
+        let container = AppContainer()
+        for kind in DestinationKind.allCases {
+            #expect(container.destinations[kind]?.kind == kind)
+        }
+        #expect(container.destinations[.photos] is PhotosDestination)
+        #expect(container.exportWorkspace.root == .exportTemporaryDirectory)
+    }
+
     @Test func usesInjectedServices() {
         let container = AppContainer(
             entitlements: FakeEntitlements(locked: [.clearVoice]),

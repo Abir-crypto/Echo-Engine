@@ -8,4 +8,10 @@ public enum ExportError: Error, Equatable {
     case cantWrite
     /// Settings outside what the export sheet offers (SPEC § 11.1).
     case unsupportedSettings
+    /// The person hasn't allowed adding to their photo library.
+    case photoLibraryDenied
+    /// Photos didn't take the video.
+    case photoLibraryFailed
+    /// The file couldn't be saved or shared at the chosen place.
+    case deliveryFailed
 }
