@@ -280,7 +280,11 @@ Goal: final render and delivery.
   > 0–40 %), then the trim range (`ChunkedRender` `range:`, frames shared with analysis) through `OfflineEffectChain` + output stage (limiter
   > always on) → ALAC 24-bit 48 kHz. User (SPEC § 3/§ 11.2/§ 20): `OfflineEffectChain`, not `AVAudioEngine` manual mode; team `L9B6N63T2Q` (free:
   > no iCloud, raise at F09). Input = `RenderedChain.output`, so T05 must wait for a running AI render. `FakeFinalRenderer`.
-- [ ] F08.T02 — Audio encoders: AAC (bitrates), WAV, FLAC, ALAC, sample rate/bit depth (§ 11.1).
+- [x] F08.T02 — Audio encoders: AAC (bitrates), WAV, FLAC, ALAC, sample rate/bit depth (§ 11.1).
+  > Done: `AudioExportSettings` (+ `AudioFormat`, presets standard/high/lossless, `isSupported`, bitrate in bps), `ExportError`,
+  > `AudioEncoding` → `AudioEncoder`: 1 s chunks, mastering-quality SRC to 44.1 kHz, TPDF dither before 16-bit, AAC constant bitrate
+  > (clamped to what the encoder takes: mono 320 kbps). FLAC goes through `ExtAudioFile`: `AVAudioFile` writes every FLAC as 24-bit.
+  > Tests read FLAC/AAC only after the writer closes (unflushed files fail to open). `FakeAudioEncoder`.
 - [ ] F08.T03 — Video remux: composition + passthrough, same container, metadata preserved, trim via edit lists.
 - [ ] F08.T04 — Destinations: Photos (`shouldMoveFile`), Files, Share; temp cleanup.
 - [ ] F08.T04a — `AppSettingsStore` protocol + `UserDefaults`-backed impl + fake (§ 4.3): appearance, tint, last export settings. Route `EchoEngineApp` and `DebugAppearanceMenu` through it (they repeat the `@AppStorage` keys and defaults today). From the F01 code review.
