@@ -272,7 +272,7 @@ Goal: leveling and loudness targeting.
 
 ---
 
-## F08 — Export  [IN PROGRESS]
+## F08 — Export  [DONE]
 Goal: final render and delivery.
 
 - [x] F08.T01 — Offline final render (manual rendering mode) over trim range, Auto Level recomputed (§ 11.2).
@@ -315,7 +315,7 @@ Goal: final render and delivery.
 
 ---
 
-## F09 — Presets  [TODO]
+## F09 — Presets  [IN PROGRESS]
 Goal: built-in and user presets with iCloud sync.
 
 - [ ] F09.T01 — `Preset` model, `FilePresetRepository`, built-in presets JSON (§ 12). Tests.
