@@ -315,7 +315,7 @@ Goal: final render and delivery.
 
 ---
 
-## F09 — Presets  [IN PROGRESS]
+## F09 — Presets  [DONE] (F09.T03 on hold)
 Goal: built-in and user presets with iCloud sync.
 
 - [x] F09.T01 — `Preset` model, `FilePresetRepository`, built-in presets JSON (§ 12). Tests.
@@ -339,7 +339,7 @@ Goal: built-in and user presets with iCloud sync.
 
 ---
 
-## F10 — Recording core  [TODO]
+## F10 — Recording core  [IN PROGRESS]
 Goal: reliable capture from any input with recovery.
 
 - [ ] F10.T01 — `IOSAudioDeviceManager`: session config, input list with hints, channel enumeration, built-in mono/stereo, latency values, route-change stream (§ 13.2).
