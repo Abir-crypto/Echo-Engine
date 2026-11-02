@@ -548,7 +548,11 @@ struct Preset: Codable, Identifiable, Equatable {
 - Applying copies values into the project (not linked).
 - Sync: `SyncedPresetRepository` decorates the file repo with `NSUbiquitousKeyValueStore` (key `preset.<uuid>`,
   value = JSON). Observe `didChangeExternallyNotification`; merge by `updatedAt`; deletes remove the key. Works
-  locally when iCloud is unavailable. Only presets sync; projects never sync.
+  locally when iCloud is unavailable. Only presets sync; projects never sync. **On hold** (user decision): the
+  signing team has no iCloud, so presets stay on the device (`FilePresetRepository` alone) until the user resumes
+  F09.T03.
+- Built-ins have fixed ids (`BuiltInPresetID`); the app shows their names localized by id. "Gentle comp" in Singing is
+  2:1 at −20 dB with +2 dB makeup (provisional; confirm by ear).
 - Preset management: Settings → Presets (rename, delete user presets).
 
 ---
@@ -923,3 +927,4 @@ Record new user decisions here (date, decision, section updated).
 - 2026-11-02: Export (§ 11.1): AAC inside a video is 192 (Standard) / 320 (High, Lossless) / Custom's AAC bitrate or 256;
   "Both" + Photos sends the video to Photos and the audio file to Files; Export during an AI render waits for it;
   "Keep, clear cache" returns to Projects like Delete.
+- 2026-11-02: Preset iCloud sync (F09.T03) is on hold until the user resumes it; presets are local only (§ 12).

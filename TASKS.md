@@ -318,12 +318,17 @@ Goal: final render and delivery.
 ## F09 — Presets  [IN PROGRESS]
 Goal: built-in and user presets with iCloud sync.
 
-- [ ] F09.T01 — `Preset` model, `FilePresetRepository`, built-in presets JSON (§ 12). Tests.
+- [x] F09.T01 — `Preset` model, `FilePresetRepository`, built-in presets JSON (§ 12). Tests.
+  > Done: EchoCore `Presets/`: `Preset` (+ `isFromNewerVersion`), `BuiltInPresetID` (fixed UUIDs), `BuiltInPresets.load` (forces `isBuiltIn`),
+  > `PresetRepository` → `FilePresetRepository` actor (`<root>/<UUID>.json`, built-ins first then by name, built-ins and newer-schema presets
+  > read-only, bad files skipped) + `FakePresetRepository`. App: `Resources/BuiltInPresets/BuiltInPresets.json` (generated once from Swift),
+  > `AppContainer.presets`, `Preset.displayName` (localized built-ins). Singing's compressor 2:1/−20/+2 is provisional.
 - [ ] F09.T02 — Apply (replace, one undo step, `basePresetID`), Save as preset, Update preset, "Based on … (modified)".
 - [ ] F09.T03 — `SyncedPresetRepository` with `NSUbiquitousKeyValueStore`, merge by `updatedAt`, deletes. Tests with fake store.
+  **On hold (user, 2026-11-02):** the Personal Team has no iCloud; skip until the user resumes it (SPEC § 12, § 20).
 - [ ] F09.T04 — Settings → Presets management (rename, delete).
 
-**Checkpoint test:** create preset on iPhone simulator, apply to another project, edit and update it; with two devices on one Apple ID, preset appears on the other.
+**Checkpoint test:** create preset on iPhone simulator, apply to another project, edit and update it; (two-device sync: when F09.T03 resumes).
 
 ---
 

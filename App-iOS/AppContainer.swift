@@ -1,4 +1,5 @@
 import EchoCore
+import Foundation
 import Observation
 
 /// Composition root: the only place that names concrete service types (SPEC § 4.4).
@@ -26,6 +27,7 @@ final class AppContainer {
     let settings: any AppSettingsStore
     let exportService: any ExportService
     let background: any BackgroundProcessing
+    let presets: any PresetRepository
 
     init(
         entitlements: any EntitlementProvider = FreeV1Entitlements(),
@@ -45,7 +47,8 @@ final class AppContainer {
         photoLibrary: any PhotoLibraryAdding = SystemPhotoLibrary(),
         settings: (any AppSettingsStore)? = nil,
         exportService: (any ExportService)? = nil,
-        background: (any BackgroundProcessing)? = nil
+        background: (any BackgroundProcessing)? = nil,
+        presets: (any PresetRepository)? = nil
     ) {
         self.entitlements = entitlements
         self.capabilities = capabilities
@@ -66,6 +69,10 @@ final class AppContainer {
             renderer: FinalRenderer(autoLevel: autoLevel), encoder: AudioEncoder(), remuxer: VideoRemuxer()
         )
         self.background = background ?? ContinuedProcessingScheduler()
+        // Presets stay on this device for now: iCloud sync (F09.T03) is on hold (user decision, SPEC § 12).
+        self.presets = presets ?? FilePresetRepository(
+            root: .presetsDirectory, builtIns: Self.builtInPresetsURL.flatMap { try? BuiltInPresets.load(from: $0) } ?? []
+        )
         let presenter = DeliveryPresenter()
         deliveryPresenter = presenter
         destinations = [
@@ -73,6 +80,11 @@ final class AppContainer {
             .files: InteractiveDestination(kind: .files, presenter: presenter),
             .share: InteractiveDestination(kind: .share, presenter: presenter),
         ]
+    }
+
+    /// The bundled presets (SPEC § 12), `Resources/BuiltInPresets/BuiltInPresets.json`.
+    static var builtInPresetsURL: URL? {
+        Bundle.main.url(forResource: "BuiltInPresets", withExtension: "json")
     }
 
     /// The processor of every AI feature (SPEC § 7).

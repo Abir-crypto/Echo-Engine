@@ -1,0 +1,278 @@
+[
+  {
+    "aiStack" : [
+      {
+        "id" : "B0117000-0000-4000-8000-000000000101",
+        "kind" : "noiseSuppression",
+        "strength" : 0.7
+      },
+      {
+        "id" : "B0117000-0000-4000-8000-000000000102",
+        "kind" : "voiceLeveler",
+        "strength" : 1
+      }
+    ],
+    "createdAt" : 815270400,
+    "id" : "B0117000-0000-4000-8000-000000000001",
+    "isBuiltIn" : true,
+    "manual" : {
+      "compressor" : {
+        "attackMs" : 10,
+        "isEnabled" : false,
+        "makeupDB" : 0,
+        "ratio" : 3,
+        "releaseMs" : 120,
+        "thresholdDB" : -18
+      },
+      "deEsser" : {
+        "amount" : 0.5,
+        "frequencyHz" : 6500,
+        "isEnabled" : false
+      },
+      "eq" : [
+        {
+          "frequencyHz" : 80,
+          "gainDB" : 0,
+          "kind" : "lowShelf",
+          "q" : 0.71
+        },
+        {
+          "frequencyHz" : 250,
+          "gainDB" : 0,
+          "kind" : "peaking",
+          "q" : 1
+        },
+        {
+          "frequencyHz" : 1000,
+          "gainDB" : 0,
+          "kind" : "peaking",
+          "q" : 1
+        },
+        {
+          "frequencyHz" : 3000,
+          "gainDB" : 0,
+          "kind" : "peaking",
+          "q" : 1
+        },
+        {
+          "frequencyHz" : 6000,
+          "gainDB" : 0,
+          "kind" : "peaking",
+          "q" : 1
+        },
+        {
+          "frequencyHz" : 12000,
+          "gainDB" : 0,
+          "kind" : "highShelf",
+          "q" : 0.71
+        }
+      ],
+      "gate" : {
+        "attackMs" : 2,
+        "isEnabled" : false,
+        "rangeDB" : -40,
+        "releaseMs" : 150,
+        "thresholdDB" : -50
+      },
+      "inputGainDB" : 0,
+      "limiter" : {
+        "ceilingDB" : -1
+      },
+      "pitchSemitones" : 0,
+      "reverb" : {
+        "damping" : 0.5,
+        "isEnabled" : false,
+        "mix" : 0.2,
+        "roomSize" : 0.5
+      }
+    },
+    "name" : "Podcast Voice",
+    "outputLoudness" : {
+      "kind" : "podcast",
+      "lufs" : -16
+    },
+    "schemaVersion" : 1,
+    "updatedAt" : 815270400
+  },
+  {
+    "aiStack" : [
+      {
+        "id" : "B0117000-0000-4000-8000-000000000103",
+        "kind" : "noiseSuppression",
+        "strength" : 0.9
+      },
+      {
+        "id" : "B0117000-0000-4000-8000-000000000104",
+        "kind" : "clearVoice",
+        "strength" : 0.8
+      }
+    ],
+    "createdAt" : 815270400,
+    "id" : "B0117000-0000-4000-8000-000000000002",
+    "isBuiltIn" : true,
+    "manual" : {
+      "compressor" : {
+        "attackMs" : 10,
+        "isEnabled" : false,
+        "makeupDB" : 0,
+        "ratio" : 3,
+        "releaseMs" : 120,
+        "thresholdDB" : -18
+      },
+      "deEsser" : {
+        "amount" : 0.5,
+        "frequencyHz" : 6500,
+        "isEnabled" : false
+      },
+      "eq" : [
+        {
+          "frequencyHz" : 80,
+          "gainDB" : 0,
+          "kind" : "lowShelf",
+          "q" : 0.71
+        },
+        {
+          "frequencyHz" : 250,
+          "gainDB" : 0,
+          "kind" : "peaking",
+          "q" : 1
+        },
+        {
+          "frequencyHz" : 1000,
+          "gainDB" : 0,
+          "kind" : "peaking",
+          "q" : 1
+        },
+        {
+          "frequencyHz" : 3000,
+          "gainDB" : 0,
+          "kind" : "peaking",
+          "q" : 1
+        },
+        {
+          "frequencyHz" : 6000,
+          "gainDB" : 0,
+          "kind" : "peaking",
+          "q" : 1
+        },
+        {
+          "frequencyHz" : 12000,
+          "gainDB" : 0,
+          "kind" : "highShelf",
+          "q" : 0.71
+        }
+      ],
+      "gate" : {
+        "attackMs" : 2,
+        "isEnabled" : false,
+        "rangeDB" : -40,
+        "releaseMs" : 150,
+        "thresholdDB" : -50
+      },
+      "inputGainDB" : 0,
+      "limiter" : {
+        "ceilingDB" : -1
+      },
+      "pitchSemitones" : 0,
+      "reverb" : {
+        "damping" : 0.5,
+        "isEnabled" : false,
+        "mix" : 0.2,
+        "roomSize" : 0.5
+      }
+    },
+    "name" : "Outdoor Video",
+    "outputLoudness" : {
+      "kind" : "youtube",
+      "lufs" : -14
+    },
+    "schemaVersion" : 1,
+    "updatedAt" : 815270400
+  },
+  {
+    "aiStack" : [
+      {
+        "id" : "B0117000-0000-4000-8000-000000000105",
+        "kind" : "noiseSuppression",
+        "strength" : 0.4
+      }
+    ],
+    "createdAt" : 815270400,
+    "id" : "B0117000-0000-4000-8000-000000000003",
+    "isBuiltIn" : true,
+    "manual" : {
+      "compressor" : {
+        "attackMs" : 10,
+        "isEnabled" : true,
+        "makeupDB" : 2,
+        "ratio" : 2,
+        "releaseMs" : 120,
+        "thresholdDB" : -20
+      },
+      "deEsser" : {
+        "amount" : 0.5,
+        "frequencyHz" : 6500,
+        "isEnabled" : false
+      },
+      "eq" : [
+        {
+          "frequencyHz" : 80,
+          "gainDB" : 0,
+          "kind" : "lowShelf",
+          "q" : 0.71
+        },
+        {
+          "frequencyHz" : 250,
+          "gainDB" : 0,
+          "kind" : "peaking",
+          "q" : 1
+        },
+        {
+          "frequencyHz" : 1000,
+          "gainDB" : 0,
+          "kind" : "peaking",
+          "q" : 1
+        },
+        {
+          "frequencyHz" : 3000,
+          "gainDB" : 0,
+          "kind" : "peaking",
+          "q" : 1
+        },
+        {
+          "frequencyHz" : 6000,
+          "gainDB" : 0,
+          "kind" : "peaking",
+          "q" : 1
+        },
+        {
+          "frequencyHz" : 12000,
+          "gainDB" : 0,
+          "kind" : "highShelf",
+          "q" : 0.71
+        }
+      ],
+      "gate" : {
+        "attackMs" : 2,
+        "isEnabled" : false,
+        "rangeDB" : -40,
+        "releaseMs" : 150,
+        "thresholdDB" : -50
+      },
+      "inputGainDB" : 0,
+      "limiter" : {
+        "ceilingDB" : -1
+      },
+      "pitchSemitones" : 0,
+      "reverb" : {
+        "damping" : 0.5,
+        "isEnabled" : true,
+        "mix" : 0.15,
+        "roomSize" : 0.5
+      }
+    },
+    "name" : "Singing",
+    "schemaVersion" : 1,
+    "updatedAt" : 815270400
+  }
+]

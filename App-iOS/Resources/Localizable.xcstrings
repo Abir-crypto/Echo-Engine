@@ -394,6 +394,9 @@
     "Original pitch" : {
       "comment" : "VoiceOver value of the pitch slider at 0."
     },
+    "Outdoor Video" : {
+      "comment" : "Built-in preset: strong noise suppression, Clear Voice, YouTube loudness."
+    },
     "Pause" : {
       "comment" : "Accessibility label of the pause button."
     },
@@ -426,6 +429,9 @@
     },
     "Podcast" : {
       "comment" : "Loudness target for podcasts."
+    },
+    "Podcast Voice" : {
+      "comment" : "Built-in preset: noise suppression, Voice Leveler, podcast loudness."
     },
     "Preparing…" : {
       "comment" : "Import progress before copying starts."
@@ -495,6 +501,9 @@
     },
     "Share" : {
       "comment" : "Save to: the share sheet."
+    },
+    "Singing" : {
+      "comment" : "Built-in preset: light noise suppression, gentle compression, a little reverb."
     },
     "Softens harsh “s” sounds." : {
       "comment" : "Gain and dynamics: explanation under the De-esser switch."
