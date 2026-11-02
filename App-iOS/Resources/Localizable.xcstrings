@@ -1,14 +1,23 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ %lld-bit, %@." : {
+      "comment" : "Export quality caption for a lossless file: format, bit depth, sample rate, e.g. FLAC 24-bit, 48 kHz."
+    },
     "%@ dB" : {
       "comment" : "A level in decibels, e.g. +2.5 dB."
     },
     "%@ LUFS" : {
       "comment" : "A loudness target, e.g. -14 LUFS."
     },
+    "%@ The video gets AAC %@ kbps and is kept exactly as it is." : {
+      "comment" : "Export quality caption for Both: the audio file's description (e.g. FLAC 24-bit, 48 kHz.), then the bitrate of the audio inside the video."
+    },
     "%@:1" : {
       "comment" : "A compression ratio, e.g. 3:1."
+    },
+    "%lld kbps" : {
+      "comment" : "An AAC bitrate choice in the export sheet, e.g. 320 kbps."
     },
     "%lld semitones higher" : {
       "comment" : "VoiceOver value of the pitch slider.",
@@ -56,6 +65,15 @@
         }
       }
     },
+    "%lld-bit" : {
+      "comment" : "A bit depth choice in the export sheet, e.g. 24-bit."
+    },
+    "AAC %@ kbps." : {
+      "comment" : "Export quality caption for an AAC audio file, e.g. AAC 320 kbps."
+    },
+    "AAC %@ kbps. The video is kept exactly as it is." : {
+      "comment" : "Export quality caption when exporting a video: its new audio's bitrate; the picture is not re-encoded."
+    },
     "Add enhancement" : {
       "comment" : "Editor Enhance section: row that opens the list of AI features; also that sheet's title."
     },
@@ -74,6 +92,9 @@
     "Advanced" : {
       "comment" : "Row that reveals timing and range controls of a dynamics section."
     },
+    "After export" : {
+      "comment" : "Export sheet section: what happens to the project once the export is saved."
+    },
     "Already reduces noise" : {
       "comment" : "Hint under Clear Voice when Noise Suppression is also in the stack."
     },
@@ -82,6 +103,9 @@
     },
     "Amount" : {
       "comment" : "De-esser: how strongly sibilance is reduced (slider)."
+    },
+    "An enhancement couldn’t be applied, so there’s nothing to export yet. Free up some space, then try again." : {
+      "comment" : "Export alert when the AI enhancements couldn't be rendered."
     },
     "An enhancement couldn’t be applied. Free up some space, then try again." : {
       "comment" : "Editor alert when an AI enhancement fails to render (usually no space left)."
@@ -101,6 +125,12 @@
     "Audio" : {
       "comment" : "Accessibility label of the audio badge on a project card."
     },
+    "Audio only" : {
+      "comment" : "Export as: only the audio, as a file."
+    },
+    "Audio quality" : {
+      "comment" : "Export sheet section: quality presets of the exported audio."
+    },
     "Auto Level applies %@, the most it can." : {
       "comment" : "The gain Auto Level applies when the target is out of reach; it is at its limit, e.g. +20.0 dB."
     },
@@ -112,6 +142,15 @@
     },
     "Band %lld, %@" : {
       "comment" : "VoiceOver label of an EQ band. %1$lld = band number, %2$@ = its frequency, e.g. Band 3, 1 kHz."
+    },
+    "Bit depth" : {
+      "comment" : "Export sheet, Custom quality: 16 or 24 bits per sample."
+    },
+    "Bitrate" : {
+      "comment" : "Export sheet, Custom quality: AAC bitrate in kbps."
+    },
+    "Both" : {
+      "comment" : "Export as: the video and a separate audio file."
     },
     "Can’t import" : {
       "comment" : "Title of the import sheet when an import fails."
@@ -127,6 +166,9 @@
     },
     "Clear Voice" : {
       "comment" : "AI feature name: noise removal plus presence EQ and gentle compression."
+    },
+    "Close" : {
+      "comment" : "Accessibility label of the button that closes a sheet."
     },
     "Collapsed" : {
       "comment" : "VoiceOver value of the closed Advanced row."
@@ -155,6 +197,12 @@
     "Done" : {
       "comment" : "Closes a sheet; changes are already applied."
     },
+    "Echo Engine can’t add videos to your photo library. Allow it in Settings, then try again." : {
+      "comment" : "Export alert when Photos access was denied; offers Open Settings."
+    },
+    "Echo Engine export" : {
+      "comment" : "File name of an export whose project has no title."
+    },
     "Edited today" : {
       "comment" : "Project card date when the project changed today."
     },
@@ -182,11 +230,43 @@
     "Export" : {
       "comment" : "Editor toolbar button that opens the export sheet."
     },
+    "Export as" : {
+      "comment" : "Export sheet section: video, audio only or both."
+    },
+    "Export audio" : {
+      "comment" : "Export sheet primary button when exporting audio only."
+    },
+    "Export video" : {
+      "comment" : "Export sheet primary button when exporting the video."
+    },
+    "export.quality.high" : {
+      "comment" : "Audio quality preset: AAC 320 kbps.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High"
+          }
+        }
+      }
+    },
+    "Exporting…" : {
+      "comment" : "Export sheet title while rendering and encoding."
+    },
     "Files" : {
       "comment" : "Import source: the Files app."
     },
+    "Finishing enhancements…" : {
+      "comment" : "Export sheet title while the AI enhancements finish rendering before the export starts."
+    },
     "Flat" : {
       "comment" : "VoiceOver value of the Equalizer row when no band is changed."
+    },
+    "Format" : {
+      "comment" : "Export sheet, Custom quality: the audio file format (AAC, WAV, FLAC, ALAC)."
+    },
+    "Frees %@" : {
+      "comment" : "How much space an After export choice frees, e.g. Frees 1.4 GB."
     },
     "Frequency" : {
       "comment" : "EQ band / de-esser frequency slider."
@@ -233,8 +313,17 @@
     "It can’t be undone." : {
       "comment" : "Delete confirmation message when the size is unknown."
     },
+    "Keep project" : {
+      "comment" : "After export: keep the project as it is (default)."
+    },
+    "Keep, clear cache" : {
+      "comment" : "After export: keep the project but delete its rendered enhancements (rebuilt when opened)."
+    },
     "Limiter ceiling" : {
       "comment" : "Gain and dynamics: the limiter's maximum level (slider, dB)."
+    },
+    "Lossless" : {
+      "comment" : "Audio quality preset: FLAC 24-bit 48 kHz."
     },
     "Loudness" : {
       "comment" : "Editor Adjust row: Auto Level loudness target."
@@ -272,6 +361,12 @@
     "Needs %@ to export" : {
       "comment" : "Project card warning. %@ = missing space, e.g. 0.2 GB (SPEC § 15)."
     },
+    "Needs about %@." : {
+      "comment" : "Export storage line when free space is unknown, e.g. Needs about 1.2 GB."
+    },
+    "Needs about %@. %@ available." : {
+      "comment" : "Export storage line: estimated size, then free space, e.g. Needs about 1.2 GB. 18.4 GB available."
+    },
     "Noise gate" : {
       "comment" : "Gain and dynamics: section and switch title."
     },
@@ -289,6 +384,9 @@
     },
     "OK" : {
       "comment" : "Dismisses an alert."
+    },
+    "Open Settings" : {
+      "comment" : "Alert button that opens the app's page in the Settings app."
     },
     "Original pitch" : {
       "comment" : "VoiceOver value of the pitch slider at 0."
@@ -380,8 +478,20 @@
     "Room size" : {
       "comment" : "Reverb: size of the simulated room (slider, percent)."
     },
+    "Sample rate" : {
+      "comment" : "Export sheet, Custom quality: 44.1 or 48 kHz."
+    },
+    "Save to" : {
+      "comment" : "Export sheet section: where the exported file goes."
+    },
+    "Saving…" : {
+      "comment" : "Export sheet title while the file goes to Photos, Files or the share sheet."
+    },
     "Settings" : {
       "comment" : "Settings button and screen title."
+    },
+    "Share" : {
+      "comment" : "Save to: the share sheet."
     },
     "Softens harsh “s” sounds." : {
       "comment" : "Gain and dynamics: explanation under the De-esser switch."
@@ -389,11 +499,20 @@
     "Spotify" : {
       "comment" : "Loudness target named after a platform; keep the brand name."
     },
+    "Standard" : {
+      "comment" : "Audio quality preset: AAC 192 kbps."
+    },
     "Strength" : {
       "comment" : "Slider and value label: how much of an AI step is applied (wet/dry)."
     },
     "Target" : {
       "comment" : "Slider for the custom loudness target, in LUFS."
+    },
+    "The export couldn’t be finished. Free up some space, then try again." : {
+      "comment" : "Export alert when rendering, encoding or combining with the video failed."
+    },
+    "The file couldn’t be saved there. Try again, or choose another place." : {
+      "comment" : "Export alert when saving to Photos or Files failed."
     },
     "The import couldn’t finish. Try again." : {
       "comment" : "Import error."
@@ -406,6 +525,9 @@
     },
     "The video couldn’t be loaded from Photos. Make sure it’s downloaded from iCloud, then try again." : {
       "comment" : "Import error."
+    },
+    "This export needs about %@. You have %@ free. Free up space, then try again." : {
+      "comment" : "Export alert when there isn't enough space: estimated size, then free space."
     },
     "This file can’t be read. Export it again from the app that made it, then import the new file." : {
       "comment" : "Import error."
@@ -469,6 +591,9 @@
     },
     "Yesterday" : {
       "comment" : "Project card date when the project changed yesterday."
+    },
+    "Your export is saved, but the project couldn’t be deleted. You can delete it in Projects." : {
+      "comment" : "Export alert when deleting the project after a successful export failed."
     },
     "YouTube" : {
       "comment" : "Loudness target named after a platform; keep the brand name."

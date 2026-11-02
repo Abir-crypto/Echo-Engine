@@ -27,9 +27,21 @@ public struct StorageEstimator: StorageEstimating {
     }
 
     public func bytesToExport(_ project: Project) -> Int64 {
+        let aac256 = Self.encodedAudioBytesPerSecond * 8
+        let output: ExportOutput = project.mediaType == .video
+            ? .video(audioBitrate: Int(aac256))
+            : .audioOnly(AudioExportSettings(format: .aac, sampleRate: 48_000, bitDepth: nil, bitrate: Int(aac256)))
+        return bytesToExport(project, output: output)
+    }
+
+    /// The lossless render, each encoded audio (the video's AAC, the audio file), the trimmed video and a margin.
+    public func bytesToExport(_ project: Project, output: ExportOutput) -> Int64 {
         let trimmed = project.trimRange.duration
-        var bytes = Self.bytes(trimmed, at: Self.renderBytesPerSecond + Self.encodedAudioBytesPerSecond) + Self.exportMargin
-        if project.mediaType == .video, project.sourceInfo.duration > 0 {
+        var bytesPerSecond = Self.renderBytesPerSecond
+        if let bitrate = output.videoAudioBitrate { bytesPerSecond += Int64(bitrate / 8) }
+        if let settings = output.audioSettings { bytesPerSecond += Self.encodedBytesPerSecond(settings) }
+        var bytes = Self.bytes(trimmed, at: bytesPerSecond) + Self.exportMargin
+        if output.includesVideo, project.mediaType == .video, project.sourceInfo.duration > 0 {
             let trimRatio = min(1, trimmed / project.sourceInfo.duration)
             bytes += Int64((Double(project.sourceInfo.byteSize) * trimRatio).rounded(.up))
         }
@@ -39,6 +51,19 @@ public struct StorageEstimator: StorageEstimating {
     public func availableBytes() throws -> Int64 {
         let values = try volume.resourceValues(forKeys: [.volumeAvailableCapacityForImportantUsageKey])
         return values.volumeAvailableCapacityForImportantUsage ?? 0
+    }
+
+    /// Stereo is assumed, as for renders. FLAC and ALAC are taken as large as the ALAC render at their rate and depth.
+    private static func encodedBytesPerSecond(_ settings: AudioExportSettings) -> Int64 {
+        let bitDepth = Double(settings.bitDepth ?? 24)
+        switch settings.format {
+        case .aac:
+            return Int64((settings.bitrate ?? 256_000) / 8)
+        case .wav:
+            return Int64((settings.sampleRate * 2 * bitDepth / 8).rounded(.up))
+        case .flac, .alac:
+            return Int64((Double(renderBytesPerSecond) * settings.sampleRate / 48_000 * bitDepth / 24).rounded(.up))
+        }
     }
 
     private static func bytes(_ seconds: Double, at bytesPerSecond: Int64) -> Int64 {

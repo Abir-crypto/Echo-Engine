@@ -419,6 +419,34 @@ struct EditorModelTests {
         #expect(engine.currentAudio == render(2, of: project))
     }
 
+    @Test func exportWaitsForTheRunningRenderAndUsesIt() async throws {
+        await renderer.setDelay(.milliseconds(100))
+        var project = audio
+        project.clips[0].aiStack = [noise, clear]
+        let (model, _) = makeModel(project)
+        await model.open()
+
+        #expect(try await model.audioForExport() == render(2, of: project))
+    }
+
+    @Test func withoutAIStepsExportUsesTheWorkingAudio() async throws {
+        let (model, _) = makeModel(plain)
+        await model.open()
+
+        #expect(try await model.audioForExport() == repository.folder(for: plain.id).working)
+    }
+
+    @Test func exportNeverUsesARenderOfAnOlderStack() async throws {
+        let (model, _) = makeModel(plain)
+        await model.open()
+        await renderer.setError(RenderError.cantWrite)
+
+        model.changeAIStack { $0.append(noise) }
+        await waitUntil { model.failure != nil }
+
+        await #expect(throws: ExportError.unreadableAudio) { try await model.audioForExport() }
+    }
+
     @Test func aFailedRenderIsReportedAndPlaybackStaysOnTheOriginal() async {
         await renderer.setError(RenderError.cantWrite)
         let (model, engine) = makeModel(plain)

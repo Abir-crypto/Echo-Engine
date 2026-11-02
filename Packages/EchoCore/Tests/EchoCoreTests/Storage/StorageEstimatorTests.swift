@@ -43,6 +43,25 @@ struct StorageEstimatorTests {
         #expect(estimator.bytesToExport(audio) == 179_200_000)
     }
 
+    @Test func exportEstimatesFollowTheChosenOutput() {
+        let half = video(trimmedTo: TimeRangeCodable(start: 150, duration: 300))
+        // 500 MB video + 300 s × (100 KB/s render + 40 KB/s AAC 320) + 100 MB
+        #expect(estimator.bytesToExport(half, output: .video(audioBitrate: 320_000)) == 642_000_000)
+        // 300 s × (100 KB/s + 176.4 KB/s WAV 16-bit 44.1 kHz stereo) + 100 MB
+        let wav = AudioExportSettings(format: .wav, sampleRate: 44_100, bitDepth: 16, bitrate: nil)
+        #expect(estimator.bytesToExport(half, output: .audioOnly(wav)) == 182_920_000)
+        // FLAC/ALAC at 24-bit 48 kHz ≈ the render rate: 500 MB + 300 s × (100 + 24 + 100) KB/s + 100 MB
+        #expect(estimator.bytesToExport(half, output: .both(audioBitrate: 192_000, .lossless)) == 667_200_000)
+        // ALAC 16-bit 44.1 kHz: 100 KB/s × 44.1/48 × 16/24 = 61.25 KB/s
+        let alac = AudioExportSettings(format: .alac, sampleRate: 44_100, bitDepth: 16, bitrate: nil)
+        #expect(estimator.bytesToExport(half, output: .audioOnly(alac)) == 148_375_000)
+    }
+
+    @Test func theDefaultExportEstimateIsAVideoWithAAC256() {
+        let half = video(trimmedTo: TimeRangeCodable(start: 150, duration: 300))
+        #expect(estimator.bytesToExport(half) == estimator.bytesToExport(half, output: .video(audioBitrate: 256_000)))
+    }
+
     @Test func availableBytesReadsTheVolume() throws {
         #expect(try estimator.availableBytes() > 0)
     }

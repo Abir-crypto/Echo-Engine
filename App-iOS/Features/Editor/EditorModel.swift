@@ -63,6 +63,8 @@ final class EditorModel {
     @ObservationIgnored private let renderer: any AIChainRendering
     @ObservationIgnored private let janitor: any RenderCacheJanitoring
     @ObservationIgnored private var renderTask: Task<Void, Never>?
+    /// The chain `rendered` belongs to; an export only starts from the current one.
+    @ObservationIgnored private var renderedChain: AIChain?
     /// Counts render requests, so progress and results of superseded ones are ignored.
     @ObservationIgnored private var renderRequest = 0
     /// The audio the engine plays now.
@@ -170,6 +172,26 @@ final class EditorModel {
         if isLoaded, !isReadOnly {
             try? await janitor.prune(projectID: project.id, sourceRange: project.clips[0].sourceRange, current: project.editState)
         }
+    }
+
+    // MARK: Export
+
+    /// The audio an export starts from (SPEC § 11.2): the current AI stack's render, after the one in progress
+    /// finishes (user decision, SPEC § 11.2), or `working.caf` without AI steps. Throws `ExportError.unreadableAudio`
+    /// when the current stack has no render (it failed).
+    func audioForExport() async throws -> URL {
+        while let task = renderTask {
+            await task.value
+            try Task.checkCancellation()
+            // A finished render clears `renderTask`; a newer one replaces it. Anything else would wait forever.
+            guard renderTask != task else { break }
+        }
+        guard let rendered, renderedChain == chain else { throw ExportError.unreadableAudio }
+        return rendered.output
+    }
+
+    func pausePlayback() {
+        engine.pause()
     }
 
     /// Read-only projects play nothing either: all controls are disabled (SPEC § 9).
@@ -424,6 +446,7 @@ final class EditorModel {
         guard !chain.operations.isEmpty else {
             renderTask = nil
             rendered = RenderedChain(prefixes: [], output: workingAudio)
+            renderedChain = chain
             renderedPeaks = nil
             playCurrentSource()
             sweepRenders()
@@ -435,7 +458,7 @@ final class EditorModel {
         renderTask = Task { [weak self, renderer] in
             do {
                 let result = try await renderer.render(source: source, chain: chain, progress: relay.report)
-                self?.renderFinished(result, request: request)
+                self?.renderFinished(result, chain: chain, request: request)
             } catch is CancellationError {
             } catch {
                 guard let self, self.renderRequest == request else { return }
@@ -453,12 +476,13 @@ final class EditorModel {
         renderProgress = progress.fraction
     }
 
-    private func renderFinished(_ result: RenderedChain, request: Int) {
+    private func renderFinished(_ result: RenderedChain, chain: AIChain, request: Int) {
         guard request == renderRequest else { return }
         renderTask = nil
         renderingStep = nil
         renderProgress = nil
         rendered = result
+        renderedChain = chain
         if let step = auditionedStep, !result.prefixes.indices.contains(step) { auditionedStep = nil }
         playCurrentSource()
         sweepRenders()

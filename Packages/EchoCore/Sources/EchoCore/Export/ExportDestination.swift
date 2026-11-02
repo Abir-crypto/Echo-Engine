@@ -12,10 +12,11 @@ public enum DeliveryOutcome: Equatable, Sendable {
     case cancelled
 }
 
-/// Delivers a finished export file (SPEC § 4.3, § 11.2 step 5). Throws `ExportError` when delivery fails.
+/// Delivers finished export files (SPEC § 4.3, § 11.2 step 5), all together (a video and its audio file for
+/// "Both"). Throws `ExportError` when delivery fails.
 public protocol ExportDestination: Sendable {
     var kind: DestinationKind { get }
-    func deliver(_ file: URL) async throws -> DeliveryOutcome
+    func deliver(_ files: [URL]) async throws -> DeliveryOutcome
 }
 
 /// Adding videos to the photo library (wraps PhotoKit's shared library, SPEC § 4.1).
@@ -36,10 +37,13 @@ public struct PhotosDestination: ExportDestination {
 
     public var kind: DestinationKind { .photos }
 
-    public func deliver(_ file: URL) async throws -> DeliveryOutcome {
+    /// Every file must be a video: Photos takes only videos (SPEC § 11.1).
+    public func deliver(_ files: [URL]) async throws -> DeliveryOutcome {
         guard await library.requestAddAccess() else { throw ExportError.photoLibraryDenied }
         do {
-            try await library.addVideo(movingFileAt: file)
+            for file in files {
+                try await library.addVideo(movingFileAt: file)
+            }
         } catch {
             throw ExportError.photoLibraryFailed
         }

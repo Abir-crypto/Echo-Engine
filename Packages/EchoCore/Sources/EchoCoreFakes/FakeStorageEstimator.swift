@@ -19,6 +19,7 @@ public struct FakeStorageEstimator: StorageEstimating {
     public func bytesToImport(_ source: SourceInfo) -> Int64 { importBytes }
     public func bytesToEdit(_ project: Project) -> Int64 { editBytes }
     public func bytesToExport(_ project: Project) -> Int64 { exportBytes }
+    public func bytesToExport(_ project: Project, output: ExportOutput) -> Int64 { exportBytes }
     public func availableBytes() throws -> Int64 {
         if failsToMeasure { throw MeasureFailure() }
         return available

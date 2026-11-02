@@ -9,7 +9,7 @@ struct DeliveryPresenterTests {
 
     /// Starts a delivery and waits until the presenter shows it.
     private func start(_ destination: InteractiveDestination, _ presenter: DeliveryPresenter) async -> Task<DeliveryOutcome, any Error> {
-        let task = Task { try await destination.deliver(file) }
+        let task = Task { try await destination.deliver([file]) }
         while presenter.request == nil { await Task.yield() }
         return task
     }
@@ -20,7 +20,7 @@ struct DeliveryPresenterTests {
         let task = await start(InteractiveDestination(kind: kind, presenter: presenter), presenter)
 
         #expect(presenter.request?.kind == kind)
-        #expect(presenter.request?.file == file)
+        #expect(presenter.request?.files == [file])
         presenter.finish(.delivered)
 
         #expect(try await task.value == .delivered)
@@ -50,7 +50,7 @@ struct DeliveryPresenterTests {
         let first = await start(InteractiveDestination(kind: .files, presenter: presenter), presenter)
         let firstID = presenter.request?.id
 
-        let second = Task { try await InteractiveDestination(kind: .share, presenter: presenter).deliver(file) }
+        let second = Task { try await InteractiveDestination(kind: .share, presenter: presenter).deliver([file]) }
         while presenter.request?.id == firstID { await Task.yield() }
 
         #expect(try await first.value == .cancelled)

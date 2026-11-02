@@ -11,17 +11,17 @@ final class DeliveryPresenter {
     struct Request: Identifiable, Equatable, Sendable {
         let id = UUID()
         let kind: DestinationKind
-        let file: URL
+        let files: [URL]
     }
 
     private(set) var request: Request?
     @ObservationIgnored private var continuation: CheckedContinuation<DeliveryOutcome, any Error>?
 
-    /// Shows `file` for `kind` until the person saves, shares or closes it. A newer request closes this one
+    /// Shows `files` for `kind` until the person saves, shares or closes them. A newer request closes this one
     /// (`.cancelled`), and so does cancelling the calling task.
-    func present(_ file: URL, kind: DestinationKind) async throws -> DeliveryOutcome {
+    func present(_ files: [URL], kind: DestinationKind) async throws -> DeliveryOutcome {
         finish(.cancelled)
-        let request = Request(kind: kind, file: file)
+        let request = Request(kind: kind, files: files)
         return try await withTaskCancellationHandler {
             try await withCheckedThrowingContinuation { continuation in
                 guard !Task.isCancelled else {
@@ -59,8 +59,8 @@ struct InteractiveDestination: ExportDestination {
     let kind: DestinationKind
     let presenter: DeliveryPresenter
 
-    func deliver(_ file: URL) async throws -> DeliveryOutcome {
-        try await presenter.present(file, kind: kind)
+    func deliver(_ files: [URL]) async throws -> DeliveryOutcome {
+        try await presenter.present(files, kind: kind)
     }
 }
 
@@ -75,14 +75,13 @@ private struct DeliveryPresentation: ViewModifier {
     let presenter: DeliveryPresenter
 
     func body(content: Content) -> some View {
-        let files = presenter.request.flatMap { $0.kind == .files ? ExportedFile(url: $0.file) : nil }
+        let files = presenter.request?.kind == .files ? presenter.request?.files.map(ExportedFile.init) ?? [] : []
         content
             .fileExporter(
                 // Closing is reported through `onCompletion` / `onCancellation`; the setter has nothing to add.
-                isPresented: Binding(get: { files != nil }, set: { _ in }),
-                item: files,
-                contentTypes: files.map { [$0.contentType] } ?? [],
-                defaultFilename: files?.url.deletingPathExtension().lastPathComponent,
+                isPresented: Binding(get: { !files.isEmpty }, set: { _ in }),
+                items: files,
+                contentTypes: Array(Set(files.map(\.contentType))),
                 onCompletion: { result in
                     switch result {
                     case .success: presenter.finish(.delivered)
@@ -92,7 +91,7 @@ private struct DeliveryPresentation: ViewModifier {
                 onCancellation: { presenter.finish(.cancelled) }
             )
             .sheet(item: shareRequest) { request in
-                ActivityView(file: request.file) { completed in
+                ActivityView(files: request.files) { completed in
                     presenter.finish(completed ? .delivered : .cancelled)
                 }
                 .presentationDetents([.medium, .large])
@@ -129,11 +128,11 @@ struct ExportedFile: Transferable {
 
 /// The system share sheet; reports whether the person completed an action.
 private struct ActivityView: UIViewControllerRepresentable {
-    let file: URL
+    let files: [URL]
     let onFinish: (_ completed: Bool) -> Void
 
     func makeUIViewController(context: Context) -> UIActivityViewController {
-        let controller = UIActivityViewController(activityItems: [file], applicationActivities: nil)
+        let controller = UIActivityViewController(activityItems: files, applicationActivities: nil)
         controller.completionWithItemsHandler = { _, completed, _, _ in
             onFinish(completed)
         }

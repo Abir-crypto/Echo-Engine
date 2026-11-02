@@ -6,8 +6,10 @@ public protocol StorageEstimating: Sendable {
     func bytesToImport(_ source: SourceInfo) -> Int64
     /// Opening the editor: room for one render twice over.
     func bytesToEdit(_ project: Project) -> Int64
-    /// Exporting the trimmed range with the default output (video projects keep their video).
+    /// Exporting the trimmed range with the default output (video projects keep their video, AAC 256).
     func bytesToExport(_ project: Project) -> Int64
+    /// Exporting the trimmed range as `output`.
+    func bytesToExport(_ project: Project, output: ExportOutput) -> Int64
     /// Free space for important usage on the projects volume.
     func availableBytes() throws -> Int64
 }

@@ -300,7 +300,11 @@ Goal: final render and delivery.
   > values → defaults) + `FakeAppSettingsStore`; `Appearance`/`AppTint` enums moved to EchoCore (app keeps the SwiftUI extensions; files naming them
   > `import EchoCore`). `ExportChoices` (`ExportKind`, `AudioQuality`, custom settings, destination) per media type; defaults from the mockup:
   > High, video → Photos, audio → Files; "After export" not remembered. `container.settings` drives the app; `AppSettingsKey` removed.
-- [ ] F08.T05 — Export sheet UI per canvas; last-used settings; storage line; post-export actions after confirmed delivery.
+- [x] F08.T05 — Export sheet UI per canvas; last-used settings; storage line; post-export actions after confirmed delivery.
+  > Done: EchoCore `ExportOutput`/`PostExportAction`, `bytesToExport(_:output:)`, `ExportService` → `AVExportService` (render → AAC for the video
+  > + remux, and/or the audio file; work files in `.work/`), destinations take `[URL]`. App `ExportModel` (+ `ExportEditor` hooks; `EditorModel.audioForExport`
+  > refuses a stale render) and `ExportSheet` (native segmented, tiles, radio list, progress + Cancel, `-debugExportSheet YES`). User decisions in
+  > SPEC § 11.1/§ 20. Quality "High" uses key `export.quality.high` (the EQ's "High" differs). Not yet tapped through on a device: checkpoint.
 - [ ] F08.T06 — `BGContinuedProcessingTask`, progress, cancellation, failure handling.
 
 **Checkpoint test:** export 4K HDR video to Photos and verify identical video quality/metadata and new audio; export audio-only in each format; video→audio conversion with no effects; delete-after-export removes project only after save.

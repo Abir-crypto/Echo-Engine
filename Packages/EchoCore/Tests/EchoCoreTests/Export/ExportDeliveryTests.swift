@@ -84,7 +84,7 @@ struct PhotosDestinationTests {
         let destination = PhotosDestination(library: library)
 
         #expect(destination.kind == .photos)
-        #expect(try await destination.deliver(video) == .delivered)
+        #expect(try await destination.deliver([video]) == .delivered)
         #expect(await library.added == [video])
     }
 
@@ -92,7 +92,7 @@ struct PhotosDestinationTests {
         let library = FakePhotoLibrary(grantsAccess: false)
 
         await #expect(throws: ExportError.photoLibraryDenied) {
-            try await PhotosDestination(library: library).deliver(video)
+            try await PhotosDestination(library: library).deliver([video])
         }
         #expect(await library.added.isEmpty)
     }
@@ -102,7 +102,7 @@ struct PhotosDestinationTests {
         await library.setFailure(CocoaError(.fileWriteOutOfSpace))
 
         await #expect(throws: ExportError.photoLibraryFailed) {
-            try await PhotosDestination(library: library).deliver(video)
+            try await PhotosDestination(library: library).deliver([video])
         }
     }
 }

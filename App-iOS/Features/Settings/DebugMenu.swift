@@ -37,6 +37,11 @@ enum DebugAutoplay {
     static let launchArgument = "debugAutoplay"
 }
 
+/// `-debugExportSheet YES` opens the export sheet when the editor opens.
+enum DebugExportSheet {
+    static let launchArgument = "debugExportSheet"
+}
+
 /// `-debugAdjustSheet equalizer|gainDynamics|effects|loudness` opens that Adjust sheet when the editor opens.
 enum DebugAdjustSheet {
     static let launchArgument = "debugAdjustSheet"

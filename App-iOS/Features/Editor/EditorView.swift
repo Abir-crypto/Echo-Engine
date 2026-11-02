@@ -25,6 +25,8 @@ struct EditorScreen: View {
 struct EditorView: View {
     let model: EditorModel
 
+    @Environment(AppContainer.self) private var container
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.appTint) private var tint
     @Environment(\.deviceFamily) private var deviceFamily
     @State private var visibleDuration: Double = 20
@@ -32,6 +34,7 @@ struct EditorView: View {
     @State private var adjustSheet: AdjustSheet?
     @State private var enhanceSheet: EnhanceSheet?
     @State private var newTitle = ""
+    @State private var export: ExportModel?
 
     var body: some View {
         Group {
@@ -63,16 +66,22 @@ struct EditorView: View {
                 .accessibilityHint(Text("Rename"))
             }
             ToolbarItem(placement: .topBarTrailing) {
-                // Export arrives in F08.
-                Button("Export") {}
+                Button("Export") { export = container.makeExportModel(for: model) }
                     .buttonStyle(.compactPrimary)
-                    .disabled(true)
+                    .disabled(!model.canEdit)
             }
             .sharedBackgroundVisibility(.hidden)
         }
         // The native back chevron is a circle-button glyph: TextValue, not the tint (SPEC § 18.4). Alerts are attached
         // outside it, so their text buttons keep the app tint.
         .tint(.token(.textValue))
+        .sheet(item: $export) { export in
+            ExportSheet(model: export, presenter: container.deliveryPresenter) { closesEditor in
+                self.export = nil
+                // After "Keep, clear cache" or "Delete project" the editor is already closed: back to Projects.
+                if closesEditor { dismiss() }
+            }
+        }
         .alert("Rename project", isPresented: $isRenaming) {
             TextField("Title", text: $newTitle)
             Button("Cancel", role: .cancel) {}
@@ -100,6 +109,7 @@ struct EditorView: View {
             default: break
             }
             adjustSheet = UserDefaults.standard.string(forKey: DebugAdjustSheet.launchArgument).flatMap(AdjustSheet.init)
+            if UserDefaults.standard.bool(forKey: DebugExportSheet.launchArgument) { export = container.makeExportModel(for: model) }
             #endif
         }
         .flushesAutosave(model.autosaver)

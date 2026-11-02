@@ -24,6 +24,7 @@ final class AppContainer {
     let deliveryPresenter: DeliveryPresenter
     let destinations: [DestinationKind: any ExportDestination]
     let settings: any AppSettingsStore
+    let exportService: any ExportService
 
     init(
         entitlements: any EntitlementProvider = FreeV1Entitlements(),
@@ -41,7 +42,8 @@ final class AppContainer {
         autoLevel: any AutoLevelAnalyzing = AutoLevelAnalyzer(),
         exportWorkspace: ExportWorkspace = ExportWorkspace(root: .exportTemporaryDirectory),
         photoLibrary: any PhotoLibraryAdding = SystemPhotoLibrary(),
-        settings: (any AppSettingsStore)? = nil
+        settings: (any AppSettingsStore)? = nil,
+        exportService: (any ExportService)? = nil
     ) {
         self.entitlements = entitlements
         self.capabilities = capabilities
@@ -58,6 +60,9 @@ final class AppContainer {
         self.autoLevel = autoLevel
         self.exportWorkspace = exportWorkspace
         self.settings = settings ?? UserDefaultsSettingsStore(defaults: .standard)
+        self.exportService = exportService ?? AVExportService(
+            renderer: FinalRenderer(autoLevel: autoLevel), encoder: AudioEncoder(), remuxer: VideoRemuxer()
+        )
         let presenter = DeliveryPresenter()
         deliveryPresenter = presenter
         destinations = [
@@ -91,6 +96,30 @@ final class AppContainer {
             janitor: janitor,
             autoLevel: autoLevel,
             makeAutosaver: { [projects] onError in ProjectAutosaver(repository: projects, onError: onError) }
+        )
+    }
+
+    /// The export of the editor's project as it is now (SPEC § 11).
+    func makeExportModel(for editor: EditorModel) -> ExportModel {
+        let project = editor.project
+        let folder = projects.folder(for: project.id)
+        return ExportModel(
+            editor: ExportEditor(
+                project: project,
+                sourceVideo: project.mediaType == .video ? folder.source(fileName: project.sourceFileName) : nil,
+                audio: { try await editor.audioForExport() },
+                pausePlayback: { editor.pausePlayback() },
+                close: { await editor.close() }
+            ),
+            settings: settings,
+            storage: storage,
+            service: exportService,
+            workspace: exportWorkspace,
+            destinations: destinations,
+            repository: projects,
+            renders: renders,
+            waveforms: waveforms,
+            fallbackTitle: String(localized: "Echo Engine export", comment: "File name of an export whose project has no title.")
         )
     }
 

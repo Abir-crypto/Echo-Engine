@@ -487,13 +487,19 @@ One `EditorView` for both media types; only the header differs.
 - **Export as** (video projects): Video · Audio only · Both. Audio projects: audio only (no picker shown).
 - **Audio quality** presets: Standard (AAC 192 kbps) · High (AAC 320) · Lossless (FLAC 24-bit 48 kHz) · Custom.
   Custom: format AAC/WAV/FLAC/ALAC, sample rate 44.1/48 kHz, bit depth 16/24 (lossless/PCM), bitrate 128/192/256/320 (AAC).
-  For video output, the audio track inside the video is AAC; quality preset picks its bitrate (default 256).
+  For video output, the audio track inside the video is AAC; quality preset picks its bitrate: Standard 192, High 320,
+  Lossless 320 (the best AAC), Custom its AAC bitrate (256 when Custom isn't AAC).
   Caption under the picker explains the choice, e.g. "AAC 320 kbps. The video is kept exactly as it is."
 - **Save to**: Photos (video only) · Files · Share (share sheet). `NSPhotoLibraryAddUsageDescription`: "Echo Engine
-  saves exported videos to your photo library."
-- **After export**: Keep project (default) · Keep, clear cache ("Frees X") · Delete project ("Frees X").
+  saves exported videos to your photo library." With "Both" and Photos, the video goes to Photos, then the Files
+  exporter opens for the audio file; Files and Share get both files at once.
+- **After export**: Keep project (default) · Keep, clear cache ("Frees X") · Delete project ("Frees X"). Clearing the
+  cache and deleting both close the editor and return to Projects (renders rebuild next time the project opens).
 - Storage line: "Needs about X. Y available." Primary button: "Export video" / "Export audio" / "Export".
-- Remember last choices per media type (`AppSettingsStore`).
+- Remember last choices per media type (`AppSettingsStore`). First time: High; video projects export Video to Photos,
+  audio projects to Files (as the mockup shows). "After export" always starts at Keep project.
+- Tapping Export while an AI step is still rendering starts the export anyway: it first shows "Finishing
+  enhancements…" and waits for the render.
 
 ```swift
 enum ExportOutput { case video(audioBitrate: Int), audioOnly(AudioExportSettings), both(audioBitrate: Int, AudioExportSettings) }
@@ -914,3 +920,6 @@ Record new user decisions here (date, decision, section updated).
   `DEVELOPMENT_TEAM` (§ 3).
 - 2026-11-02: The export's final render runs the effects through `OfflineEffectChain` (the same C++ effects as
   playback, the chain Auto Level measures with) instead of `AVAudioEngine` manual rendering mode (§ 11.2).
+- 2026-11-02: Export (§ 11.1): AAC inside a video is 192 (Standard) / 320 (High, Lossless) / Custom's AAC bitrate or 256;
+  "Both" + Photos sends the video to Photos and the audio file to Files; Export during an AI render waits for it;
+  "Keep, clear cache" returns to Projects like Delete.
