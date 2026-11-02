@@ -285,7 +285,11 @@ Goal: final render and delivery.
   > `AudioEncoding` → `AudioEncoder`: 1 s chunks, mastering-quality SRC to 44.1 kHz, TPDF dither before 16-bit, AAC constant bitrate
   > (clamped to what the encoder takes: mono 320 kbps). FLAC goes through `ExtAudioFile`: `AVAudioFile` writes every FLAC as 24-bit.
   > Tests read FLAC/AAC only after the writer closes (unflushed files fail to open). `FakeAudioEncoder`.
-- [ ] F08.T03 — Video remux: composition + passthrough, same container, metadata preserved, trim via edit lists.
+- [x] F08.T03 — Video remux: composition + passthrough, same container, metadata preserved, trim via edit lists.
+  > Done: `VideoRemuxing` → `VideoRemuxer` (`fileType(forVideo:)` MOV/MP4/M4V): video tracks (trim clamped per track, transform kept) + the new
+  > audio only, passthrough export, file metadata copied; progress via `states` (session in an `@unchecked Sendable` box). Keep the audio
+  > `AVURLAsset` alive: tracks weakly reference it (insert fails −12780). Tests prove same frames, edit list at a mid-GOP trim, colour tags.
+  > Timed-metadata tracks (e.g. Cinematic) are dropped — check real iPhone HDR/Cinematic clips at the checkpoint. `FakeVideoRemuxer`.
 - [ ] F08.T04 — Destinations: Photos (`shouldMoveFile`), Files, Share; temp cleanup.
 - [ ] F08.T04a — `AppSettingsStore` protocol + `UserDefaults`-backed impl + fake (§ 4.3): appearance, tint, last export settings. Route `EchoEngineApp` and `DebugAppearanceMenu` through it (they repeat the `@AppStorage` keys and defaults today). From the F01 code review.
 - [ ] F08.T05 — Export sheet UI per canvas; last-used settings; storage line; post-export actions after confirmed delivery.

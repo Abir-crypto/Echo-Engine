@@ -77,11 +77,34 @@ enum TestMedia {
         try await session.export(to: url, as: .mov)
     }
 
-    private static func writeVideoTrack(to url: URL, seconds: Double) async throws {
-        let writer = try AVAssetWriter(outputURL: url, fileType: .mov)
-        let input = AVAssetWriterInput(mediaType: .video, outputSettings: [
-            AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: 64, AVVideoHeightKey: 64,
-        ])
+    /// A 64×64 H.264 video-only movie at 10 fps. Options: a keyframe every `keyframeInterval` frames (no B-frames),
+    /// a rotation, HDR-style colour tags (BT.2020, HLG) and file metadata.
+    static func writeVideoTrack(
+        to url: URL,
+        seconds: Double,
+        fileType: AVFileType = .mov,
+        keyframeInterval: Int? = nil,
+        transform: CGAffineTransform = .identity,
+        hdrColorTags: Bool = false,
+        metadata: [AVMetadataItem] = []
+    ) async throws {
+        let writer = try AVAssetWriter(outputURL: url, fileType: fileType)
+        writer.metadata = metadata
+        var settings: [String: Any] = [AVVideoCodecKey: AVVideoCodecType.h264, AVVideoWidthKey: 64, AVVideoHeightKey: 64]
+        if let keyframeInterval {
+            settings[AVVideoCompressionPropertiesKey] = [
+                AVVideoMaxKeyFrameIntervalKey: keyframeInterval, AVVideoAllowFrameReorderingKey: false,
+            ]
+        }
+        if hdrColorTags {
+            settings[AVVideoColorPropertiesKey] = [
+                AVVideoColorPrimariesKey: AVVideoColorPrimaries_ITU_R_2020,
+                AVVideoTransferFunctionKey: AVVideoTransferFunction_ITU_R_2100_HLG,
+                AVVideoYCbCrMatrixKey: AVVideoYCbCrMatrix_ITU_R_2020,
+            ]
+        }
+        let input = AVAssetWriterInput(mediaType: .video, outputSettings: settings)
+        input.transform = transform
         let adaptor = AVAssetWriterInputPixelBufferAdaptor(assetWriterInput: input, sourcePixelBufferAttributes: [
             kCVPixelBufferPixelFormatTypeKey as String: kCVPixelFormatType_32BGRA,
             kCVPixelBufferWidthKey as String: 64, kCVPixelBufferHeightKey as String: 64,
