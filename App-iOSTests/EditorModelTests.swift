@@ -7,7 +7,7 @@ import Testing
 private struct LoadFailure: Error {}
 
 @MainActor
-struct EditorModelTests {
+final class EditorModelTests {
     private let video = PreviewProjects.all()[0]   // 198 s video
     private let audio = PreviewProjects.all()[1]   // audio
     private let devices = FakeAudioDeviceManager()
@@ -16,15 +16,25 @@ struct EditorModelTests {
     private let renderer = FakeAIChainRenderer()
     private let janitor = FakeRenderCacheJanitor()
     private let autoLevel = FakeAutoLevelAnalyzer()
+    private let clock = FakeClock(now: Date(timeIntervalSince1970: 1_900_000_000))
+    private let podcastVoice = Preset(
+        id: BuiltInPresetID.podcastVoice, name: "Podcast Voice",
+        aiStack: [AIOperation(kind: .noiseSuppression, strength: 0.7), AIOperation(kind: .voiceLeveler, strength: 1)],
+        manual: ManualSettings(), outputLoudness: .podcast, isBuiltIn: true, createdAt: Date(timeIntervalSince1970: 0)
+    )
+    private var presets: FakePresetRepository!
 
     private func makeModel(
         _ project: Project,
         readOnly: Bool = false,
         engine: FakePlaybackEngine? = nil,
         entitlements: FakeEntitlements = FakeEntitlements(),
-        storage: FakeStorageEstimator = FakeStorageEstimator(editBytes: 1_000, available: 1_000_000)
+        storage: FakeStorageEstimator = FakeStorageEstimator(editBytes: 1_000, available: 1_000_000),
+        presets: FakePresetRepository? = nil
     ) -> (EditorModel, FakePlaybackEngine) {
         let engine = engine ?? FakePlaybackEngine(duration: project.sourceInfo.duration)
+        let presets = presets ?? FakePresetRepository(builtIns: [podcastVoice])
+        self.presets = presets
         let model = EditorModel(
             stored: StoredProject(project: project, isReadOnly: readOnly),
             engine: engine,
@@ -37,6 +47,8 @@ struct EditorModelTests {
             renderer: renderer,
             janitor: janitor,
             autoLevel: autoLevel,
+            presets: presets,
+            clock: clock,
             autoLevelDelay: .milliseconds(5),
             makeAutosaver: { [autosaver] _ in autosaver }
         )
@@ -445,6 +457,106 @@ struct EditorModelTests {
         await waitUntil { model.failure != nil }
 
         await #expect(throws: ExportError.unreadableAudio) { try await model.audioForExport() }
+    }
+
+    // MARK: Presets
+
+    @Test func applyingAPresetReplacesTheSettingsInOneUndoStep() async {
+        var project = plain
+        project.clips[0].manual.inputGainDB = 5
+        project.trimRange = TimeRangeCodable(start: 1, duration: 10)
+        let (model, engine) = makeModel(project)
+        await model.open()
+
+        model.applyPreset(podcastVoice)
+
+        #expect(model.aiStack.map(\.kind) == [.noiseSuppression, .voiceLeveler])
+        #expect(model.aiStack.map(\.strength) == [0.7, 1])
+        #expect(Set(model.aiStack.map(\.id)).isDisjoint(with: podcastVoice.aiStack.map(\.id)), "copied, not linked")
+        #expect(model.manual == ManualSettings())
+        #expect(engine.appliedManual == ManualSettings())
+        #expect(model.outputLoudness == .podcast)
+        #expect(model.project.trimRange == TimeRangeCodable(start: 1, duration: 10), "presets never carry a trim")
+        #expect(model.project.basePresetID == podcastVoice.id)
+
+        model.undo()
+        #expect(model.aiStack.isEmpty)
+        #expect(model.manual.inputGainDB == 5)
+        #expect(model.outputLoudness == nil)
+        #expect(!model.canUndo, "one step")
+    }
+
+    @Test func theProjectSaysWhichPresetItIsBasedOnAndWhenItChanged() async {
+        let (model, _) = makeModel(plain)
+        await model.open()
+        #expect(model.basePreset == nil)
+
+        model.applyPreset(podcastVoice)
+        #expect(model.basePreset?.id == podcastVoice.id)
+        #expect(!model.isModifiedFromBasePreset)
+
+        model.changeAIStack { $0[0].strength = 0.5 }
+        #expect(model.isModifiedFromBasePreset)
+        #expect(!model.canUpdateBasePreset, "built-ins can't be updated")
+    }
+
+    @Test func saveAsPresetKeepsTheCurrentSettingsAndBasesTheProjectOnIt() async throws {
+        var project = plain
+        project.clips[0].aiStack = [noise]
+        project.clips[0].manual.inputGainDB = 4
+        project.outputLoudness = .youtube
+        let (model, _) = makeModel(project)
+        await model.open()
+
+        await model.saveAsPreset(named: "  Booth  ")
+
+        let saved = try #require(await presets.saved.values.first)
+        #expect(saved.name == "Booth")
+        #expect(!saved.isBuiltIn)
+        #expect(saved.aiStack.map(\.kind) == [.noiseSuppression])
+        #expect(saved.manual.inputGainDB == 4)
+        #expect(saved.outputLoudness == .youtube)
+        #expect(saved.createdAt == clock.now)
+        #expect(model.project.basePresetID == saved.id)
+        #expect(model.basePreset?.name == "Booth")
+        #expect(model.canUpdateBasePreset)
+    }
+
+    @Test func updatePresetWritesTheCurrentSettingsIntoIt() async throws {
+        let mine = Preset(name: "Booth", aiStack: [noise], manual: ManualSettings(), outputLoudness: nil, createdAt: Date(timeIntervalSince1970: 0))
+        let (model, _) = makeModel(plain, presets: FakePresetRepository(builtIns: [podcastVoice], saved: [mine]))
+        await model.open()
+        model.applyPreset(mine)
+        model.setOutputLoudness(.spotify)
+        #expect(model.isModifiedFromBasePreset)
+
+        await model.updateBasePreset()
+
+        let updated = try #require(await presets.saved[mine.id])
+        #expect(updated.outputLoudness == .spotify)
+        #expect(updated.updatedAt == clock.now)
+        #expect(!model.isModifiedFromBasePreset)
+    }
+
+    @Test func aPresetThatCantBeSavedIsReported() async {
+        let (model, _) = makeModel(plain)
+        await model.open()
+        await presets.setError(CocoaError(.fileWriteOutOfSpace))
+
+        await model.saveAsPreset(named: "Booth")
+
+        #expect(model.failure == .cantSavePreset)
+        #expect(model.project.basePresetID == nil)
+    }
+
+    @Test func readOnlyProjectsTakeNoPreset() async {
+        let (model, _) = makeModel(plain, readOnly: true)
+        await model.open()
+
+        model.applyPreset(podcastVoice)
+
+        #expect(model.aiStack.isEmpty)
+        #expect(model.project.basePresetID == nil)
     }
 
     @Test func aFailedRenderIsReportedAndPlaybackStaysOnTheOriginal() async {

@@ -23,6 +23,14 @@ public struct AIOperation: Codable, Identifiable, Equatable, Sendable {
         self.strength = strength
     }
 
+    /// The same step with its own id, e.g. copied from a preset into a project (SPEC § 12: copied, not linked). An
+    /// unknown feature keeps its raw kind.
+    public func renewed() -> AIOperation {
+        var copy = AIOperation(kind: kind, strength: strength)
+        copy.unknownKindRawValue = unknownKindRawValue
+        return copy
+    }
+
     private enum CodingKeys: String, CodingKey {
         case id, kind, strength
     }

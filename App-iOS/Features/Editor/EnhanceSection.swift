@@ -7,6 +7,8 @@ struct EnhanceSection: View {
     let model: EditorModel
     let onEditStrength: (Int) -> Void
     let onAdd: () -> Void
+    let onApplyPreset: () -> Void
+    let onSaveAsPreset: () -> Void
 
     @Environment(\.appTint) private var tint
     @Environment(\.dynamicTypeSize) private var typeSize
@@ -61,17 +63,44 @@ struct EnhanceSection: View {
     }
 
     private var header: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .firstTextBaseline) {
-                title
-                Spacer(minLength: 8)
-                caption
+        HStack(spacing: 8) {
+            ViewThatFits(in: .horizontal) {
+                HStack(alignment: .firstTextBaseline) {
+                    title
+                    Spacer(minLength: 8)
+                    caption
+                }
+                VStack(alignment: .leading, spacing: 2) {
+                    title
+                    caption
+                }
             }
-            VStack(alignment: .leading, spacing: 2) {
-                title
-                caption
-            }
+            presetMenu
         }
+    }
+
+    /// Presets live in the Enhance header menu (SPEC § 9).
+    private var presetMenu: some View {
+        Menu {
+            Button("Apply preset…", systemImage: "square.stack", action: onApplyPreset)
+            Button("Save as preset…", systemImage: "square.and.arrow.down", action: onSaveAsPreset)
+            if model.canUpdateBasePreset, let preset = model.basePreset {
+                Button("Update “\(preset.displayName)”", systemImage: "arrow.triangle.2.circlepath") {
+                    Task { await model.updateBasePreset() }
+                }
+                .disabled(!model.isModifiedFromBasePreset)
+            }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.body.weight(.semibold))
+                .foregroundStyle(.token(.textValue))
+                .frame(width: 36, height: 36)
+                .background(.token(.surface), in: .circle)
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(.rect)
+        }
+        .accessibilityLabel(Text("Presets"))
+        .disabled(!model.canEdit)
     }
 
     private var title: some View {
@@ -194,7 +223,7 @@ struct EnhanceSection: View {
     let model = previewAdjustModel()
     model.changeAIStack { $0.append(AIOperation(kind: .clearVoice, strength: 0.8)) }
     return ScrollView {
-        EnhanceSection(model: model, onEditStrength: { _ in }, onAdd: {})
+        EnhanceSection(model: model, onEditStrength: { _ in }, onAdd: {}, onApplyPreset: {}, onSaveAsPreset: {})
             .padding(20)
     }
     .background(Color.token(.ground))
@@ -203,7 +232,7 @@ struct EnhanceSection: View {
 
 #Preview("Enhance, light, Arabic XXL") {
     ScrollView {
-        EnhanceSection(model: previewAdjustModel(), onEditStrength: { _ in }, onAdd: {})
+        EnhanceSection(model: previewAdjustModel(), onEditStrength: { _ in }, onAdd: {}, onApplyPreset: {}, onSaveAsPreset: {})
             .padding(20)
     }
     .background(Color.token(.ground))

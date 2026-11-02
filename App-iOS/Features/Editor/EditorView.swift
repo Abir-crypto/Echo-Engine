@@ -35,6 +35,8 @@ struct EditorView: View {
     @State private var enhanceSheet: EnhanceSheet?
     @State private var newTitle = ""
     @State private var export: ExportModel?
+    @State private var isSavingPreset = false
+    @State private var presetName = ""
 
     var body: some View {
         Group {
@@ -57,10 +59,16 @@ struct EditorView: View {
                     newTitle = model.project.title
                     isRenaming = true
                 } label: {
-                    Text(model.project.title)
-                        .font(.headline)
-                        .foregroundStyle(.token(.textPrimary))
-                        .lineLimit(1)
+                    VStack(spacing: 0) {
+                        Text(model.project.title)
+                            .font(.headline)
+                            .foregroundStyle(.token(.textPrimary))
+                            .lineLimit(1)
+                        basedOn
+                            .font(.caption)
+                            .foregroundStyle(.token(.textSecondary))
+                            .lineLimit(1)
+                    }
                 }
                 .disabled(!model.canEdit)
                 .accessibilityHint(Text("Rename"))
@@ -81,6 +89,13 @@ struct EditorView: View {
                 // After "Keep, clear cache" or "Delete project" the editor is already closed: back to Projects.
                 if closesEditor { dismiss() }
             }
+        }
+        .alert("Save as preset", isPresented: $isSavingPreset) {
+            TextField("Name", text: $presetName)
+            Button("Cancel", role: .cancel) {}
+            Button("Save") { Task { await model.saveAsPreset(named: presetName) } }
+        } message: {
+            Text("Saves the enhancements, adjustments and loudness, not the trim.")
         }
         .alert("Rename project", isPresented: $isRenaming) {
             TextField("Title", text: $newTitle)
@@ -106,6 +121,7 @@ struct EditorView: View {
             switch UserDefaults.standard.string(forKey: DebugEnhanceSheet.launchArgument) {
             case "add": enhanceSheet = .add
             case "strength": enhanceSheet = .strength(0)
+            case "presets": enhanceSheet = .presets
             default: break
             }
             adjustSheet = UserDefaults.standard.string(forKey: DebugAdjustSheet.launchArgument).flatMap(AdjustSheet.init)
@@ -115,6 +131,17 @@ struct EditorView: View {
         .flushesAutosave(model.autosaver)
         .onDisappear {
             Task { await model.close() }
+        }
+    }
+
+    /// "Based on: <preset>", with "(modified)" once the settings differ (SPEC § 9).
+    @ViewBuilder private var basedOn: some View {
+        if let preset = model.basePreset {
+            if model.isModifiedFromBasePreset {
+                Text("Based on: \(preset.displayName) (modified)")
+            } else {
+                Text("Based on: \(preset.displayName)")
+            }
         }
     }
 
@@ -141,7 +168,12 @@ struct EditorView: View {
                 EnhanceSection(
                     model: model,
                     onEditStrength: { enhanceSheet = .strength($0) },
-                    onAdd: { enhanceSheet = .add }
+                    onAdd: { enhanceSheet = .add },
+                    onApplyPreset: { enhanceSheet = .presets },
+                    onSaveAsPreset: {
+                        presetName = ""
+                        isSavingPreset = true
+                    }
                 )
                 .padding(.top, 4)
                 AdjustSection(model: model) { adjustSheet = $0 }
@@ -155,6 +187,7 @@ struct EditorView: View {
             switch sheet {
             case .add: AddEnhancementSheet(model: model)
             case .strength(let index): StrengthSheet(model: model, index: index)
+            case .presets: ApplyPresetSheet(model: model)
             }
         }
         .sheet(item: $adjustSheet) { sheet in
@@ -272,6 +305,7 @@ struct EditorView: View {
 private enum EnhanceSheet: Identifiable, Hashable {
     case add
     case strength(Int)
+    case presets
 
     var id: Self { self }
 }
@@ -285,6 +319,7 @@ private struct EditorFailureMessage: LocalizedError {
         case .cantPlay: String(localized: "This project’s audio can’t be played. Import the file again to make a new project.")
         case .cantSave: String(localized: "Changes couldn’t be saved. Free up some space, then try again.")
         case .cantRender: String(localized: "An enhancement couldn’t be applied. Free up some space, then try again.")
+        case .cantSavePreset: String(localized: "The preset couldn’t be saved. Free up some space, then try again.")
         }
     }
 }
@@ -306,6 +341,8 @@ private func previewEditor(_ project: Project, readOnly: Bool = false, available
         renderer: FakeAIChainRenderer(),
         janitor: FakeRenderCacheJanitor(),
         autoLevel: FakeAutoLevelAnalyzer(),
+        presets: FakePresetRepository(),
+        clock: FakeClock(),
         makeAutosaver: { _ in FakeProjectAutosaver() }
     )
     return NavigationStack { EditorView(model: model) }

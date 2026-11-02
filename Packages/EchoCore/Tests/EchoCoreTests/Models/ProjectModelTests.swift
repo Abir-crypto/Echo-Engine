@@ -78,6 +78,19 @@ struct ProjectModelTests {
         #expect(reencoded?["kind"] as? String == "dereverb")
     }
 
+    @Test func aRenewedOperationIsACopyWithItsOwnID() throws {
+        let known = AIOperation(kind: .clearVoice, strength: 0.4)
+        let copy = known.renewed()
+        #expect(copy.id != known.id)
+        #expect(copy.kind == .clearVoice)
+        #expect(copy.strength == 0.4)
+
+        let json = Data(#"{"id":"\#(UUID().uuidString)","kind":"dereverb","strength":0.5}"#.utf8)
+        let unknown = try JSONDecoder().decode(AIOperation.self, from: json)
+        let encoded = try JSONEncoder().encode(unknown.renewed())
+        #expect(String(decoding: encoded, as: UTF8.self).contains(#""kind":"dereverb""#), "a newer feature survives being copied")
+    }
+
     @Test func unknownRawValuesDecodeAsUnknown() throws {
         let decoder = JSONDecoder()
         #expect(try decoder.decode([AIFeature].self, from: Data(#"["dereverb"]"#.utf8)) == [.unknown])

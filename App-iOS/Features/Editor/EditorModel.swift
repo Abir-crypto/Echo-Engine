@@ -20,6 +20,7 @@ final class EditorModel {
         case cantSave
         /// An AI step couldn't be rendered.
         case cantRender
+        case cantSavePreset
     }
 
     private(set) var project: Project
@@ -46,6 +47,8 @@ final class EditorModel {
     private(set) var renderedPeaks: WaveformPeaks?
     /// Auto Level's current gain in dB (SPEC § 6.7); `nil` while the target is Off or before it's measured.
     private(set) var autoLevelGainDB: Double?
+    /// Built-in and user presets (SPEC § 12), loaded when the editor opens.
+    private(set) var presets: [Preset] = []
     var failure: Failure?
 
     let engine: any PlaybackEngine
@@ -57,6 +60,8 @@ final class EditorModel {
     @ObservationIgnored private let entitlements: any EntitlementProvider
     @ObservationIgnored private let capabilities: any DeviceCapabilityChecking
     @ObservationIgnored private let autoLevel: any AutoLevelAnalyzing
+    @ObservationIgnored private let presetRepository: any PresetRepository
+    @ObservationIgnored private let clock: any DateProviding
     /// Auto Level waits this long after the last change before measuring (SPEC § 6.7: 500 ms).
     @ObservationIgnored private let autoLevelDelay: Duration
     @ObservationIgnored private var autoLevelTask: Task<Void, Never>?
@@ -88,6 +93,8 @@ final class EditorModel {
         renderer: any AIChainRendering,
         janitor: any RenderCacheJanitoring,
         autoLevel: any AutoLevelAnalyzing,
+        presets: any PresetRepository,
+        clock: any DateProviding,
         autoLevelDelay: Duration = .milliseconds(500),
         makeAutosaver: (@escaping @Sendable (any Error) -> Void) -> any ProjectAutosaving
     ) {
@@ -104,6 +111,8 @@ final class EditorModel {
         self.renderer = renderer
         self.janitor = janitor
         self.autoLevel = autoLevel
+        self.presetRepository = presets
+        self.clock = clock
         self.autoLevelDelay = autoLevelDelay
         let failed = SaveFailureRelay()
         autosaver = makeAutosaver { _ in failed.report() }
@@ -151,6 +160,7 @@ final class EditorModel {
             failure = .cantPlay
             return
         }
+        await reloadPresets()
         if let peaks = try? await waveforms.peaks(of: folder.working, projectID: project.id, key: "working", progress: { _ in }) {
             self.peaks = peaks
             peakLevel = max(peaks.peaks.max() ?? 1, 0.001)
@@ -345,6 +355,86 @@ final class EditorModel {
     func resetEqualizer() {
         adjust { $0.eq = EQBand.defaultBands }
         commit()
+    }
+
+    // MARK: Presets
+
+    /// The preset the project was last set from (`basePresetID`), while it still exists.
+    var basePreset: Preset? {
+        project.basePresetID.flatMap { id in presets.first { $0.id == id } }
+    }
+
+    /// The editor's subtitle says "(modified)" once the settings differ from the base preset (SPEC § 9).
+    var isModifiedFromBasePreset: Bool {
+        guard let preset = basePreset else { return false }
+        let state = project.editState
+        let sameStack = state.aiStack.count == preset.aiStack.count
+            && zip(state.aiStack, preset.aiStack).allSatisfy { $0.kind == $1.kind && $0.strength == $1.strength }
+        return !(sameStack && state.manual == preset.manual && state.outputLoudness == preset.outputLoudness)
+    }
+
+    /// "Update preset" is only for the person's own presets (SPEC § 9).
+    var canUpdateBasePreset: Bool {
+        canEdit && basePreset.map { !$0.isBuiltIn && !$0.isFromNewerVersion } == true
+    }
+
+    func reloadPresets() async {
+        if let listed = try? await presetRepository.list() { presets = listed }
+    }
+
+    /// Replaces the AI stack, manual chain and Auto Level target with the preset's (copies, not linked; never the
+    /// trim) as one undo step, and bases the project on it (SPEC § 9, § 12).
+    func applyPreset(_ preset: Preset) {
+        guard canEdit else { return }
+        var state = project.editState
+        state.aiStack = preset.aiStack.map { $0.renewed() }
+        state.manual = preset.manual
+        state.outputLoudness = preset.outputLoudness
+        project.editState = state
+        project.basePresetID = preset.id
+        auditionedStep = nil
+        engine.apply(state.manual)
+        commit()
+        // `basePresetID` isn't part of the undo state; save it even when the settings were already the preset's.
+        save()
+        renderChain()
+    }
+
+    /// A new user preset from the current settings; the project is then based on it.
+    func saveAsPreset(named name: String) async {
+        let name = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard canEdit, !name.isEmpty else { return }
+        let state = project.editState
+        let preset = Preset(
+            name: name, aiStack: state.aiStack.map { $0.renewed() }, manual: state.manual,
+            outputLoudness: state.outputLoudness, createdAt: clock.now
+        )
+        do {
+            try await presetRepository.save(preset)
+        } catch {
+            failure = .cantSavePreset
+            return
+        }
+        project.basePresetID = preset.id
+        save()
+        await reloadPresets()
+    }
+
+    /// Writes the current settings into the base user preset.
+    func updateBasePreset() async {
+        guard canUpdateBasePreset, var preset = basePreset else { return }
+        let state = project.editState
+        preset.aiStack = state.aiStack.map { $0.renewed() }
+        preset.manual = state.manual
+        preset.outputLoudness = state.outputLoudness
+        preset.updatedAt = clock.now
+        do {
+            try await presetRepository.save(preset)
+        } catch {
+            failure = .cantSavePreset
+            return
+        }
+        await reloadPresets()
     }
 
     /// Ignores titles that are empty after trimming whitespace.

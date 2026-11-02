@@ -83,7 +83,8 @@ enum DebugAIDemo {
     static let launchArgument = "debugAIDemo"
 }
 
-/// `-debugEnhanceSheet add|strength` opens Add enhancement, or the first step's strength, when the editor opens.
+/// `-debugEnhanceSheet add|strength|presets` opens Add enhancement, the first step's strength or Apply preset when the
+/// editor opens.
 enum DebugEnhanceSheet {
     static let launchArgument = "debugEnhanceSheet"
 }

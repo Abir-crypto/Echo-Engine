@@ -116,6 +116,12 @@
     "Applied top to bottom" : {
       "comment" : "Caption next to the Enhance title: steps run in list order."
     },
+    "Apply preset" : {
+      "comment" : "Title of the sheet listing presets to apply."
+    },
+    "Apply preset…" : {
+      "comment" : "Enhance menu: opens the list of presets."
+    },
     "Applying" : {
       "comment" : "VoiceOver label of the progress bar on the step being rendered."
     },
@@ -143,6 +149,12 @@
     "Band %lld, %@" : {
       "comment" : "VoiceOver label of an EQ band. %1$lld = band number, %2$@ = its frequency, e.g. Band 3, 1 kHz."
     },
+    "Based on: %@" : {
+      "comment" : "Editor subtitle: the preset the project was set from."
+    },
+    "Based on: %@ (modified)" : {
+      "comment" : "Editor subtitle: the project's preset, changed since it was applied."
+    },
     "Bit depth" : {
       "comment" : "Export sheet, Custom quality: 16 or 24 bits per sample."
     },
@@ -151,6 +163,9 @@
     },
     "Both" : {
       "comment" : "Export as: the video and a separate audio file."
+    },
+    "Built-in" : {
+      "comment" : "Apply preset: the presets that come with the app."
     },
     "Can’t import" : {
       "comment" : "Title of the import sheet when an import fails."
@@ -352,6 +367,9 @@
     "Move up" : {
       "comment" : "VoiceOver action on an Enhance row: move it one step earlier."
     },
+    "Name" : {
+      "comment" : "Placeholder of the preset name field."
+    },
     "Need %@ more to edit this project. Free up space on your iPad, then come back. Your import is saved." : {
       "comment" : "Editor blocked by storage on iPad (SPEC § 9). %@ = missing space."
     },
@@ -369,6 +387,9 @@
     },
     "Needs about %@. %@ available." : {
       "comment" : "Export storage line: estimated size, then free space, e.g. Needs about 1.2 GB. 18.4 GB available."
+    },
+    "No enhancements" : {
+      "comment" : "A preset without AI steps."
     },
     "Noise gate" : {
       "comment" : "Gain and dynamics: section and switch title."
@@ -436,6 +457,9 @@
     "Preparing…" : {
       "comment" : "Import progress before copying starts."
     },
+    "Presets" : {
+      "comment" : "Accessibility label of the Enhance menu button (apply, save and update presets)."
+    },
     "Projects" : {
       "comment" : "Tab bar item and title of the projects screen."
     },
@@ -478,6 +502,9 @@
     "Rename project" : {
       "comment" : "Title of the rename dialog."
     },
+    "Replaces the enhancements, adjustments and loudness. The trim stays, and Undo brings back what you had." : {
+      "comment" : "Explains what applying a preset does."
+    },
     "Reset" : {
       "comment" : "Equalizer: returns every band to flat."
     },
@@ -490,8 +517,20 @@
     "Sample rate" : {
       "comment" : "Export sheet, Custom quality: 44.1 or 48 kHz."
     },
+    "Save" : {
+      "comment" : "Saves (a preset)."
+    },
+    "Save as preset" : {
+      "comment" : "Title of the alert that names a new preset."
+    },
+    "Save as preset…" : {
+      "comment" : "Enhance menu: saves the current settings as a new preset."
+    },
     "Save to" : {
       "comment" : "Export sheet section: where the exported file goes."
+    },
+    "Saves the enhancements, adjustments and loudness, not the trim." : {
+      "comment" : "Message of the Save as preset alert."
     },
     "Saving…" : {
       "comment" : "Export sheet title while the file goes to Photos, Files or the share sheet."
@@ -534,6 +573,9 @@
     },
     "The import couldn’t finish. Try again." : {
       "comment" : "Import error."
+    },
+    "The preset couldn’t be saved. Free up some space, then try again." : {
+      "comment" : "Editor alert when a preset can't be written."
     },
     "The project couldn’t be deleted. Try again." : {
       "comment" : "Error alert."
@@ -589,6 +631,9 @@
     "Undo" : {
       "comment" : "Accessibility label of the undo button."
     },
+    "Update “%@”" : {
+      "comment" : "Enhance menu: writes the current settings into the project's own preset."
+    },
     "Update Echo Engine to edit this project." : {
       "comment" : "Shown for projects made with a newer app version (SPEC § 5.3)."
     },
@@ -615,6 +660,9 @@
     },
     "Your export is saved, but the project couldn’t be deleted. You can delete it in Projects." : {
       "comment" : "Export alert when deleting the project after a successful export failed."
+    },
+    "Your presets" : {
+      "comment" : "Apply preset: presets the person saved."
     },
     "YouTube" : {
       "comment" : "Loudness target named after a platform; keep the brand name."

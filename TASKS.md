@@ -323,7 +323,11 @@ Goal: built-in and user presets with iCloud sync.
   > `PresetRepository` → `FilePresetRepository` actor (`<root>/<UUID>.json`, built-ins first then by name, built-ins and newer-schema presets
   > read-only, bad files skipped) + `FakePresetRepository`. App: `Resources/BuiltInPresets/BuiltInPresets.json` (generated once from Swift),
   > `AppContainer.presets`, `Preset.displayName` (localized built-ins). Singing's compressor 2:1/−20/+2 is provisional.
-- [ ] F09.T02 — Apply (replace, one undo step, `basePresetID`), Save as preset, Update preset, "Based on … (modified)".
+- [x] F09.T02 — Apply (replace, one undo step, `basePresetID`), Save as preset, Update preset, "Based on … (modified)".
+  > Done: `EditorModel` (+ `presets`, `clock` deps): `applyPreset` (steps copied with `AIOperation.renewed()`, which keeps unknown kinds; one
+  > undo step; `basePresetID` saved, not undoable — it isn't in `EditState`), `saveAsPreset(named:)` (bases the project on it),
+  > `updateBasePreset` (user presets only), `basePreset`/`isModifiedFromBasePreset`. UI: Enhance header "…" menu, `ApplyPresetSheet`
+  > (`-debugEnhanceSheet presets`), "Based on: X (modified)" under the editor title, Save as preset alert.
 - [ ] F09.T03 — `SyncedPresetRepository` with `NSUbiquitousKeyValueStore`, merge by `updatedAt`, deletes. Tests with fake store.
   **On hold (user, 2026-11-02):** the Personal Team has no iCloud; skip until the user resumes it (SPEC § 12, § 20).
 - [ ] F09.T04 — Settings → Presets management (rename, delete).

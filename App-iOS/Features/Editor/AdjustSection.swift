@@ -193,6 +193,8 @@ func previewAdjustModel(outputLoudness: LoudnessTarget? = nil) -> EditorModel {
         renderer: FakeAIChainRenderer(),
         janitor: FakeRenderCacheJanitor(),
         autoLevel: FakeAutoLevelAnalyzer(),
+        presets: FakePresetRepository(),
+        clock: FakeClock(),
         makeAutosaver: { _ in FakeProjectAutosaver() }
     )
 }

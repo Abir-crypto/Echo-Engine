@@ -12,6 +12,16 @@ extension AIFeature {
         }
     }
 
+    /// The same name as a string, for lists such as a preset's steps (same catalog keys as `displayName`).
+    var localizedName: String {
+        switch self {
+        case .noiseSuppression: String(localized: "Noise Suppression")
+        case .clearVoice: String(localized: "Clear Voice")
+        case .voiceLeveler: String(localized: "Voice Leveler")
+        case .unknown: String(localized: "Enhancement from a newer version")
+        }
+    }
+
     /// One line for the Add enhancement sheet.
     var summary: LocalizedStringKey {
         switch self {
