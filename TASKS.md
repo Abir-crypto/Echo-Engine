@@ -275,7 +275,11 @@ Goal: leveling and loudness targeting.
 ## F08 — Export  [IN PROGRESS]
 Goal: final render and delivery.
 
-- [ ] F08.T01 — Offline final render (manual rendering mode) over trim range, Auto Level recomputed (§ 11.2).
+- [x] F08.T01 — Offline final render (manual rendering mode) over trim range, Auto Level recomputed (§ 11.2).
+  > Done: `EchoCore/Export/FinalRendering` → `FinalRenderer`: Auto Level measured again (`AutoLevelAnalyzing` now reports progress,
+  > 0–40 %), then the trim range (`ChunkedRender` `range:`, frames shared with analysis) through `OfflineEffectChain` + output stage (limiter
+  > always on) → ALAC 24-bit 48 kHz. User (SPEC § 3/§ 11.2/§ 20): `OfflineEffectChain`, not `AVAudioEngine` manual mode; team `L9B6N63T2Q` (free:
+  > no iCloud, raise at F09). Input = `RenderedChain.output`, so T05 must wait for a running AI render. `FakeFinalRenderer`.
 - [ ] F08.T02 — Audio encoders: AAC (bitrates), WAV, FLAC, ALAC, sample rate/bit depth (§ 11.1).
 - [ ] F08.T03 — Video remux: composition + passthrough, same container, metadata preserved, trim via edit lists.
 - [ ] F08.T04 — Destinations: Photos (`shouldMoveFile`), Files, Share; temp cleanup.

@@ -1,6 +1,7 @@
 import CEchoDSP
 @testable import EchoCore
 import Foundation
+import Synchronization
 import Testing
 
 struct OfflineEffectChainTests {
@@ -91,6 +92,17 @@ final class AutoLevelAnalyzerTests {
         let silent = directory.appending(path: "silence.caf")
         try TestMedia.writeSamples([Array(repeating: 0, count: 96_000)], to: silent)
         #expect(try await gain(silent, target: .youtube) == 0)
+    }
+
+    @Test func theAnalysisReportsProgress() async throws {
+        let values = Mutex<[Double]>([])
+        _ = try await AutoLevelAnalyzer().gain(of: try tone(-30, seconds: 3), manual: ManualSettings(), range: .full(duration: 3), target: .youtube) { value in
+            values.withLock { $0.append(value) }
+        }
+        let reported = values.withLock { $0 }
+        #expect(reported.first == 0)
+        #expect(reported.last == 1)
+        #expect(reported.count > 2, "one value per second of audio")
     }
 
     @Test func onlyTheTrimRangeCounts() async throws {

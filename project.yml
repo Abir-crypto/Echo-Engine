@@ -46,6 +46,8 @@ targets:
         CURRENT_PROJECT_VERSION: "1"
         TARGETED_DEVICE_FAMILY: "1,2"
         CODE_SIGN_STYLE: Automatic
+        # Personal Team (free): no iCloud capability, 7-day device profiles (SPEC § 3, § 20).
+        DEVELOPMENT_TEAM: L9B6N63T2Q
         ENABLE_PREVIEWS: YES
         # No AppIcon set until F16.T01; restore "AppIcon" there.
         ASSETCATALOG_COMPILER_APPICON_NAME: ""

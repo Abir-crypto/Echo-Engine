@@ -8,9 +8,9 @@ protocol ChunkTransform {
     mutating func finish() throws -> [[Float]]
 }
 
-/// Streams a 48 kHz file through a `ChunkTransform` into an ALAC 24-bit render (SPEC § 6.2), one second at a time,
-/// reporting progress and checking cancellation between chunks (SPEC § 4.6). A failed or cancelled render leaves no
-/// output file behind.
+/// Streams a 48 kHz file (or a time range of it) through a `ChunkTransform` into an ALAC 24-bit render (SPEC § 6.2),
+/// one second at a time, reporting progress and checking cancellation between chunks (SPEC § 4.6). A failed or
+/// cancelled render leaves no output file behind.
 enum ChunkedRender {
     static let sampleRate: Double = 48_000
     static let chunkFrames: AVAudioFrameCount = 48_000
@@ -18,11 +18,12 @@ enum ChunkedRender {
     static func run<Transform: ChunkTransform>(
         input: URL,
         output: URL,
+        range: TimeRangeCodable? = nil,
         progress: @Sendable (Double) -> Void,
         makeTransform: (_ channelCount: Int) throws -> Transform
     ) async throws {
         do {
-            try render(input: input, output: output, progress: progress, makeTransform: makeTransform)
+            try render(input: input, output: output, range: range, progress: progress, makeTransform: makeTransform)
         } catch {
             try? FileManager.default.removeItem(at: output)
             throw error
@@ -32,6 +33,7 @@ enum ChunkedRender {
     private static func render<Transform: ChunkTransform>(
         input: URL,
         output: URL,
+        range: TimeRangeCodable?,
         progress: @Sendable (Double) -> Void,
         makeTransform: (_ channelCount: Int) throws -> Transform
     ) throws {
@@ -56,19 +58,22 @@ enum ChunkedRender {
         guard let chunk = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: chunkFrames) else {
             throw RenderError.unsupportedFormat
         }
-        let total = max(source.length, 1)
+        let frames = range?.frames(sampleRate: sampleRate, length: source.length) ?? 0..<source.length
+        let total = max(frames.upperBound - frames.lowerBound, 1)
+        source.framePosition = frames.lowerBound
         progress(0)
-        while source.framePosition < source.length {
+        while source.framePosition < frames.upperBound {
             try Task.checkCancellation()
+            let count = AVAudioFrameCount(min(AVAudioFramePosition(chunkFrames), frames.upperBound - source.framePosition))
             do {
-                try source.read(into: chunk, frameCount: chunkFrames)
+                try source.read(into: chunk, frameCount: count)
             } catch {
                 throw RenderError.unreadableInput
             }
             guard chunk.frameLength > 0, let data = chunk.floatChannelData else { break }
             let channels = (0..<channelCount).map { Array(UnsafeBufferPointer(start: data[$0], count: Int(chunk.frameLength))) }
             try write(transform.process(channels), to: destination)
-            progress(Double(source.framePosition) / Double(total))
+            progress(Double(source.framePosition - frames.lowerBound) / Double(total))
         }
         try Task.checkCancellation()
         try write(transform.finish(), to: destination)

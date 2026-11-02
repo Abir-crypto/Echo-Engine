@@ -59,8 +59,9 @@ Hooks to prepare in v1: `Project.clips` (exactly one clip), `EntitlementProvider
 - Project generation: **XcodeGen** (`project.yml` in repo root is the source of truth; never hand-edit
   `.pbxproj`). If `xcodegen` is not installed, ask the user to run `brew install xcodegen`.
 - Bundle ID: `akumatech.Echo-Engine`. Display name (`CFBundleDisplayName`): "Echo Engine".
-- Apple team ID: not set yet; leave `DEVELOPMENT_TEAM` out of `project.yml` (simulator builds only). Ask the user
-  for it before the first task that needs a real device (F10 checkpoint).
+- Apple team ID: `L9B6N63T2Q` ("abdullah al abir (Personal Team)", free), `DEVELOPMENT_TEAM` in `project.yml` for the
+  app target. A free Personal Team has no iCloud capability (preset sync, § 12, can't be enabled on a device) and
+  device profiles expire after 7 days; raise this with the user at F09.
 - The Xcode template project from the initial commit (`Echo Engine/`, `Echo Engine.xcodeproj`, incl. tracked
   `xcuserdata`) is deleted in F01.T02 and replaced by the XcodeGen layout (§ 4.2).
 
@@ -503,8 +504,10 @@ struct AudioExportSettings: Codable { var format: AudioFormat; var sampleRate: D
 ### 11.2 Pipeline
 
 1. Storage check (export stage).
-2. Offline render (manual rendering mode of `AVAudioEngine`): current AI render → manual chain → Auto Level gain
-   (recomputed) → limiter, over `trimRange` only, to a temp lossless file.
+2. Offline render (`FinalRendering` → `FinalRenderer`): current AI render → manual chain → Auto Level gain
+   (recomputed) → limiter, over `trimRange` only, to a temp lossless file (ALAC 24-bit 48 kHz). It runs the playback
+   effects' C++ code directly through `OfflineEffectChain`, the chain Auto Level measures with, not `AVAudioEngine`'s
+   manual rendering mode, so the export lands exactly on the measured gain. The limiter is always on.
 3. Encode to the chosen audio format (`AVAudioFile`/`AVAssetWriter`). MP3 export is not supported.
 4. Video: `AVMutableComposition` with source video track `trimRange` + new audio track; `AVAssetExportSession`
    **passthrough**, same container as source (MOV→MOV, MP4→MP4). Preserve metadata (creation date, location,
@@ -907,3 +910,7 @@ Record new user decisions here (date, decision, section updated).
 - 2026-11-01: Auto Level: one true-peak limiter at the end using the user's Limiter ceiling (not a fixed −1 dBTP);
   Auto Level gain limited to −20…+20 dB; Custom loudness −30…−8 LUFS in 0.5 steps, default −14 (§ 5.2, § 6.7, § 8).
 - 2026-11-01: The Loudness screen is built natively like the other Adjust sheets, not in Sleek (§ 18.5).
+- 2026-11-02: Signing team `L9B6N63T2Q` (the user's free Personal Team; no iCloud, 7-day profiles) set as
+  `DEVELOPMENT_TEAM` (§ 3).
+- 2026-11-02: The export's final render runs the effects through `OfflineEffectChain` (the same C++ effects as
+  playback, the chain Auto Level measures with) instead of `AVAudioEngine` manual rendering mode (§ 11.2).

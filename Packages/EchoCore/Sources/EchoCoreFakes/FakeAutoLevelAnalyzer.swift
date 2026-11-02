@@ -17,8 +17,12 @@ public actor FakeAutoLevelAnalyzer: AutoLevelAnalyzing {
         self.gain = gain
     }
 
-    public func gain(of audio: URL, manual: ManualSettings, range: TimeRangeCodable, target: LoudnessTarget) async throws -> Double {
+    public func gain(
+        of audio: URL, manual: ManualSettings, range: TimeRangeCodable, target: LoudnessTarget, progress: @Sendable (Double) -> Void
+    ) async throws -> Double {
         requests.append(Request(audio: audio, manual: manual, range: range, target: target))
+        progress(0)
+        progress(1)
         return gain
     }
 }

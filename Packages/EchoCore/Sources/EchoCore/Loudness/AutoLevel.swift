@@ -4,8 +4,17 @@ import CEchoDSP
 /// Auto Level (SPEC § 6.7): the static gain that brings the processed audio (AI render + manual chain) to the
 /// loudness target over the trim range.
 public protocol AutoLevelAnalyzing: Sendable {
-    /// The gain in dB, within ±20 (user decision, SPEC § 6.7); 0 when nothing is loud enough to measure.
-    func gain(of audio: URL, manual: ManualSettings, range: TimeRangeCodable, target: LoudnessTarget) async throws -> Double
+    /// The gain in dB, within ±20 (user decision, SPEC § 6.7); 0 when nothing is loud enough to measure. Reports
+    /// progress 0…1 and stops when cancelled.
+    func gain(
+        of audio: URL, manual: ManualSettings, range: TimeRangeCodable, target: LoudnessTarget, progress: @Sendable (Double) -> Void
+    ) async throws -> Double
+}
+
+extension AutoLevelAnalyzing {
+    public func gain(of audio: URL, manual: ManualSettings, range: TimeRangeCodable, target: LoudnessTarget) async throws -> Double {
+        try await gain(of: audio, manual: manual, range: range, target: target, progress: { _ in })
+    }
 }
 
 public struct AutoLevelAnalyzer: AutoLevelAnalyzing {
@@ -13,8 +22,10 @@ public struct AutoLevelAnalyzer: AutoLevelAnalyzing {
 
     public init() {}
 
-    public func gain(of audio: URL, manual: ManualSettings, range: TimeRangeCodable, target: LoudnessTarget) async throws -> Double {
-        let measurement = try await LoudnessScan.measure(audio, range: range, measuresTruePeak: false, progress: { _ in }) { sampleRate, channels in
+    public func gain(
+        of audio: URL, manual: ManualSettings, range: TimeRangeCodable, target: LoudnessTarget, progress: @Sendable (Double) -> Void
+    ) async throws -> Double {
+        let measurement = try await LoudnessScan.measure(audio, range: range, measuresTruePeak: false, progress: progress) { sampleRate, channels in
             try OfflineEffectChain(manual: manual, outputStage: nil, sampleRate: sampleRate, channelCount: channels)
         }
         guard let loudness = measurement.integratedLUFS else { return 0 }
@@ -40,8 +51,8 @@ enum LoudnessScan {
         let format = file.processingFormat
         let sampleRate = format.sampleRate
         let channelCount = Int(format.channelCount)
-        let start = min(max(AVAudioFramePosition((range.start * sampleRate).rounded()), 0), file.length)
-        let end = min(max(AVAudioFramePosition((range.end * sampleRate).rounded()), start), file.length)
+        let frames = range.frames(sampleRate: sampleRate, length: file.length)
+        let start = frames.lowerBound, end = frames.upperBound
         let chunkFrames = AVAudioFrameCount(sampleRate)
         guard format.commonFormat == .pcmFormatFloat32, !format.isInterleaved,
               let chunk = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: chunkFrames) else {
