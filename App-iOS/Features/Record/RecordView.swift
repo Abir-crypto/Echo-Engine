@@ -24,6 +24,7 @@ struct RecordView: View {
             }
             .scrollBounceBehavior(.basedOnSize)
             .background(Color.token(.ground).ignoresSafeArea())
+            .crashReportScreen("record")
             .navigationTitle("Record")
             .toolbarTitleDisplayMode(.inlineLarge)
             .toolbar {

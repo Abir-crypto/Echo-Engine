@@ -21,6 +21,8 @@ struct RecordModelTests {
         let relay: RecordingStopRelay
         let settings: FakeAppSettingsStore
         let backingTracks: FakeBackingTrackStore
+        let analytics: FakeAnalytics
+        let crashes: FakeCrashReporter
     }
 
     private func fixture(
@@ -36,16 +38,19 @@ struct RecordModelTests {
         let idleTimer = FakeIdleTimer()
         let activity = FakeRecordingActivity()
         let relay = RecordingStopRelay()
+        let analytics = FakeAnalytics(), crashes = FakeCrashReporter()
         let model = RecordModel(
             engine: engine, devices: devices, interruptions: RecordingInterruptions(devices: devices, engine: engine),
             projects: projects, builder: builder, backingTracks: backingTracks, keyDetector: FakeKeyDetector(key: songKey),
             idleTimer: idleTimer, activity: activity, stopRelay: relay,
             settings: settings, clock: FakeClock(now: started),
-            title: { "Recording at \($0.timeIntervalSince1970)" }
+            title: { "Recording at \($0.timeIntervalSince1970)" },
+            analytics: analytics, crashes: crashes
         )
         return Fixture(
             model: model, engine: engine, devices: devices, projects: projects, builder: builder, idleTimer: idleTimer,
-            activity: activity, relay: relay, settings: settings, backingTracks: backingTracks
+            activity: activity, relay: relay, settings: settings, backingTracks: backingTracks, analytics: analytics,
+            crashes: crashes
         )
     }
 
@@ -59,6 +64,21 @@ struct RecordModelTests {
         fixture.model.renameChannel(1, to: "Guest 1")
         await fixture.model.record()
         return fixture
+    }
+
+    // MARK: Analytics (SPEC § 16)
+
+    @Test func aTakeIsCountedByInputKindAndSettingsOnly() async {
+        let fixture = await recordingOnInterface()
+        #expect(fixture.analytics.events == [
+            .recordingStarted(inputType: .usb, channels: 2, suppression: .off, autoTune: false, backingTrack: false),
+        ])
+        #expect(fixture.crashes.context[.inputType] == "usb")
+        #expect(fixture.crashes.context[.recordingState] == "recording")
+
+        await fixture.model.stop()
+        #expect(fixture.analytics.events.last == .recordingFinished(durationBucket: .underOneMinute, interrupted: false))
+        #expect(fixture.crashes.context[.recordingState] != "recording")
     }
 
     // MARK: Input

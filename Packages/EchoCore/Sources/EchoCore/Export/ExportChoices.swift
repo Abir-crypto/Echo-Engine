@@ -102,3 +102,14 @@ extension ExportChoices {
         }
     }
 }
+
+extension ExportOutput {
+    /// What the export makes, without its settings.
+    public var kind: ExportKind {
+        switch self {
+        case .video: .video
+        case .audioOnly: .audioOnly
+        case .both: .both
+        }
+    }
+}

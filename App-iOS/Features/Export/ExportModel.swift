@@ -76,6 +76,7 @@ final class ExportModel: Identifiable {
     /// Keeps the export running in the background until its files are ready (SPEC § 11.2 step 7).
     @ObservationIgnored private var activity: (any BackgroundActivity)?
     @ObservationIgnored private var wasStoppedInBackground = false
+    @ObservationIgnored private let analytics: any AnalyticsTracking
 
     init(
         editor: ExportEditor,
@@ -88,7 +89,8 @@ final class ExportModel: Identifiable {
         renders: any RenderCaching,
         waveforms: any WaveformProviding,
         background: any BackgroundProcessing,
-        fallbackTitle: String
+        fallbackTitle: String,
+        analytics: any AnalyticsTracking = NoOpAnalytics()
     ) {
         project = editor.project
         self.editor = editor
@@ -102,6 +104,7 @@ final class ExportModel: Identifiable {
         self.waveforms = waveforms
         self.background = background
         self.fallbackTitle = fallbackTitle
+        self.analytics = analytics
         let mediaType = editor.project.mediaType
         storedChoices = Self.normalized(settings.lastExportChoices(for: mediaType) ?? .defaults(for: mediaType), for: mediaType)
     }
@@ -168,9 +171,12 @@ final class ExportModel: Identifiable {
             availableBytes = available
             guard available >= neededBytes else {
                 failure = .notEnoughSpace(needed: neededBytes, available: available)
+                analytics.track(.exportFailed(reason: .notEnoughSpace))
+                analytics.track(.storageBlocked(stage: .export))
                 return
             }
         }
+        analytics.track(.exportStarted(output: output.kind, format: output.audioSettings?.format))
         editor.pausePlayback()
         activity = background.begin(title: activityTitle, subtitle: activitySubtitle(output)) { [weak self] in
             self?.stoppedInBackground()
@@ -224,6 +230,9 @@ final class ExportModel: Identifiable {
             end(Self.failure(for: error))
             return
         }
+        analytics.track(.exportCompleted(
+            output: output.kind, format: output.audioSettings?.format, destination: choices.destination, postAction: postAction
+        ))
         await finishProject()
     }
 
@@ -245,6 +254,20 @@ final class ExportModel: Identifiable {
     private func end(_ failure: Failure?) {
         phase = .choosing
         self.failure = wasStoppedInBackground ? .stoppedInBackground : failure
+        if let reason = self.failure.flatMap(Self.analyticsReason) { analytics.track(.exportFailed(reason: reason)) }
+    }
+
+    private static func analyticsReason(_ failure: Failure) -> ExportFailureReason? {
+        switch failure {
+        case .notEnoughSpace: .notEnoughSpace
+        case .enhancementsFailed: .enhancementsFailed
+        case .couldNotExport: .exportFailed
+        case .photosDenied: .photosDenied
+        case .couldNotSave: .deliveryFailed
+        case .stoppedInBackground: .stoppedInBackground
+        // After a delivered export; not an export failure.
+        case .couldNotDelete: nil
+        }
     }
 
     private var activityTitle: String {

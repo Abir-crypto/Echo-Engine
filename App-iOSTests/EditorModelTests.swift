@@ -17,6 +17,8 @@ final class EditorModelTests {
     private let janitor = FakeRenderCacheJanitor()
     private let autoLevel = FakeAutoLevelAnalyzer()
     private let clock = FakeClock(now: Date(timeIntervalSince1970: 1_900_000_000))
+    private let analytics = FakeAnalytics()
+    private let crashes = FakeCrashReporter()
     private let podcastVoice = Preset(
         id: BuiltInPresetID.podcastVoice, name: "Podcast Voice",
         aiStack: [AIOperation(kind: .noiseSuppression, strength: 0.7), AIOperation(kind: .voiceLeveler, strength: 1)],
@@ -50,9 +52,43 @@ final class EditorModelTests {
             presets: presets,
             clock: clock,
             autoLevelDelay: .milliseconds(5),
+            analytics: analytics,
+            crashes: crashes,
             makeAutosaver: { [autosaver] _ in autosaver }
         )
         return (model, engine)
+    }
+
+    // MARK: Analytics (SPEC § 16)
+
+    @Test func editingIsCountedByKindAndPosition() async {
+        var project = audio
+        project.editState.aiStack = []
+        let (model, _) = makeModel(project)
+        await model.open()
+        model.addEnhancement(.noiseSuppression)
+        model.addEnhancement(.voiceLeveler)
+        #expect(crashes.context[.aiStack] == "noiseSuppression,voiceLeveler")
+        model.removeEnhancement(at: 0)
+        model.undo()
+        model.redo()
+        model.holdOriginal(true)
+        model.holdOriginal(false)
+        model.setOutputLoudness(.custom(lufs: -20))
+        model.didOpenManualControl(.equalizer)
+        model.applyPreset(podcastVoice)
+        #expect(analytics.events == [
+            .aiFeatureApplied(.noiseSuppression, stackPosition: 1), .aiFeatureApplied(.voiceLeveler, stackPosition: 2),
+            .aiFeatureRemoved(.noiseSuppression), .undoUsed, .redoUsed, .originalComparedHeld, .loudnessTargetSet(.custom),
+            .manualControlOpened(.equalizer), .presetApplied(isBuiltIn: true),
+        ])
+        #expect(crashes.context[.mediaType] == "audio")
+    }
+
+    @Test func tooLittleSpaceToEditIsCountedAsBlocked() async {
+        let (model, _) = makeModel(audio, storage: FakeStorageEstimator(editBytes: 2_000_000, available: 1_000))
+        await model.open()
+        #expect(analytics.events == [.storageBlocked(stage: .edit)])
     }
 
     @Test func openingAVideoLoadsWorkingAudioAndTheSourceVideo() async {

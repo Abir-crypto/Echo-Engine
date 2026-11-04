@@ -64,6 +64,7 @@ struct PresetsView: View {
         .listStyle(.insetGrouped)
         .scrollContentBackground(.hidden)
         .background(Color.token(.ground).ignoresSafeArea())
+        .crashReportScreen("presets")
         .navigationTitle("Presets")
         .navigationBarTitleDisplayMode(.inline)
         .task { await model.load() }

@@ -148,6 +148,8 @@ final class AppContainer {
             clock: dateProvider,
             renders: renders,
             recordings: recordedProjects,
+            analytics: analytics,
+            crashes: crashReporter,
             makeAutosaver: { [projects] onError in ProjectAutosaver(repository: projects, onError: onError) }
         )
     }
@@ -173,7 +175,8 @@ final class AppContainer {
             renders: renders,
             waveforms: waveforms,
             background: background,
-            fallbackTitle: String(localized: "Echo Engine export", comment: "File name of an export whose project has no title.")
+            fallbackTitle: String(localized: "Echo Engine export", comment: "File name of an export whose project has no title."),
+            analytics: analytics
         )
     }
 
@@ -196,7 +199,9 @@ final class AppContainer {
             stopRelay: recordingStopRelay,
             settings: settings,
             clock: dateProvider,
-            title: { DisplayFormat.recordingTitle($0) }
+            title: { DisplayFormat.recordingTitle($0) },
+            analytics: analytics,
+            crashes: crashReporter
         )
     }
 
@@ -210,13 +215,19 @@ final class AppContainer {
         )
     }
 
+    /// The first-launch consent screen (SPEC § 16).
+    func makeConsentModel() -> ConsentModel {
+        ConsentModel(consent: consent, telemetry: telemetry, analytics: analytics)
+    }
+
     func makeRecordingRecoveryModel() -> RecordingRecoveryModel {
         RecordingRecoveryModel(recovery: recovery, title: { DisplayFormat.recordingTitle($0) })
     }
 
     func makeImportModel() -> ImportModel {
         ImportModel(
-            inspector: inspector, importer: importer, storage: storage, repository: projects, dateProvider: dateProvider
+            inspector: inspector, importer: importer, storage: storage, repository: projects, dateProvider: dateProvider,
+            analytics: analytics, crashes: crashReporter
         )
     }
 }

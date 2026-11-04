@@ -118,6 +118,7 @@ struct SettingsView: View {
             .padding(.vertical, 12)
         }
         .background(Color.token(.ground).ignoresSafeArea())
+        .crashReportScreen("settings")
         .navigationTitle("Settings")
         .toolbarTitleDisplayMode(.inlineLarge)
         // The mockup has no tab bar here, like the editor.

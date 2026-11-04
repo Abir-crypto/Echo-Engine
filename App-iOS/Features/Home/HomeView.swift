@@ -32,6 +32,7 @@ struct HomeView: View {
         NavigationStack(path: $path) {
             content
                 .background(Color.token(.ground).ignoresSafeArea())
+                .crashReportScreen("home")
                 .navigationTitle("Projects")
                 .toolbarTitleDisplayMode(.inlineLarge)
                 .toolbar {

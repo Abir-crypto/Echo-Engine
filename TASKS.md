@@ -483,7 +483,11 @@ Goal: privacy-respecting telemetry.
   > kind/count parameters), `DurationBucket`, reason/kind enums, `CrashContextKey`; `TelemetryConsent` applies consent (off until answered) and follows
   > changes. App `Platform/FirebaseTelemetry.swift` is the only Firebase import: configured only if the plist is bundled; ad consent always denied;
   > Crashlytics deletes unsent reports when off; `record` sends domain+code only. Container picks Firebase or no-ops; app starts telemetry at launch.
-- [ ] F14.T03 — Onboarding/consent screen; Settings toggles wired; instrument events listed in § 16 across features.
+- [x] F14.T03 — Onboarding/consent screen; Settings toggles wired; instrument events listed in § 16 across features.
+  > Done: `Features/Onboarding/ConsentView` + `ConsentModel`, shown by `EchoEngineApp` until answered (switches start off — no pre-ticked
+  > consent; Continue applies it at once, then counts `onboarding_completed`). Settings toggles already write the store; `TelemetryConsent` follows.
+  > Events in Import/Editor/Export/Record models (injected, no-op defaults); crash context: screen (`.crashReportScreen`), ai_stack, recording_state,
+  > input_type, media/duration/container. Simulator runs that skip the screen: launch with `-consent.answered YES`.
 - [ ] F14.T04 — `PrivacyInfo.xcprivacy`; document privacy label answers for the user in the checkpoint summary.
 
 **Checkpoint test:** consent off → no Firebase traffic (debug view); consent on → events appear in Firebase DebugView; forced test crash reports with readable symbols.

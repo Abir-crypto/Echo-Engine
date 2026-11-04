@@ -31,6 +31,8 @@ final class ImportModel {
     private let storage: any StorageEstimating
     private let repository: any ProjectRepository
     private let dateProvider: any DateProviding
+    private let analytics: any AnalyticsTracking
+    private let crashes: any CrashReporting
     private var task: Task<Void, Never>?
 
     init(
@@ -38,13 +40,17 @@ final class ImportModel {
         importer: any MediaImporting,
         storage: any StorageEstimating,
         repository: any ProjectRepository,
-        dateProvider: any DateProviding
+        dateProvider: any DateProviding,
+        analytics: any AnalyticsTracking = NoOpAnalytics(),
+        crashes: any CrashReporting = NoOpCrashReporter()
     ) {
         self.inspector = inspector
         self.importer = importer
         self.storage = storage
         self.repository = repository
         self.dateProvider = dateProvider
+        self.analytics = analytics
+        self.crashes = crashes
     }
 
     /// A file chosen with `fileImporter` (security-scoped; left in place).
@@ -102,19 +108,41 @@ final class ImportModel {
             // Cancelled by the user: nothing to report.
         } catch let failure as Failure {
             self.failure = failure
+            track(failure)
         } catch let error as ImportError {
-            failure = switch error {
+            let failure: Failure = switch error {
             case .unsupportedFormat: .unsupportedFormat
             case .noAudio: .noAudio
             case .unreadable: .unreadable
             }
+            self.failure = failure
+            track(failure)
         } catch {
             failure = .failed
+            track(.failed)
+            crashes.record(error)
         }
+    }
+
+    private func track(_ failure: Failure) {
+        let reason: ImportFailureReason = switch failure {
+        case .unsupportedFormat: .unsupportedFormat
+        case .noAudio: .noAudio
+        case .unreadable: .unreadable
+        case .needsSpace: .notEnoughSpace
+        case .photosUnavailable, .failed: .other
+        }
+        analytics.track(.importFailed(reason: reason))
+        if case .needsSpace = failure { analytics.track(.storageBlocked(stage: .import)) }
     }
 
     private func importProject(from url: URL) async throws {
         let inspection = try await inspector.inspect(url)
+        let info = inspection.sourceInfo, bucket = DurationBucket(seconds: info.duration)
+        crashes.setContext(.mediaType, inspection.mediaType.rawValue)
+        crashes.setContext(.durationBucket, bucket.rawValue)
+        crashes.setContext(.sourceContainer, info.container)
+        analytics.track(.importStarted(mediaType: inspection.mediaType))
         let needed = storage.bytesToImport(inspection.sourceInfo)
         let available = try storage.availableBytes()
         guard needed <= available else { throw Failure.needsSpace(needed: needed, available: available) }
@@ -138,6 +166,7 @@ final class ImportModel {
             )
             try await repository.save(project)
             importedProject = project
+            analytics.track(.importCompleted(mediaType: inspection.mediaType, durationBucket: bucket))
         } catch {
             // The partial project folder never outlives a failed or cancelled import (SPEC § 10).
             try? await repository.delete(id: id)

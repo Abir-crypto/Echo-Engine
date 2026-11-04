@@ -32,6 +32,7 @@ final class ExportModelTests {
     private let background = FakeBackgroundProcessing()
     private let workspaceRoot = FileManager.default.temporaryDirectory.appending(path: "ExportModelTests-\(UUID().uuidString)")
     private let renderedAudio = URL(filePath: "/tmp/render-2.m4a")
+    private let analytics = FakeAnalytics()
     private var repository: FakeProjectRepository!
 
     deinit {
@@ -68,8 +69,27 @@ final class ExportModelTests {
             renders: renders,
             waveforms: waveforms,
             background: background,
-            fallbackTitle: "Echo Engine export"
+            fallbackTitle: "Echo Engine export",
+            analytics: analytics
         )
+    }
+
+    // MARK: Analytics (SPEC § 16)
+
+    @Test func anExportIsCountedByItsChoicesOnly() async {
+        let model = makeModel(audio)
+        let format = model.output.audioSettings?.format
+        await model.export()
+        #expect(analytics.events == [
+            .exportStarted(output: .audioOnly, format: format),
+            .exportCompleted(output: .audioOnly, format: format, destination: .files, postAction: .keepProject),
+        ])
+    }
+
+    @Test func tooLittleSpaceIsCountedAsBlocked() async {
+        let model = makeModel(video, storage: FakeStorageEstimator(exportBytes: 20_000, available: 18_400))
+        await model.export()
+        #expect(analytics.events == [.exportFailed(reason: .notEnoughSpace), .storageBlocked(stage: .export)])
     }
 
     // MARK: Choices

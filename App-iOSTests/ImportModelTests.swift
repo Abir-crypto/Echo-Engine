@@ -21,6 +21,8 @@ struct ImportModelTests {
     private let repository = FakeProjectRepository()
     private let clock = FakeClock(now: Date(timeIntervalSince1970: 1_800_000_000))
     private let source = URL(filePath: "/Imports/Beach vlog.mov")
+    private let analytics = FakeAnalytics()
+    private let crashes = FakeCrashReporter()
     private let inspection = MediaInspection(
         mediaType: .video,
         sourceInfo: SourceInfo(
@@ -40,8 +42,34 @@ struct ImportModelTests {
             importer: importer,
             storage: storage,
             repository: repository,
-            dateProvider: clock
+            dateProvider: clock,
+            analytics: analytics,
+            crashes: crashes
         )
+    }
+
+    // MARK: Analytics (SPEC § 16)
+
+    @Test func anImportIsCountedWithoutTheFilesName() async {
+        let model = makeModel()
+        model.importFile(at: source)
+        await model.waitUntilFinished()
+        #expect(analytics.events == [.importStarted(mediaType: .video), .importCompleted(mediaType: .video, durationBucket: .oneToTenMinutes)])
+        #expect(crashes.context == [.mediaType: "video", .durationBucket: "1-10m", .sourceContainer: "com.apple.quicktime-movie"])
+    }
+
+    @Test func failedImportsAreCountedByReason() async {
+        let model = makeModel(storage: FakeStorageEstimator(importBytes: 2_400_000_000, available: 1_100_000_000))
+        model.importFile(at: source)
+        await model.waitUntilFinished()
+        #expect(analytics.events == [
+            .importStarted(mediaType: .video), .importFailed(reason: .notEnoughSpace), .storageBlocked(stage: .import),
+        ])
+
+        let unreadable = makeModel(inspectorError: .unreadable)
+        unreadable.importFile(at: source)
+        await unreadable.waitUntilFinished()
+        #expect(analytics.events.last == .importFailed(reason: .unreadable))
     }
 
     @Test func importCreatesAProjectTitledAfterTheFile() async throws {

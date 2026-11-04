@@ -64,6 +64,8 @@ final class EditorModel {
     @ObservationIgnored private let autoLevel: any AutoLevelAnalyzing
     @ObservationIgnored private let presetRepository: any PresetRepository
     @ObservationIgnored private let clock: any DateProviding
+    @ObservationIgnored private let analytics: any AnalyticsTracking
+    @ObservationIgnored private let crashes: any CrashReporting
     /// Auto Level waits this long after the last change before measuring (SPEC § 6.7: 500 ms).
     @ObservationIgnored private let autoLevelDelay: Duration
     @ObservationIgnored private var autoLevelTask: Task<Void, Never>?
@@ -103,6 +105,8 @@ final class EditorModel {
         autoLevelDelay: Duration = .milliseconds(500),
         renders: (any RenderCaching)? = nil,
         recordings: (any RecordedProjectBuilding)? = nil,
+        analytics: any AnalyticsTracking = NoOpAnalytics(),
+        crashes: any CrashReporting = NoOpCrashReporter(),
         makeAutosaver: (@escaping @Sendable (any Error) -> Void) -> any ProjectAutosaving
     ) {
         project = stored.project
@@ -123,6 +127,8 @@ final class EditorModel {
         self.presetRepository = presets
         self.clock = clock
         self.autoLevelDelay = autoLevelDelay
+        self.analytics = analytics
+        self.crashes = crashes
         let failed = SaveFailureRelay()
         autosaver = makeAutosaver { _ in failed.report() }
         failed.onFailure = { [weak self] in self?.failure = .cantSave }
@@ -155,7 +161,13 @@ final class EditorModel {
         if let available = try? storage.availableBytes() {
             readiness = storage.readiness(of: project, availableBytes: available)
         }
-        if case .needsSpaceToEdit = readiness { return }
+        crashes.setContext(.mediaType, project.mediaType.rawValue)
+        crashes.setContext(.durationBucket, DurationBucket(seconds: sourceDuration).rawValue)
+        crashes.setContext(.sourceContainer, project.sourceInfo.container)
+        if case .needsSpaceToEdit = readiness {
+            analytics.track(.storageBlocked(stage: .edit))
+            return
+        }
         let folder = repository.folder(for: project.id)
         do {
             try engine.load(audio: folder.working, video: isVideo ? folder.source(fileName: project.sourceFileName) : nil)
@@ -282,6 +294,7 @@ final class EditorModel {
         let isHolding = isHolding && canEdit
         guard isHolding != isHoldingOriginal else { return }
         isHoldingOriginal = isHolding
+        if isHolding { analytics.track(.originalComparedHeld) }
         engine.holdOriginal(isHolding)
         playCurrentSource()
     }
@@ -308,11 +321,14 @@ final class EditorModel {
     func addEnhancement(_ feature: AIFeature) {
         guard canAdd(feature) else { return }
         changeAIStack { $0.append(AIOperation(kind: feature, strength: Self.newStepStrength)) }
+        if aiStack.last?.kind == feature { analytics.track(.aiFeatureApplied(feature, stackPosition: aiStack.count)) }
     }
 
     func removeEnhancement(at index: Int) {
         guard aiStack.indices.contains(index) else { return }
+        let feature = aiStack[index].kind
         changeAIStack { $0.remove(at: index) }
+        if !aiStack.contains(where: { $0.kind == feature }) { analytics.track(.aiFeatureRemoved(feature)) }
     }
 
     func moveEnhancements(fromOffsets source: IndexSet, toOffset destination: Int) {
@@ -370,11 +386,13 @@ final class EditorModel {
     func undo() {
         guard canEdit, let previous = history.undo(from: project.editState) else { return }
         restore(previous)
+        analytics.track(.undoUsed)
     }
 
     func redo() {
         guard canEdit, let next = history.redo(from: project.editState) else { return }
         restore(next)
+        analytics.track(.redoUsed)
     }
 
     /// Changes the manual chain and hears it at once (the chain ramps). Slider drags call this per step and
@@ -397,6 +415,12 @@ final class EditorModel {
         project.editState = state
         commit()
         scheduleAutoLevel()
+        analytics.track(.loudnessTargetSet(LoudnessTargetKind(target)))
+    }
+
+    /// An Adjust group's sheet opened (SPEC § 16).
+    func didOpenManualControl(_ group: ManualGroup) {
+        analytics.track(.manualControlOpened(group))
     }
 
     /// A slider drag or toggle ended: one undo step, saved (SPEC § 6.5).
@@ -451,6 +475,7 @@ final class EditorModel {
         // `basePresetID` isn't part of the undo state; save it even when the settings were already the preset's.
         save()
         renderChain()
+        analytics.track(.presetApplied(isBuiltIn: preset.isBuiltIn))
     }
 
     /// A new user preset from the current settings; the project is then based on it.
@@ -470,6 +495,7 @@ final class EditorModel {
         }
         project.basePresetID = preset.id
         save()
+        analytics.track(.presetSaved)
         await reloadPresets()
     }
 
@@ -580,6 +606,8 @@ final class EditorModel {
     /// Renders the AI stack (cached prefixes are instant) and swaps playback to it at the playhead when ready. A newer
     /// request supersedes this one (latest change wins, SPEC § 6.3).
     private func renderChain() {
+        // Kinds only, in order (SPEC § 16).
+        crashes.setContext(.aiStack, aiStack.map(\.kind.rawValue).joined(separator: ","))
         renderTask?.cancel()
         renderRequest += 1
         let request = renderRequest

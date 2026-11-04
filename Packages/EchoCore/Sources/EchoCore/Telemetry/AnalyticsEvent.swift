@@ -152,8 +152,18 @@ public enum LoudnessTargetKind: String, Sendable {
     }
 }
 
+/// Why an export ended without files delivered (cancelling isn't a failure).
 public enum ExportFailureReason: String, Sendable {
-    case notEnoughSpace, renderFailed, encodingFailed, videoFailed, deliveryFailed, stopped, other
+    case notEnoughSpace
+    /// The AI stack's render failed.
+    case enhancementsFailed
+    /// Rendering, encoding or writing the files failed.
+    case exportFailed
+    case photosDenied
+    /// Photos, Files or Share didn't take the files.
+    case deliveryFailed
+    /// The system stopped the export while the app was in the background.
+    case stoppedInBackground
 }
 
 /// The kind of input recorded from (SPEC § 13.2).

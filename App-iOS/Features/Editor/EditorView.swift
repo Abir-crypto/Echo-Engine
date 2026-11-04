@@ -49,6 +49,7 @@ struct EditorView: View {
         // Content keeps the app tint; the TextValue tint below is only for the navigation bar.
         .tint(tint.text)
         .background(Color.token(.ground).ignoresSafeArea())
+        .crashReportScreen("editor")
         .navigationTitle(model.project.title)
         .navigationBarTitleDisplayMode(.inline)
         // The editor is a full screen in the mockups: no tab bar.
@@ -176,7 +177,10 @@ struct EditorView: View {
                     }
                 )
                 .padding(.top, 4)
-                AdjustSection(model: model) { adjustSheet = $0 }
+                AdjustSection(model: model) { sheet in
+                    adjustSheet = sheet
+                    model.didOpenManualControl(sheet.group)
+                }
             }
             .padding(.horizontal, 20)
             .padding(.bottom, 32)

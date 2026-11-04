@@ -140,6 +140,9 @@
     "An enhancement couldn’t be applied. Free up some space, then try again." : {
       "comment" : "Editor alert when an AI enhancement fails to render (usually no space left)."
     },
+    "Anonymous counts of the features you use. Never your audio or file names." : {
+      "comment" : "First-launch screen: what sharing usage analytics means."
+    },
     "Appearance" : {
       "comment" : "Settings section: System, Dark or Light."
     },
@@ -263,6 +266,9 @@
     "Chromatic" : {
       "comment" : "Auto-tune key: every note is allowed."
     },
+    "Clean, clear audio for your videos and recordings. Everything stays on your device." : {
+      "comment" : "First-launch screen: what the app does."
+    },
     "Clear" : {
       "comment" : "Clears the render cache."
     },
@@ -280,6 +286,9 @@
     },
     "Connect “%@” again to continue, or stop to save the recording." : {
       "comment" : "The recorded input was disconnected; its name, e.g. USB interface."
+    },
+    "Continue" : {
+      "comment" : "Leaves the first-launch consent screen."
     },
     "Created" : {
       "comment" : "Project info row."
@@ -325,6 +334,9 @@
     },
     "Duration" : {
       "comment" : "Project info row."
+    },
+    "Echo Engine" : {
+      "comment" : "App name on the first-launch screen."
     },
     "Echo Engine can’t add videos to your photo library. Allow it in Settings, then try again." : {
       "comment" : "Export alert when Photos access was denied; offers Open Settings."
@@ -432,6 +444,9 @@
     },
     "Hear yourself" : {
       "comment" : "Monitor switch title."
+    },
+    "Help improve Echo Engine" : {
+      "comment" : "First-launch screen: heading above the consent switches."
     },
     "High" : {
       "comment" : "EQ band chip: the high shelf band."
@@ -1048,10 +1063,10 @@
       "comment" : "Save to: the share sheet."
     },
     "Share crash reports" : {
-      "comment" : "Settings privacy switch."
+      "comment" : "Privacy switch in Settings and on the first-launch screen."
     },
     "Share usage analytics" : {
-      "comment" : "Settings privacy switch."
+      "comment" : "Privacy switch in Settings and on the first-launch screen."
     },
     "Sing along to an instrumental. It plays in your headphones and isn’t recorded with your voice." : {
       "comment" : "Backing track sheet before a track is chosen."
@@ -1103,6 +1118,9 @@
     },
     "Teal" : {
       "comment" : "Tint name."
+    },
+    "Technical details when the app crashes, so it can be fixed." : {
+      "comment" : "First-launch screen: what sharing crash reports means."
     },
     "That file can’t be played as a backing track. Choose an audio file such as M4A, MP3 or WAV." : {
       "comment" : "The chosen backing track file isn’t playable audio."
@@ -1265,6 +1283,9 @@
     },
     "Yesterday" : {
       "comment" : "Project card date when the project changed yesterday."
+    },
+    "You can change these anytime in Settings." : {
+      "comment" : "First-launch screen: below the consent switches."
     },
     "Your audio never leaves your device." : {
       "comment" : "Settings privacy caption."

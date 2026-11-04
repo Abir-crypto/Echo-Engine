@@ -68,6 +68,10 @@ final class RecordModel {
     @ObservationIgnored private let settings: any AppSettingsStore
     @ObservationIgnored private let clock: any DateProviding
     @ObservationIgnored private let title: (Date) -> String
+    @ObservationIgnored private let analytics: any AnalyticsTracking
+    @ObservationIgnored private let crashes: any CrashReporting
+    /// The recording state crash reports last got.
+    @ObservationIgnored private var reportedState: String?
     @ObservationIgnored private var take: OpenTake?
     @ObservationIgnored private var isOnScreen = false
     @ObservationIgnored private var meterTask: Task<Void, Never>?
@@ -96,7 +100,9 @@ final class RecordModel {
         stopRelay: RecordingStopRelay,
         settings: any AppSettingsStore,
         clock: any DateProviding,
-        title: @escaping (Date) -> String
+        title: @escaping (Date) -> String,
+        analytics: any AnalyticsTracking = NoOpAnalytics(),
+        crashes: any CrashReporting = NoOpCrashReporter()
     ) {
         self.engine = engine
         self.devices = devices
@@ -111,6 +117,8 @@ final class RecordModel {
         self.settings = settings
         self.clock = clock
         self.title = title
+        self.analytics = analytics
+        self.crashes = crashes
     }
 
     // MARK: State
@@ -240,11 +248,19 @@ final class RecordModel {
             try? await projects.delete(id: id)
             if case RecordingError.notEnoughSpace(let available) = error {
                 problem = .notEnoughSpace(availableBytes: available)
+                analytics.track(.storageBlocked(stage: .recording))
             } else {
                 problem = .cantStart
             }
             return
         }
+        let input = InputType(selectedInput?.kind ?? .other)
+        crashes.setContext(.inputType, input.rawValue)
+        reportState()
+        analytics.track(.recordingStarted(
+            inputType: input, channels: recordedChannels.count, suppression: engine.suppression.level,
+            autoTune: engine.autoTune.isOn, backingTrack: engine.backingTrack != nil
+        ))
         activity.start(tint: settings.tint)
         stopRelay.handler = { [weak self] in await self?.stop() }
         updateIdleTimer()
@@ -555,6 +571,7 @@ final class RecordModel {
             return max(MeterScale.fraction(forPeak: peak), previous - Self.meterFall)
         }
         updateIdleTimer()
+        reportState()
         guard var take, !isFinishing else { return }
         if case .ended(let reason) = state {
             Task { await finish(notice: reason) }
@@ -569,6 +586,22 @@ final class RecordModel {
         activity.update(elapsedSeconds: engine.elapsedSeconds, isPaused: state != .recording, level: loudest)
     }
 
+    /// Crash reports carry the recording state (SPEC § 16), sent on change only.
+    private func reportState() {
+        let name = switch state {
+        case .idle: "idle"
+        case .ready: "ready"
+        case .recording: "recording"
+        case .paused: "paused"
+        case .pausedByInterruption: "pausedByInterruption"
+        case .finishing: "finishing"
+        case .ended: "ended"
+        }
+        guard name != reportedState else { return }
+        reportedState = name
+        crashes.setContext(.recordingState, name)
+    }
+
     private func finish(notice: TakeEndReason?) async {
         guard let take, !isFinishing else { return }
         isFinishing = true
@@ -576,7 +609,11 @@ final class RecordModel {
         isDimmed = false
         var session = take.session
         do {
-            session.markers = try await engine.finishTake().markers
+            let finished = try await engine.finishTake()
+            session.markers = finished.markers
+            let interrupted = notice != nil || finished.markers.contains { $0.kind == .interruption || $0.kind == .routeChange }
+            analytics.track(.recordingFinished(durationBucket: DurationBucket(seconds: finished.duration), interrupted: interrupted))
+            if notice == .lowStorage { analytics.track(.storageBlocked(stage: .recording)) }
             if session.backingTrack != nil, notice == nil {
                 // Sung over a backing track: the person chooses how to save it (SPEC § 13.6).
                 pendingSave = PendingSave(id: take.id, session: session)
@@ -588,6 +625,7 @@ final class RecordModel {
             problem = .cantSave
         }
         self.take = nil
+        reportState()
         activity.end()
         stopRelay.handler = nil
         updateIdleTimer()

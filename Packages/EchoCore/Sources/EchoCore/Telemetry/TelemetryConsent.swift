@@ -32,7 +32,8 @@ public final class TelemetryConsent {
         }
     }
 
-    private func apply() {
+    /// Applies the current consent at once, e.g. right after the consent screen, so its own event counts.
+    public func apply() {
         analytics.setEnabled(consent.hasAnswered && consent.sharesAnalytics)
         crashes.setEnabled(consent.hasAnswered && consent.sharesCrashReports)
     }

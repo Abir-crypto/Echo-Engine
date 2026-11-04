@@ -9,6 +9,16 @@ enum AdjustSheet: String, Identifiable {
     case equalizer, gainDynamics, effects, loudness
 
     var id: Self { self }
+
+    /// Its group for analytics (SPEC § 16).
+    var group: ManualGroup {
+        switch self {
+        case .equalizer: .equalizer
+        case .gainDynamics: .gainDynamics
+        case .effects: .effects
+        case .loudness: .loudness
+        }
+    }
 }
 
 /// "Adjust": Equalizer (mini curve), Gain and dynamics (input gain), Effects, Loudness (SPEC § 9). The mockup has no

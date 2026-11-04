@@ -24,6 +24,7 @@ struct ExportSheet: View {
             }
         }
         .background(Color.token(.ground).ignoresSafeArea())
+        .crashReportScreen("export")
         .presentationDetents([.large])
         .presentationDragIndicator(.visible)
         .interactiveDismissDisabled(model.isExporting)
