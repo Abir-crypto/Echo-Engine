@@ -39,7 +39,11 @@ final class IOSAudioDeviceManager: AudioDeviceManaging {
     func selectInput(id: String, builtInMode: BuiltInMicMode) throws {
         guard let port = session.availableInputs?.first(where: { $0.uid == id }) else { throw AudioDeviceError.inputUnavailable }
         try session.setPreferredInput(port)
-        guard port.portType == .builtInMic else { return }
+        guard port.portType == .builtInMic else {
+            // iOS may deliver only the first channel(s) of an interface; ask for all, so any of them can be recorded.
+            try? session.setPreferredInputNumberOfChannels(session.maximumInputNumberOfChannels)
+            return
+        }
         if builtInMode == .stereo, let source = Self.stereoSource(of: port) {
             try source.setPreferredPolarPattern(.stereo)
             try port.setPreferredDataSource(source)

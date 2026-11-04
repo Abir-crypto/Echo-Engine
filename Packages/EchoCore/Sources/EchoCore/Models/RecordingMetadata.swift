@@ -1,5 +1,5 @@
 /// Recording-specific data of a recorded project (SPEC § 5.2, § 13.3). Takes live in the project's
-/// `takes/` folder: `raw.caf`, `processed.caf` and one `ch<N>.caf` per channel.
+/// `takes/` folder: `raw.caf`, `processed.caf` and, when several channels were summed, one `ch<N>.caf` per channel.
 /// Later recording features add fields here with `decodeIfPresent ?? default` (SPEC § 5.3).
 public struct RecordingMetadata: Codable, Equatable, Sendable {
     /// User-given channel names in file order: `channelNames[0]` is `ch1.caf`.

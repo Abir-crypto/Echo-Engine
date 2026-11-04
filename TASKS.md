@@ -350,11 +350,18 @@ Goal: reliable capture from any input with recovery.
   > channels, `supportsStereo`, `hasHigherDelay` = Bluetooth hint), `selectInput(id:builtInMode:)` (stereo polar pattern data source, else mono),
   > `latency` (`AudioLatency.roundTripSeconds` for § 13.6), `selectedInputChannelCount`; events `.inputDeviceRemoved` (a used input left the
   > route) and `.availableInputsChanged`; editor ignores both. Fake extended. AVAudioSession behaviour is device-only: check at the F10 checkpoint.
-- [ ] F10.T02 — `AVRecordingEngine`: continuous CAF writing (raw mixdown, processed, per-channel), locked config, level metering.
+- [x] F10.T02 — `AVRecordingEngine`: continuous CAF writing (raw mixdown, processed, per-channel), locked config, level metering.
+  > Done: EchoCore `Recording/`: `AVRecordingEngine` (input → `RecordingCaptureAudioUnit` → muted mixer; `prepare` meters, `startTake`/`pause`/`resume`/
+  > `finishTake`, self-ended `.ended(.lowStorage/.writeFailed)`). C++ `CaptureCore.mm`: peaks per input channel, mixdown (F11 processes it in place), lock-free
+  > ring (8 s; overflow → same-length silence; layout locked while a take is open, for T03 restarts). `TakeWriter` actor (own queue, `.high`: inherited priority delayed drains 5 s) →
+  > `CAFWriter` (data size −1 until close: crash-safe), SRC to 48 kHz. User decisions SPEC § 13.3/§ 15/§ 20; interfaces now deliver all channels. New F10.T06a.
 - [ ] F10.T03 — Interruptions + route changes: pause, flush, markers, manual Resume (§ 13.7).
 - [ ] F10.T04 — Background audio mode, idle timer, Live Activity widget extension (timer, level, Stop).
 - [ ] F10.T05 — Crash recovery of unfinished takes on launch.
 - [ ] F10.T06 — Record screen UI per canvas + device/channel sheet + dim mode; Stop creates project and opens Editor.
+- [ ] F10.T06a — Low storage on Record (user decision, SPEC § 15): `RecordingError.notEnoughSpace` message with exact numbers; on
+  `.ended(.lowStorage)`/`.ended(.writeFailed)` finish the take like Stop and say why it stopped. Stop clones the chosen take as `working.caf`
+  (§ 13.3). Wire `AVRecordingEngine(storage:)` in `AppContainer`; meters get linear peaks (convert to dB in the UI). From F10.T02.
 
 **Checkpoint test (real device required):** record with built-in mic (mono/stereo), a USB interface with 2 channels, AirPods; lock the phone mid-recording; take a call; unplug the interface; force-quit and recover.
 

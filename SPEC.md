@@ -589,6 +589,11 @@ audio. Your recordings stay on your device."
 - Write continuously to CAF: `takes/raw.caf` (unprocessed mixdown), `takes/processed.caf` (with live processing),
   and per selected channel `takes/ch<N>.caf` raw. Mixdown is the v1 editing source (`working.caf` = processed or
   raw per user's choice at finish; default processed).
+- Takes are 48 kHz 32-bit float CAF, like `working.caf`: finishing clones the chosen take as `working.caf` (APFS
+  clone, no extra space), and a sum of several mics never clips in `raw.caf`.
+- The mixdown is mono, the sum of the selected channels (each voice at its own level); only the built-in mic in
+  Stereo mode records a stereo mixdown. `ch<N>.caf` files are written only when 2+ channels are summed into the
+  mono mixdown; otherwise they would duplicate `raw.caf`.
 - Log parameter changes with timestamps in `RecordingMetadata` (future re-processing).
 - Crash/kill recovery: on launch, detect unfinished takes (session marker file), offer "Recover recording".
 - On Stop: create a recorded `Project`, open in Editor.
@@ -675,6 +680,8 @@ Estimates (constants in `StorageEstimator`):
 | Edit | opening editor | one render (duration × 100 KB/s) × 2 + margin |
 | Export | starting export | trimmed video size (size × trim ratio) + lossless render + encoded audio + 100 MB |
 
+- Recording: Record doesn't start with less than 500 MB free; while recording, the take stops and is saved
+  automatically when free space drops below 200 MB, and the Record screen says why it stopped.
 - Free space: `volumeAvailableCapacityForImportantUsage`.
 - `ProjectReadiness`: `.ready`, `.needsSpaceToEdit(bytes)`, `.needsSpaceToExport(bytes)`; shown on Home cards and in Editor.
 - Messages always state exact numbers: "This project needs about 2.4 GB. You have 1.1 GB free."
@@ -928,3 +935,7 @@ Record new user decisions here (date, decision, section updated).
   "Both" + Photos sends the video to Photos and the audio file to Files; Export during an AI render waits for it;
   "Keep, clear cache" returns to Projects like Delete.
 - 2026-11-02: Preset iCloud sync (F09.T03) is on hold until the user resumes it; presets are local only (§ 12).
+- 2026-11-04: Recording takes are 48 kHz 32-bit float CAF (`working.caf` is cloned from the chosen take); the mixdown
+  is the mono sum of the selected channels, stereo only for the built-in mic in Stereo mode; `ch<N>.caf` only when
+  2+ channels are summed (§ 13.3). Low storage: no recording start below 500 MB free; auto-stop and save below
+  200 MB (§ 15).

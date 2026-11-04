@@ -83,5 +83,8 @@ public enum EchoAudioUnits {
         AUAudioUnit.registerSubclass(
             SourceSwitchAudioUnit.self, as: SourceSwitchAudioUnit.componentDescription, name: "Echo Engine: Source switch", version: 1
         )
+        AUAudioUnit.registerSubclass(
+            RecordingCaptureAudioUnit.self, as: RecordingCaptureAudioUnit.componentDescription, name: "Echo Engine: Capture", version: 1
+        )
     }()
 }
