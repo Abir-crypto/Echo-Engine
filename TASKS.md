@@ -410,7 +410,7 @@ Goal: live suppression, gain, leveling, clip protection.
 
 ---
 
-## F12 — Auto-tune & backing tracks  [IN PROGRESS]
+## F12 — Auto-tune & backing tracks  [DONE]
 Goal: live pitch correction and sing-along.
 
 - [x] F12.T01 — YIN pitch detector kernel + tests on synthetic tones.
@@ -451,7 +451,7 @@ Goal: live pitch correction and sing-along.
 
 ---
 
-## F13 — Settings  [TODO]
+## F13 — Settings  [IN PROGRESS]
 Goal: complete Settings screen.
 
 - [ ] F13.T01 — Settings UI per canvas: Appearance, Tint, Presets link, Privacy toggles, Storage (sizes, Clear cache), Acknowledgements, Version (§ 14.2).
