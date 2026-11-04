@@ -339,11 +339,12 @@ Goal: built-in and user presets with iCloud sync.
 
 ---
 
-## F10 — Recording core  [IN PROGRESS]
+## F10 — Recording core  [DONE]
 Goal: reliable capture from any input with recovery.
 
-> Handoff (2026-11-02, end of session): next task F10.T02. Waiting on the user: device runs of the F07–F09 checkpoint tests;
-> F09.T03 (iCloud presets) on hold. The F10 checkpoint needs a real device (signing team L9B6N63T2Q, free: 7-day profiles).
+> Handoff (2026-11-04): F10 done; F11 next once the user says so. Waiting on the user: device runs of the F07–F10 checkpoint tests
+> (team L9B6N63T2Q, free: 7-day profiles); F09.T03 (iCloud presets) on hold. The simulator on this Mac can't record (its only input is
+> Bluetooth): use `-debugFakeRecorder YES` there, real recording on a device.
 
 - [x] F10.T01 — `IOSAudioDeviceManager`: session config, input list with hints, channel enumeration, built-in mono/stereo, latency values, route-change stream (§ 13.2).
   > Done: `AudioDeviceManaging` + `activateForRecording` (`.playAndRecord`, HFP/A2DP, speaker, 48 kHz), `availableInputs()` → `AudioInput` (kind,
@@ -386,7 +387,7 @@ Goal: reliable capture from any input with recovery.
 
 ---
 
-## F11 — Live processing in Record  [TODO]
+## F11 — Live processing in Record  [IN PROGRESS]
 Goal: live suppression, gain, leveling, clip protection.
 
 - [ ] F11.T01 — Suppression tiers Off/Standard/High (live RNNoise ring buffer), voice-processing fallback rule (§ 13.4).
