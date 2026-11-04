@@ -17,6 +17,17 @@ public actor FakeRecordedProjectBuilder: RecordedProjectBuilding {
         self.error = error
     }
 
+    public private(set) var switches: [RecordingMetadata.Take] = []
+
+    public func switchEditingSource(of project: Project, to source: RecordingMetadata.Take) async throws -> Project {
+        if let error { throw error }
+        switches.append(source)
+        var switched = project
+        switched.recording?.editingSource = source
+        switched.sourceFileName = source == .raw ? "takes/raw.caf" : "takes/processed.caf"
+        return switched
+    }
+
     public func buildProject(id: UUID, title: String, session: TakeSession, editingSource: RecordingMetadata.Take) async throws -> Project {
         calls.append(Call(id: id, title: title, session: session, editingSource: editingSource))
         if let error { throw error }

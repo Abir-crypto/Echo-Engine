@@ -21,6 +21,8 @@ final class EditorModel {
         /// An AI step couldn't be rendered.
         case cantRender
         case cantSavePreset
+        /// The other take of a recording couldn't be made the editing audio.
+        case cantSwitchRecording
     }
 
     private(set) var project: Project
@@ -67,6 +69,9 @@ final class EditorModel {
     @ObservationIgnored private var autoLevelTask: Task<Void, Never>?
     @ObservationIgnored private let renderer: any AIChainRendering
     @ObservationIgnored private let janitor: any RenderCacheJanitoring
+    /// For switching a recording's take (SPEC § 13.3); without them the switch isn't offered.
+    @ObservationIgnored private let renders: (any RenderCaching)?
+    @ObservationIgnored private let recordings: (any RecordedProjectBuilding)?
     @ObservationIgnored private var renderTask: Task<Void, Never>?
     /// The chain `rendered` belongs to; an export only starts from the current one.
     @ObservationIgnored private var renderedChain: AIChain?
@@ -96,6 +101,8 @@ final class EditorModel {
         presets: any PresetRepository,
         clock: any DateProviding,
         autoLevelDelay: Duration = .milliseconds(500),
+        renders: (any RenderCaching)? = nil,
+        recordings: (any RecordedProjectBuilding)? = nil,
         makeAutosaver: (@escaping @Sendable (any Error) -> Void) -> any ProjectAutosaving
     ) {
         project = stored.project
@@ -110,6 +117,8 @@ final class EditorModel {
         self.capabilities = capabilities
         self.renderer = renderer
         self.janitor = janitor
+        self.renders = renders
+        self.recordings = recordings
         self.autoLevel = autoLevel
         self.presetRepository = presets
         self.clock = clock
@@ -162,6 +171,50 @@ final class EditorModel {
         }
         await reloadPresets()
         if let peaks = try? await waveforms.peaks(of: folder.working, projectID: project.id, key: "working", progress: { _ in }) {
+            self.peaks = peaks
+            peakLevel = max(peaks.peaks.max() ?? 1, 0.001)
+        }
+    }
+
+    // MARK: Recording's take (SPEC § 13.3)
+
+    /// A recording (not a mix) can edit its unprocessed take instead of the processed one, and back.
+    var canSwitchRecordingTake: Bool {
+        guard canEdit, renders != nil, recordings != nil, let source = project.recording?.editingSource else { return false }
+        return source == .raw || source == .processed
+    }
+
+    var editsUnprocessedRecording: Bool { project.recording?.editingSource == .raw }
+
+    /// Makes the raw (or processed) take the audio being edited: playback, waveforms and the AI stack's renders start
+    /// over from it. Not an undo step: the menu switches it back.
+    func setEditsUnprocessedRecording(_ unprocessed: Bool) async {
+        guard canSwitchRecordingTake, unprocessed != editsUnprocessedRecording, let recordings, let renders else { return }
+        engine.pause()
+        renderTask?.cancel()
+        renderTask = nil
+        do {
+            let switched = try await recordings.switchEditingSource(of: project, to: unprocessed ? .raw : .processed)
+            // Renders and peaks of the other take carry the same keys: they must go.
+            try? await renders.removeAll(projectID: project.id)
+            try? await waveforms.removeAll(projectID: project.id)
+            project.recording = switched.recording
+            project.sourceFileName = switched.sourceFileName
+            rendered = nil
+            renderedChain = nil
+            renderedPeaks = nil
+            auditionedStep = nil
+            try engine.load(audio: workingAudio, video: nil)
+            engine.playbackRange = project.trimRange
+            engine.apply(project.editState.manual)
+            playingAudio = workingAudio
+            save()
+            renderChain()
+        } catch {
+            failure = .cantSwitchRecording
+            return
+        }
+        if let peaks = try? await waveforms.peaks(of: workingAudio, projectID: project.id, key: "working", progress: { _ in }) {
             self.peaks = peaks
             peakLevel = max(peaks.peaks.max() ?? 1, 0.001)
         }

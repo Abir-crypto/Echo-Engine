@@ -128,6 +128,8 @@ final class AppContainer {
             autoLevel: autoLevel,
             presets: presets,
             clock: dateProvider,
+            renders: renders,
+            recordings: recordedProjects,
             makeAutosaver: { [projects] onError in ProjectAutosaver(repository: projects, onError: onError) }
         )
     }

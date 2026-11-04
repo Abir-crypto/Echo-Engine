@@ -8,6 +8,10 @@ public protocol RecordedProjectBuilding: Sendable {
     /// title (SPEC § 5.4). Throws `.emptyTake` when the take holds no audio, `.cantCreateProject` when a file can't be
     /// made.
     func buildProject(id: UUID, title: String, session: TakeSession, editingSource: RecordingMetadata.Take) async throws -> Project
+    /// A recorded project edits the raw or the processed take (`source`) from now on (SPEC § 13.3, user decision):
+    /// `working.caf` and the waveform overview are made from it again, and the project comes back with its new source
+    /// (to save). Renders made from the other take no longer apply; the caller clears them. Mix projects can't switch.
+    func switchEditingSource(of project: Project, to source: RecordingMetadata.Take) async throws -> Project
 }
 
 public struct RecordedProjectBuilder: RecordedProjectBuilding {
@@ -72,5 +76,28 @@ public struct RecordedProjectBuilder: RecordedProjectBuilding {
         }
         try? TakeSession.remove(from: takes)
         return project
+    }
+
+    public func switchEditingSource(of project: Project, to source: RecordingMetadata.Take) async throws -> Project {
+        guard source == .raw || source == .processed, let recording = project.recording,
+              recording.editingSource == .raw || recording.editingSource == .processed else {
+            throw RecordingError.cantCreateProject
+        }
+        let folder = repository.folder(for: project.id)
+        let take = source == .raw ? folder.takeFolder.raw : folder.takeFolder.processed
+        let files = FileManager()
+        do {
+            // Copied aside first, so a failure leaves the current audio in place.
+            let replacement = folder.url.appending(path: ".working-\(UUID().uuidString).caf")
+            try files.copyItem(at: take, to: replacement)
+            _ = try files.replaceItemAt(folder.working, withItemAt: replacement)
+            try JSONEncoder().encode(try WaveformOverview.levels(of: folder.working)).write(to: folder.waveformOverview, options: .atomic)
+        } catch {
+            throw RecordingError.cantCreateProject
+        }
+        var switched = project
+        switched.recording?.editingSource = source
+        switched.sourceFileName = "takes/\(take.lastPathComponent)"
+        return switched
     }
 }

@@ -305,6 +305,9 @@
     "Echo Engine needs the microphone to record. Your recordings stay on your device." : {
       "comment" : "Record screen text when the microphone isn’t allowed."
     },
+    "Edit the unprocessed recording" : {
+      "comment" : "Editor menu switch for recordings: edit the raw take instead of the processed one."
+    },
     "Edited today" : {
       "comment" : "Project card date when the project changed today."
     },
@@ -1012,6 +1015,9 @@
     },
     "The import couldn’t finish. Try again." : {
       "comment" : "Import error."
+    },
+    "The other recording couldn’t be used. Free up some space, then try again." : {
+      "comment" : "Editor error: switching a recording's take failed."
     },
     "The preset couldn’t be deleted. Try again." : {
       "comment" : "Settings → Presets alert when deleting fails."

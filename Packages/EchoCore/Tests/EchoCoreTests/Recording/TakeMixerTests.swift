@@ -67,3 +67,39 @@ struct TakeMixerTests {
         #expect(try readSamples(takes.processed).channels[0] == voice, "the vocal take stays on its own")
     }
 }
+
+struct EditingSourceSwitchTests {
+    @Test func aRecordingSwitchesBetweenItsTakes() async throws {
+        let root = try temporaryFolder()
+        let repository = FileProjectRepository(root: root, migrator: ProjectMigrator(), clock: FakeClock())
+        let id = UUID()
+        let folder = try await repository.createFolder(for: id)
+        try FileManager.default.createDirectory(at: folder.takes, withIntermediateDirectories: true)
+        for (url, level) in [(folder.takeFolder.raw, Float(0.1)), (folder.takeFolder.processed, Float(0.4))] {
+            let writer = try CAFWriter(url: url, sampleRate: 48_000, channelCount: 1)
+            let samples = [Float](repeating: level, count: 4_800)
+            try samples.withUnsafeBufferPointer { try writer.append([$0.baseAddress!], frames: 4_800) }
+            try writer.close()
+        }
+        try FileManager.default.copyItem(at: folder.takeFolder.processed, to: folder.working)
+        let project = Project(
+            id: id, title: "Take", mediaType: .audio, origin: .recorded, sourceFileName: "takes/processed.caf",
+            sourceInfo: SourceInfo(duration: 0.1, container: "", audioCodec: "lpcm", videoCodec: nil, byteSize: 0, channelCount: 1, sampleRate: 48_000),
+            recording: RecordingMetadata(channelNames: ["Voice"]), createdAt: Date()
+        )
+        let builder = RecordedProjectBuilder(repository: repository, inspector: AVMediaInspector())
+
+        let raw = try await builder.switchEditingSource(of: project, to: .raw)
+        #expect(raw.recording?.editingSource == .raw)
+        #expect(raw.sourceFileName == "takes/raw.caf")
+        #expect(try readSamples(folder.working).channels[0].allSatisfy { $0 == 0.1 })
+        #expect(await repository.waveformOverview(id: id)?.max() == 0.1)
+        let back = try await builder.switchEditingSource(of: raw, to: .processed)
+        #expect(try readSamples(folder.working).channels[0].allSatisfy { $0 == 0.4 })
+        #expect(back.recording?.editingSource == .processed)
+
+        var mix = project
+        mix.recording?.editingSource = .mix
+        await #expect(throws: RecordingError.cantCreateProject) { try await builder.switchEditingSource(of: mix, to: .raw) }
+    }
+}

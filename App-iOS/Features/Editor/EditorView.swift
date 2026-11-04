@@ -320,6 +320,7 @@ private struct EditorFailureMessage: LocalizedError {
         case .cantSave: String(localized: "Changes couldn’t be saved. Free up some space, then try again.")
         case .cantRender: String(localized: "An enhancement couldn’t be applied. Free up some space, then try again.")
         case .cantSavePreset: String(localized: "The preset couldn’t be saved. Free up some space, then try again.")
+        case .cantSwitchRecording: String(localized: "The other recording couldn’t be used. Free up some space, then try again.")
         }
     }
 }

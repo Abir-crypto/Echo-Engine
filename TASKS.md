@@ -441,8 +441,11 @@ Goal: live pitch correction and sing-along.
   > take the engine ended is saved vocal-only. `TakeMixer`: processed take moved earlier by the stored latency + the track from its start at its volume
   > (`ChunkReader`, now module-internal, resamples), 48 kHz float, stereo if either is. Builder: `editingSource: .mix` (new `Take` case) writes that mix as
   > `working.caf`; the vocal take stays. Killed before choosing: recovered as vocal only. New F12.T06a.
-- [ ] F12.T06a — SPEC § 13.3 says `working.caf` is the processed or raw take "per user's choice at finish (default processed)"; only processed (or the
+- [x] F12.T06a — SPEC § 13.3 says `working.caf` is the processed or raw take "per user's choice at finish (default processed)"; only processed (or the
   mix) is offered now. Ask the user where the raw/processed choice belongs (Stop prompt, or a later switch in the editor), then build it. From F12.T06.
+  > Done: user chose the Editor (SPEC § 13.3/§ 20). `RecordedProjectBuilding.switchEditingSource` re-makes `working.caf` (copy aside, then replace)
+  > and the overview; `EditorModel.setEditsUnprocessedRecording` clears the project's renders and peaks (same keys), reloads playback, re-renders,
+  > saves. Enhance "…" menu toggle "Edit the unprocessed recording" for recordings (not mixes). Optional `renders`/`recordings` deps.
 
 **Checkpoint test (device, wired headphones):** sing over a backing track with auto-tune at Natural and Robotic; check latency feels acceptable; mixed project is in sync.
 

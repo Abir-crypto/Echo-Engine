@@ -90,6 +90,19 @@ struct EnhanceSection: View {
                 }
                 .disabled(!model.isModifiedFromBasePreset)
             }
+            if model.canSwitchRecordingTake {
+                Divider()
+                Toggle(isOn: Binding(
+                    get: { model.editsUnprocessedRecording },
+                    set: { unprocessed in Task { await model.setEditsUnprocessedRecording(unprocessed) } }
+                )) {
+                    Label {
+                        Text("Edit the unprocessed recording")
+                    } icon: {
+                        Image(systemName: "waveform")
+                    }
+                }
+            }
         } label: {
             Image(systemName: "ellipsis")
                 .font(.body.weight(.semibold))

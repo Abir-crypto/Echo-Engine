@@ -588,7 +588,9 @@ audio. Your recordings stay on your device."
 
 - Write continuously to CAF: `takes/raw.caf` (unprocessed mixdown), `takes/processed.caf` (with live processing),
   and per selected channel `takes/ch<N>.caf` raw. Mixdown is the v1 editing source (`working.caf` = processed or
-  raw per user's choice at finish; default processed).
+  raw per user's choice at finish; default processed). The choice (user decision) is an Editor menu item on recorded
+  projects, "Edit the unprocessed recording" and back; switching rebuilds that project's renders. Mix projects keep
+  their mix.
 - Takes are 48 kHz 32-bit float CAF, like `working.caf`: finishing clones the chosen take as `working.caf` (APFS
   clone, no extra space), and a sum of several mics never clips in `raw.caf`.
 - The mixdown is mono, the sum of the selected channels (each voice at its own level); only the built-in mic in
@@ -965,6 +967,7 @@ Record new user decisions here (date, decision, section updated).
 - 2026-11-04: Recording Live Activity layout mirrors the Record screen: status, timer, 30-segment meter, round Stop;
   Dynamic Island compact = dot + timer + level bars (§ 13.7).
 - 2026-11-04: The device/channel sheet and dim mode are designed natively from § 18, without Sleek (§ 18.5).
+- 2026-11-04: Raw vs processed take of a recording: chosen later in the Editor's menu, not at Stop (§ 13.3).
 - 2026-11-04: Auto-tune corrects from G2 (98 Hz) up, about 26 ms added, over the ≤ 20 ms target (§ 13.5).
 - 2026-11-04: Recording's Standard tier stays Apple voice processing with its limits (processed raw take, marked gap
   when switching mid-take, one-channel inputs only); monitoring starts Off behind a Monitor row shown with headphones,
