@@ -118,6 +118,27 @@ enum DebugLiveActivity {
     }
 }
 
+/// `-debugUnfinishedTake YES` leaves a 3-second take as a killed app would (files open, session marker, no manifest),
+/// so the launch offers to recover it.
+enum DebugUnfinishedTake {
+    static let launchArgument = "debugUnfinishedTake"
+
+    static func create(in projects: any ProjectRepository) async {
+        guard let folder = try? await projects.createFolder(for: UUID()) else { return }
+        let takes = folder.takeFolder
+        try? FileManager().createDirectory(at: takes.url, withIntermediateDirectories: true)
+        let samples = (0..<144_000).map { 0.3 * sin(2 * Float.pi * 220 * Float($0) / 48_000) * (1 + sin(Float($0) / 9_000)) / 2 }
+        samples.withUnsafeBufferPointer { pointer in
+            for url in [takes.raw, takes.processed] {
+                // Never closed, like a take the app was killed during.
+                let writer = try? CAFWriter(url: url, sampleRate: 48_000, channelCount: 1)
+                try? writer?.append([pointer.baseAddress!], frames: samples.count)
+            }
+        }
+        try? TakeSession(startedAt: Date().addingTimeInterval(-3), channelNames: ["Host"]).write(to: takes)
+    }
+}
+
 /// The Home mockup's projects, saved as real (media-less) projects for manual testing.
 enum DebugSampleProjects {
     /// `-seedSampleProjects YES` adds them at launch.

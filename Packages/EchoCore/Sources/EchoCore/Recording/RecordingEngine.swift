@@ -84,6 +84,10 @@ public enum RecordingError: Error, Equatable {
     case takeInProgress
     /// No take to start, pause or finish in the current state.
     case noTake
+    /// The take holds no audio (the app was killed as it started).
+    case emptyTake
+    /// The recorded project couldn't be made from the take.
+    case cantCreateProject
 }
 
 /// A finished take's files (SPEC § 13.3): `raw.caf` and `processed.caf`, plus `ch1.caf`…`ch<N>.caf` when several

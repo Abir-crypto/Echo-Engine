@@ -596,6 +596,8 @@ audio. Your recordings stay on your device."
   mono mixdown; otherwise they would duplicate `raw.caf`.
 - Log parameter changes with timestamps in `RecordingMetadata` (future re-processing).
 - Crash/kill recovery: on launch, detect unfinished takes (session marker file), offer "Recover recording".
+  Offered as an alert at launch (user decision): Recover makes it a recorded project like Stop and opens it in the
+  Editor; Delete removes it after a confirmation; Not now asks again at the next launch.
 - On Stop: create a recorded `Project`, open in Editor.
 
 ### 13.4 Live processing chain
@@ -947,5 +949,7 @@ Record new user decisions here (date, decision, section updated).
   200 MB (§ 15).
 - 2026-11-04: A route change that keeps the recorded input (output only) doesn't pause the take: it continues on the
   same input with a marker at the gap; a lost input or a call still pauses until Resume (§ 13.7).
+- 2026-11-04: Unfinished takes are offered at launch in an alert: Recover (project + Editor), Delete (confirmed),
+  Not now (asks again next launch) (§ 13.3).
 - 2026-11-04: Recording Live Activity layout mirrors the Record screen: status, timer, 30-segment meter, round Stop;
   Dynamic Island compact = dot + timer + level bars (§ 13.7).

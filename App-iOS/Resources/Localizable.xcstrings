@@ -176,6 +176,9 @@
     "Cancel" : {
       "comment" : "Cancel button."
     },
+    "Can’t recover this recording" : {
+      "comment" : "Alert title: an unfinished recording couldn’t be made a project."
+    },
     "Change strength" : {
       "comment" : "VoiceOver action on an Enhance row."
     },
@@ -206,17 +209,29 @@
     "Delete" : {
       "comment" : "Delete action for a project."
     },
+    "Delete…" : {
+      "comment" : "Deletes an unfinished recording, after a confirmation."
+    },
     "Delete “%@”?" : {
       "comment" : "Delete confirmation title. %@ = project title."
     },
     "Delete project" : {
       "comment" : "Destructive confirmation button."
     },
+    "Delete recording" : {
+      "comment" : "Confirms deleting an unfinished recording."
+    },
+    "Delete this recording?" : {
+      "comment" : "Confirmation before deleting an unfinished recording."
+    },
     "Done" : {
       "comment" : "Closes a sheet; changes are already applied."
     },
     "Echo Engine can’t add videos to your photo library. Allow it in Settings, then try again." : {
       "comment" : "Export alert when Photos access was denied; offers Open Settings."
+    },
+    "Echo Engine closed while recording. Your audio up to that point (%@) is saved." : {
+      "comment" : "Message of the Recover recording alert; the duration saved, e.g. 12:47."
     },
     "Echo Engine export" : {
       "comment" : "File name of an export whose project has no title."
@@ -334,6 +349,9 @@
     "It can’t be undone." : {
       "comment" : "Delete confirmation message when the size is unknown."
     },
+    "It stays saved, and Echo Engine offers it again the next time it opens." : {
+      "comment" : "Message when recovering a recording failed."
+    },
     "Keep project" : {
       "comment" : "After export: keep the project as it is (default)."
     },
@@ -405,6 +423,9 @@
     },
     "Not available on this device" : {
       "comment" : "Shown instead of a feature's description when it can't be used."
+    },
+    "Not now" : {
+      "comment" : "Leaves an unfinished recording for the next launch."
     },
     "Off" : {
       "comment" : "Value of an Adjust row when nothing in it is on; also the Loudness option that turns Auto Level off."
@@ -492,6 +513,15 @@
     },
     "Record" : {
       "comment" : "Tab bar item and title of the record screen."
+    },
+    "Recording, %@, %@" : {
+      "comment" : "Default title of a recorded project: the date and time it was recorded, e.g. Recording, 28 Oct 2026, 15:42."
+    },
+    "Recover" : {
+      "comment" : "Makes a project of an unfinished recording and opens it."
+    },
+    "Recover recording?" : {
+      "comment" : "Alert title at launch: a recording didn’t finish because the app closed."
     },
     "Redo" : {
       "comment" : "Accessibility label of the redo button."

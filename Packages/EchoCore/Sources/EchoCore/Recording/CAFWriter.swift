@@ -3,10 +3,10 @@ import Foundation
 /// A 32-bit float linear PCM CAF file written as it grows (SPEC § 13.3). The data chunk's size stays "unknown" (−1,
 /// which CAF allows for the last chunk: it runs to the end of the file) until `close()` writes the real size, so the
 /// file is valid after every append: a crash or kill keeps everything already written.
-final class CAFWriter {
-    let url: URL
-    let channelCount: Int
-    private(set) var frameCount: Int64 = 0
+public final class CAFWriter {
+    public let url: URL
+    public let channelCount: Int
+    public private(set) var frameCount: Int64 = 0
     private let handle: FileHandle
     private var interleaved: [Float] = []
     private var isClosed = false
@@ -16,7 +16,7 @@ final class CAFWriter {
     private static let dataSizeOffset: UInt64 = 56
 
     /// Creates the file; never replaces an existing one.
-    init(url: URL, sampleRate: Double, channelCount: Int) throws {
+    public init(url: URL, sampleRate: Double, channelCount: Int) throws {
         self.url = url
         self.channelCount = channelCount
         try Self.header(sampleRate: sampleRate, channelCount: channelCount).write(to: url, options: .withoutOverwriting)
@@ -29,7 +29,7 @@ final class CAFWriter {
     }
 
     /// Appends `frames` frames of `channels` (one pointer per channel, non-interleaved).
-    func append(_ channels: [UnsafePointer<Float>], frames: Int) throws {
+    public func append(_ channels: [UnsafePointer<Float>], frames: Int) throws {
         guard frames > 0 else { return }
         precondition(channels.count == channelCount, "One pointer per channel")
         if channelCount == 1 {
@@ -50,12 +50,12 @@ final class CAFWriter {
     }
 
     /// Makes everything appended durable on disk (`fsync`).
-    func synchronize() throws {
+    public func synchronize() throws {
         try handle.synchronize()
     }
 
     /// Writes the data chunk's real size and closes the file. Without it the file stays valid with the unknown size.
-    func close() throws {
+    public func close() throws {
         guard !isClosed else { return }
         isClosed = true
         defer { try? handle.close() }
@@ -63,6 +63,60 @@ final class CAFWriter {
         try handle.seek(toOffset: Self.dataSizeOffset)
         try handle.write(contentsOf: Self.bigEndian(UInt64(bitPattern: dataBytes)))
         try handle.synchronize()
+    }
+
+    /// Audio frames in a file this type wrote, also while its data size is still unknown (the app was killed while
+    /// writing it).
+    static func frameCount(at url: URL) throws -> Int64 {
+        let handle = try FileHandle(forReadingFrom: url)
+        defer { try? handle.close() }
+        return try layout(of: handle).frames
+    }
+
+    /// Writes the data size of a file the app was killed while writing, dropping a partly written last frame. Leaves
+    /// a finished file alone. Returns its frames.
+    @discardableResult
+    static func finish(at url: URL) throws -> Int64 {
+        let handle = try FileHandle(forUpdating: url)
+        defer { try? handle.close() }
+        let layout = try layout(of: handle)
+        guard layout.isUnfinished else { return layout.frames }
+        let dataBytes = layout.frames * layout.bytesPerFrame
+        try handle.truncate(atOffset: UInt64(headerSize + dataBytes))
+        try handle.seek(toOffset: dataSizeOffset)
+        try handle.write(contentsOf: bigEndian(UInt64(bitPattern: Int64(MemoryLayout<UInt32>.size) + dataBytes)))
+        try handle.synchronize()
+        return layout.frames
+    }
+
+    /// Bytes before the samples: file header, `desc` chunk, `data` chunk header and edit count.
+    private static let headerSize: Int64 = 68
+
+    private struct Layout {
+        let bytesPerFrame: Int64
+        let frames: Int64
+        let isUnfinished: Bool
+    }
+
+    /// Reads the header this type writes; anything else is refused.
+    private static func layout(of handle: FileHandle) throws -> Layout {
+        try handle.seek(toOffset: 0)
+        guard let header = try handle.read(upToCount: Int(headerSize)), header.count == headerSize,
+              header[0..<4] == fourCharacterCode("caff"), header[8..<12] == fourCharacterCode("desc"),
+              header[52..<56] == fourCharacterCode("data") else {
+            throw CocoaError(.fileReadCorruptFile)
+        }
+        func integer<Value: FixedWidthInteger>(_ offset: Int, as _: Value.Type) -> Value {
+            header[offset..<offset + MemoryLayout<Value>.size].reduce(0) { $0 << 8 | Value($1) }
+        }
+        let bytesPerFrame = Int64(integer(36, as: UInt32.self))
+        guard bytesPerFrame > 0 else { throw CocoaError(.fileReadCorruptFile) }
+        let dataSize = integer(Int(dataSizeOffset), as: UInt64.self)
+        if dataSize == .max {
+            let fileSize = Int64(try handle.seekToEnd())
+            return Layout(bytesPerFrame: bytesPerFrame, frames: max(0, fileSize - headerSize) / bytesPerFrame, isUnfinished: true)
+        }
+        return Layout(bytesPerFrame: bytesPerFrame, frames: (Int64(dataSize) - 4) / bytesPerFrame, isUnfinished: false)
     }
 
     /// File header, `desc` chunk (little-endian float samples, interleaved) and the `data` chunk's header with an unknown

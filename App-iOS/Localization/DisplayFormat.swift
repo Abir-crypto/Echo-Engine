@@ -91,6 +91,19 @@ enum DisplayFormat {
 
     /// When a project was last changed, for Home cards: "Edited today", "Yesterday", "21 Oct"; earlier years
     /// add the year.
+    /// Default title of a recorded project (SPEC § 5.4), e.g. "Recording, 28 Oct 2026, 15:42".
+    static func recordingTitle(
+        _ date: Date, timeZone: TimeZone = .autoupdatingCurrent, locale: Locale = .autoupdatingCurrent
+    ) -> String {
+        let style = Date.FormatStyle(locale: locale, timeZone: timeZone)
+        let day = date.formatted(style.day().month(.abbreviated).year())
+        let time = date.formatted(style.hour().minute())
+        return String(
+            localized: "Recording, \(day), \(time)", locale: locale,
+            comment: "Default title of a recorded project: the date and time it was recorded, e.g. Recording, 28 Oct 2026, 15:42."
+        )
+    }
+
     static func projectDate(
         _ date: Date,
         now: Date,

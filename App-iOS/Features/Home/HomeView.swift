@@ -14,6 +14,8 @@ struct HomeView: View {
     let model: HomeModel
     let importModel: ImportModel
     let onRecord: () -> Void
+    /// Opens a recovered recording in the Editor (SPEC § 13.3).
+    var recovery: RecordingRecoveryModel?
 
     @State private var path: [HomeRoute] = []
     @State private var renaming: Project?
@@ -95,6 +97,14 @@ struct HomeView: View {
                 onCancel: importModel.cancel,
                 onDismissFailure: { importModel.failure = nil }
             )
+        }
+        .onChange(of: recovery?.recoveredProjectID) { _, id in
+            guard let id else { return }
+            Task {
+                await model.load()
+                path.append(.project(id))
+                recovery?.didOpenRecoveredProject()
+            }
         }
         .onChange(of: importModel.importedProject?.id) { _, id in
             guard let id else { return }

@@ -365,11 +365,16 @@ Goal: reliable capture from any input with recovery.
   > and its own String Catalog, links no EchoCore) + `Shared/RecordingActivity/` (attributes, `MeterScale` 30 segments −60…0 dB, `StopRecordingIntent` →
   > `RecordingStopRelay` via `AppDependencyManager`); app `LiveRecordingActivity` (2 updates/s, `StatusUpdateThrottle`; ends leftovers at launch). Layout: user
   > decision (SPEC § 13.7/§ 20). T06 wires them to the model. `-debugLiveActivity YES`: sim logs show it renders; screenshots miss the island → check on device.
-- [ ] F10.T05 — Crash recovery of unfinished takes on launch.
+- [x] F10.T05 — Crash recovery of unfinished takes on launch.
+  > Done: `TakeSession` marker (`takes/session.json`, lenient); `CAFWriter.frameCount`/`finish` (sets the size a killed app left unknown, drops a half
+  > frame). `RecordedProjectBuilder` (Stop + recovery: clones the take as `working.caf`, overview, manifest, removes the marker); `TakeRecovery` (marker + no
+  > manifest, oldest first; tidies saved/empty ones). App `RecordingRecoveryModel` + `.recordingRecoveryAlerts` (user decision, SPEC § 13.3/§ 20) opens the
+  > project in the Editor; `DisplayFormat.recordingTitle`. `-debugUnfinishedTake YES`: alert seen in the sim; button taps (Delete → dialog) on device.
 - [ ] F10.T06 — Record screen UI per canvas + device/channel sheet + dim mode; Stop creates project and opens Editor.
 - [ ] F10.T06a — Low storage on Record (user decision, SPEC § 15): `RecordingError.notEnoughSpace` message with exact numbers; on
-  `.ended(.lowStorage)`/`.ended(.writeFailed)` finish the take like Stop and say why it stopped. Stop clones the chosen take as `working.caf`
-  (§ 13.3). Wire `AVRecordingEngine(storage:)` in `AppContainer`; meters get linear peaks (convert to dB in the UI). From F10.T02.
+  `.ended(.lowStorage)`/`.ended(.writeFailed)` finish the take like Stop and say why it stopped. Wire `AVRecordingEngine(storage:)` in `AppContainer`;
+  meters get linear peaks (`MeterScale.fraction`). From F10.T02. Also (F10.T03–T05): `createFolder` + write `TakeSession` at start (and with each
+  marker), `RecordingInterruptions.track`/`run`, idle timer, Live Activity + `RecordingStopRelay.handler`; Stop → `recordedProjects.buildProject`.
 
 **Checkpoint test (real device required):** record with built-in mic (mono/stereo), a USB interface with 2 channels, AirPods; lock the phone mid-recording; take a call; unplug the interface; force-quit and recover.
 

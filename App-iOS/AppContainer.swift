@@ -32,6 +32,9 @@ final class AppContainer {
     let recordingActivity: any RecordingActivityPresenting
     /// The recording Live Activity's Stop reaches the app through this (registered with `AppDependencyManager`).
     let recordingStopRelay = RecordingStopRelay()
+    /// Makes recorded projects from takes: on Stop and when recovering (SPEC § 13.3).
+    let recordedProjects: any RecordedProjectBuilding
+    let recovery: any RecordingRecovering
 
     init(
         entitlements: any EntitlementProvider = FreeV1Entitlements(),
@@ -54,7 +57,9 @@ final class AppContainer {
         background: (any BackgroundProcessing)? = nil,
         presets: (any PresetRepository)? = nil,
         idleTimer: any IdleTimerControlling = UIKitIdleTimer(),
-        recordingActivity: any RecordingActivityPresenting = LiveRecordingActivity()
+        recordingActivity: any RecordingActivityPresenting = LiveRecordingActivity(),
+        recordedProjects: (any RecordedProjectBuilding)? = nil,
+        recovery: (any RecordingRecovering)? = nil
     ) {
         self.entitlements = entitlements
         self.capabilities = capabilities
@@ -81,6 +86,9 @@ final class AppContainer {
         )
         self.idleTimer = idleTimer
         self.recordingActivity = recordingActivity
+        let recordedProjects = recordedProjects ?? RecordedProjectBuilder(repository: projects, inspector: inspector)
+        self.recordedProjects = recordedProjects
+        self.recovery = recovery ?? TakeRecovery(root: .projectsDirectory, repository: projects, builder: recordedProjects)
         let presenter = DeliveryPresenter()
         deliveryPresenter = presenter
         destinations = [
@@ -147,6 +155,10 @@ final class AppContainer {
             background: background,
             fallbackTitle: String(localized: "Echo Engine export", comment: "File name of an export whose project has no title.")
         )
+    }
+
+    func makeRecordingRecoveryModel() -> RecordingRecoveryModel {
+        RecordingRecoveryModel(recovery: recovery, title: { DisplayFormat.recordingTitle($0) })
     }
 
     func makeImportModel() -> ImportModel {
