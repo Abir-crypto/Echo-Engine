@@ -2,23 +2,27 @@ import EchoCore
 import Observation
 
 /// Records nothing: moves through the states like the real engine, reports `peaks` and returns a take of
-/// `takeDuration` seconds in the started folder. `prepareError`/`startError` make those calls throw; `end(_:)` acts
-/// like the engine ending a take by itself (low storage, write failure).
+/// `takeDuration` seconds in the started folder, with a marker per interruption at `elapsedSeconds`.
+/// `prepareError`/`startError`/`resumeError` make those calls throw; `end(_:)` acts like the engine ending a take by
+/// itself (low storage, write failure).
 @MainActor
 @Observable
 public final class FakeRecordingEngine: RecordingEngine {
     public private(set) var state: RecordingState = .idle
     public private(set) var inputChannelCount = 0
     public var elapsedSeconds: Double = 0
+    public var continuesAfterRouteChange: (@MainActor () -> Bool)?
     /// Channels the input offers once prepared.
     public var inputChannels: Int
     public var peaks: [Float]
     public var prepareError: RecordingError?
     public var startError: RecordingError?
+    public var resumeError: RecordingError?
     public var takeDuration: Double = 1
     public private(set) var configuration: RecordingConfiguration?
     public private(set) var takeFolder: TakeFolder?
     public private(set) var finishedTakes = 0
+    public private(set) var markers: [RecordingMetadata.Marker] = []
 
     public init(inputChannels: Int = 1, peaks: [Float] = []) {
         self.inputChannels = inputChannels
@@ -42,6 +46,7 @@ public final class FakeRecordingEngine: RecordingEngine {
         guard state == .ready else { throw RecordingError.noTake }
         if let startError { throw startError }
         takeFolder = folder
+        markers = []
         state = .recording
     }
 
@@ -49,13 +54,34 @@ public final class FakeRecordingEngine: RecordingEngine {
         if state == .recording { state = .paused }
     }
 
-    public func resume() {
-        if state == .paused { state = .recording }
+    public func interrupt(_ kind: RecordingMetadata.Marker.Kind) {
+        switch state {
+        case .recording, .paused:
+            markers.append(RecordingMetadata.Marker(time: elapsedSeconds, kind: kind))
+            state = .pausedByInterruption(kind)
+        case .ready:
+            state = .idle
+            inputChannelCount = 0
+        default:
+            break
+        }
+    }
+
+    public func resume() throws {
+        switch state {
+        case .paused:
+            break
+        case .pausedByInterruption:
+            if let resumeError { throw resumeError }
+        default:
+            throw RecordingError.noTake
+        }
+        state = .recording
     }
 
     public func finishTake() async throws -> RecordedTake {
         switch state {
-        case .recording, .paused, .ended:
+        case .recording, .paused, .pausedByInterruption, .ended:
             guard let takeFolder, let configuration else { throw RecordingError.noTake }
             self.takeFolder = nil
             finishedTakes += 1
@@ -63,7 +89,8 @@ public final class FakeRecordingEngine: RecordingEngine {
             elapsedSeconds = 0
             return RecordedTake(
                 folder: takeFolder, duration: takeDuration, mixdownChannelCount: configuration.mixdownChannelCount,
-                channelFileCount: configuration.writesChannelFiles ? configuration.channels.count : 0, droppedFrames: 0
+                channelFileCount: configuration.writesChannelFiles ? configuration.channels.count : 0, droppedFrames: 0,
+                markers: markers
             )
         default:
             throw RecordingError.noTake
@@ -78,7 +105,9 @@ public final class FakeRecordingEngine: RecordingEngine {
 
     /// The engine ends the open take by itself.
     public func end(_ reason: TakeEndReason) {
-        guard state == .recording || state == .paused else { return }
-        state = .ended(reason)
+        switch state {
+        case .recording, .paused, .pausedByInterruption: state = .ended(reason)
+        default: break
+        }
     }
 }

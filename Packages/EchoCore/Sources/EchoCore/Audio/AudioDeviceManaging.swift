@@ -17,6 +17,8 @@ public protocol AudioDeviceManaging: AnyObject {
     /// Channels the selected input offers (an interface often reports them only once selected), for step 2 of the
     /// device sheet (SPEC § 13.2).
     var selectedInputChannelCount: Int { get }
+    /// The input the session records from right now (`AudioInput.id`); nil without one.
+    var currentInputID: String? { get }
 }
 
 /// An input the person can record from (SPEC § 13.2). Its name is the device's and only shown in the app.

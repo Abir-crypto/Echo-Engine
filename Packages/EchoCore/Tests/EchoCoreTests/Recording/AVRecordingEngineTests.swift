@@ -74,7 +74,7 @@ struct AVRecordingEngineTests {
         engine.pause()
         #expect(engine.state == .paused)
         try render(engine, frames: 12_000)
-        engine.resume()
+        try engine.resume()
         try render(engine, frames: 12_000)
         let take = try await engine.finishTake()
 
@@ -147,5 +147,130 @@ struct AVRecordingEngineTests {
         #expect(take.duration == 0.2)
         #expect(engine.state == .ready)
         #expect(try readSamples(folder.raw).channels[0].count == 9_600)
+    }
+
+    // MARK: Interruptions (SPEC § 13.7)
+
+    @Test func anInterruptionPausesMarksTheTakeAndWaitsForResume() async throws {
+        let (engine, _) = try makeEngine()
+        try engine.prepare(.mono(channels: [0]))
+        let folder = TakeFolder(url: try temporaryFolder())
+        try engine.startTake(in: folder)
+        try render(engine, frames: 24_000)
+        engine.interrupt(.interruption)
+        #expect(engine.state == .pausedByInterruption(.interruption))
+        try render(engine, frames: 12_000)   // the call: not recorded
+        #expect(engine.state == .pausedByInterruption(.interruption), "never resumes by itself")
+        try engine.resume()
+        #expect(engine.state == .recording)
+        try render(engine, frames: 12_000)
+        let take = try await engine.finishTake()
+
+        #expect(take.duration == 0.75)
+        #expect(take.markers == [RecordingMetadata.Marker(time: 0.5, kind: .interruption)])
+        let raw = try readSamples(folder.raw).channels[0]
+        #expect(raw[24_000] == Self.signal(0, 36_000), "the same take continues after the call")
+    }
+
+    @Test func everythingCapturedIsOnDiskWhenInterrupted() async throws {
+        let (engine, _) = try makeEngine()
+        try engine.prepare(.mono(channels: [0, 1]))
+        let folder = TakeFolder(url: try temporaryFolder())
+        try engine.startTake(in: folder)
+        try render(engine, frames: 30_000)
+        engine.interrupt(.routeChange)
+
+        // The files are still open: readable as they are, as after a crash.
+        let deadline = ContinuousClock.now + .seconds(5)
+        var frames = 0
+        while frames < 30_000, ContinuousClock.now < deadline {
+            try await Task.sleep(for: .milliseconds(5))
+            frames = try readSamples(folder.channel(2)).channels[0].count
+        }
+        #expect(frames == 30_000)
+        #expect(try readSamples(folder.raw).channels[0].count == 30_000)
+        _ = try await engine.finishTake()
+    }
+
+    @Test func aStoppedEngineIsAnInterruptionAndResumeRestartsIt() async throws {
+        let (engine, _) = try makeEngine()
+        try engine.prepare(.mono(channels: [0]))
+        try engine.startTake(in: TakeFolder(url: try temporaryFolder()))
+        try render(engine, frames: 4_800)
+        engine.engine.stop()
+        engine.handleConfigurationChange()
+        #expect(engine.state == .pausedByInterruption(.routeChange))
+
+        engine.interrupt(.interruption)
+        #expect(engine.state == .pausedByInterruption(.interruption), "a call is the more specific cause")
+        try engine.resume()
+        #expect(engine.engine.isRunning)
+        try render(engine, frames: 4_800)
+        let take = try await engine.finishTake()
+        #expect(take.duration == 0.2)
+        #expect(take.markers == [RecordingMetadata.Marker(time: 0.1, kind: .interruption)])
+    }
+
+    @Test func aTakeCanBeFinishedWhileInterrupted() async throws {
+        let (engine, _) = try makeEngine()
+        try engine.prepare(.mono(channels: [0]))
+        try engine.startTake(in: TakeFolder(url: try temporaryFolder()))
+        try render(engine, frames: 9_600)
+        engine.interrupt(.routeChange)
+        let take = try await engine.finishTake()
+        #expect(take.duration == 0.2)
+        #expect(take.markers.map(\.kind) == [.routeChange])
+        #expect(engine.state == .ready)
+        #expect(throws: RecordingError.noTake) { try engine.resume() }
+    }
+
+    @Test func withoutATakeAnInterruptionStopsTheMeters() throws {
+        let (engine, _) = try makeEngine()
+        try engine.prepare(.mono(channels: [0]))
+        engine.handleConfigurationChange()
+        #expect(engine.state == .idle)
+        #expect(engine.inputChannelCount == 0)
+        #expect(engine.takePeakLevels().isEmpty)
+        try engine.prepare(.mono(channels: [0]))
+        #expect(engine.state == .ready)
+    }
+
+    @Test func aRouteChangeThatKeepsTheInputContinuesTheTake() async throws {
+        let (engine, _) = try makeEngine()
+        engine.continuesAfterRouteChange = { true }
+        try engine.prepare(.mono(channels: [0]))
+        try engine.startTake(in: TakeFolder(url: try temporaryFolder()))
+        try render(engine, frames: 4_800)
+        engine.engine.stop()   // headphones unplugged: the system stops the engine
+        engine.handleConfigurationChange()
+
+        #expect(engine.state == .recording)
+        #expect(engine.engine.isRunning)
+        try render(engine, frames: 4_800)
+        let take = try await engine.finishTake()
+        #expect(take.duration == 0.2)
+        #expect(take.markers == [RecordingMetadata.Marker(time: 0.1, kind: .routeChange)])
+    }
+
+    @Test func aRouteChangeToAnotherInputPausesTheTake() async throws {
+        let (engine, _) = try makeEngine()
+        engine.continuesAfterRouteChange = { false }
+        try engine.prepare(.mono(channels: [0]))
+        try engine.startTake(in: TakeFolder(url: try temporaryFolder()))
+        try render(engine, frames: 4_800)
+        engine.engine.stop()
+        engine.handleConfigurationChange()
+        #expect(engine.state == .pausedByInterruption(.routeChange))
+        _ = try await engine.finishTake()
+    }
+
+    @Test func aRouteChangeKeepsMeteringWhenTheInputStays() throws {
+        let (engine, _) = try makeEngine()
+        engine.continuesAfterRouteChange = { true }
+        try engine.prepare(.mono(channels: [0]))
+        engine.engine.stop()
+        engine.handleConfigurationChange()
+        #expect(engine.state == .ready)
+        #expect(engine.engine.isRunning)
     }
 }

@@ -355,7 +355,11 @@ Goal: reliable capture from any input with recovery.
   > `finishTake`, self-ended `.ended(.lowStorage/.writeFailed)`). C++ `CaptureCore.mm`: peaks per input channel, mixdown (F11 processes it in place), lock-free
   > ring (8 s; overflow → same-length silence; layout locked while a take is open, for T03 restarts). `TakeWriter` actor (own queue, `.high`: inherited priority delayed drains 5 s) →
   > `CAFWriter` (data size −1 until close: crash-safe), SRC to 48 kHz. User decisions SPEC § 13.3/§ 15/§ 20; interfaces now deliver all channels. New F10.T06a.
-- [ ] F10.T03 — Interruptions + route changes: pause, flush, markers, manual Resume (§ 13.7).
+- [x] F10.T03 — Interruptions + route changes: pause, flush, markers, manual Resume (§ 13.7).
+  > Done: engine `interrupt(kind)` (stops capturing, flush + fsync, `Marker` at the take time → `RecordedTake.markers`), `.pausedByInterruption`; throwing
+  > `resume()` restarts a stopped engine only on the same layout (`.inputChanged`). Engine configuration change: continues on the same input with a marker
+  > when `continuesAfterRouteChange` agrees (user decision, SPEC § 13.7/§ 20), else pauses. EchoCore `RecordingInterruptions` maps session events,
+  > `canResume` (call over + input back), `resume()` re-activates and re-selects the input; `currentInputID` added. T06 runs it. Calls/unplugging: device-only.
 - [ ] F10.T04 — Background audio mode, idle timer, Live Activity widget extension (timer, level, Stop).
 - [ ] F10.T05 — Crash recovery of unfinished takes on launch.
 - [ ] F10.T06 — Record screen UI per canvas + device/channel sheet + dim mode; Stop creates project and opens Editor.

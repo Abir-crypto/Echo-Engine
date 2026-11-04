@@ -5,8 +5,9 @@ import Observation
 /// written continuously as `raw.caf`, `processed.caf` and, for several summed channels, `ch<N>.caf`.
 ///
 /// `prepare` starts metering; `startTake` opens the files and records; `pause`/`resume` hold the take; `finishTake`
-/// writes out everything captured and closes it. The engine ends a take by itself when space runs out or a write
-/// fails (`.ended`); `finishTake` then hands it over.
+/// writes out everything captured and closes it. Calls, other apps and lost inputs interrupt the take
+/// (`.pausedByInterruption`) until the person resumes it (SPEC § 13.7). The engine ends a take by itself when space
+/// runs out or a write fails (`.ended`); `finishTake` then hands it over.
 @MainActor
 public protocol RecordingEngine: AnyObject, Observable {
     var state: RecordingState { get }
@@ -14,6 +15,10 @@ public protocol RecordingEngine: AnyObject, Observable {
     var inputChannelCount: Int { get }
     /// Seconds recorded in the open take, pauses excluded; 0 without one. Not observed: read it on every frame.
     var elapsedSeconds: Double { get }
+    /// Asked when the system stops the engine for a route change: true when the recorded input is still the session's
+    /// current one, so recording continues on it right away with a marker at the gap (user decision, SPEC § 13.7).
+    /// Otherwise (or when nil) the take pauses like an interruption.
+    var continuesAfterRouteChange: (@MainActor () -> Bool)? { get set }
 
     /// Starts the engine on the session's current input (already selected and activated through `AudioDeviceManaging`)
     /// and meters it; replaces the previous configuration. Throws `.channelsUnavailable` when the input lacks the
@@ -27,8 +32,14 @@ public protocol RecordingEngine: AnyObject, Observable {
     func startTake(in folder: TakeFolder) throws
     /// Stops adding audio to the take and writes out what was captured; meters keep running.
     func pause()
-    /// Continues the same take after `pause`.
-    func resume()
+    /// A call, another app or a lost input stopped the audio (SPEC § 13.7): stops adding audio, writes everything
+    /// captured to disk and marks the take at this point. Only `resume()` continues it, never the engine itself. Without
+    /// a take the engine stops: `prepare` again.
+    func interrupt(_ kind: RecordingMetadata.Marker.Kind)
+    /// Continues the same take after `pause` or an interruption, restarting the engine if it stopped. Throws
+    /// `.inputChanged` when the input no longer matches the take, `.engineUnavailable` when it can't start yet (the call
+    /// isn't over). The caller checks the chosen input is back first: the engine records whatever the session routes.
+    func resume() throws
     /// Writes out everything captured, closes the files and returns the take; meters keep running. After the engine
     /// ended the take by itself (`.ended`), returns that take.
     func finishTake() async throws -> RecordedTake
@@ -43,6 +54,8 @@ public enum RecordingState: Equatable, Sendable {
     case ready
     case recording
     case paused
+    /// A call, another app or a lost input stopped the take; waits for `resume()` (SPEC § 13.7).
+    case pausedByInterruption(RecordingMetadata.Marker.Kind)
     /// Writing out and closing the take.
     case finishing
     /// The engine ended the take by itself; `finishTake()` returns it.
@@ -63,6 +76,8 @@ public enum RecordingError: Error, Equatable {
     case channelsUnavailable
     /// No input to record from, or the audio engine couldn't start.
     case engineUnavailable
+    /// After an interruption, the input's channels or rate differ from the open take's.
+    case inputChanged
     /// The take's files couldn't be created.
     case cantCreateFiles
     /// `prepare` while a take is open.
@@ -82,13 +97,19 @@ public struct RecordedTake: Equatable, Sendable {
     public let channelFileCount: Int
     /// Input frames lost because writing fell behind; silence took their place, so the take kept its length.
     public let droppedFrames: Int64
+    /// Where interruptions and lost inputs paused the take (SPEC § 13.7), for `RecordingMetadata.markers`.
+    public var markers: [RecordingMetadata.Marker]
 
-    public init(folder: TakeFolder, duration: Double, mixdownChannelCount: Int, channelFileCount: Int, droppedFrames: Int64) {
+    public init(
+        folder: TakeFolder, duration: Double, mixdownChannelCount: Int, channelFileCount: Int, droppedFrames: Int64,
+        markers: [RecordingMetadata.Marker] = []
+    ) {
         self.folder = folder
         self.duration = duration
         self.mixdownChannelCount = mixdownChannelCount
         self.channelFileCount = channelFileCount
         self.droppedFrames = droppedFrames
+        self.markers = markers
     }
 
     public var channelFiles: [URL] { (0..<channelFileCount).map { folder.channel($0 + 1) } }

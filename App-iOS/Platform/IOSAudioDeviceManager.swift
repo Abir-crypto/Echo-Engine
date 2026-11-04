@@ -61,6 +61,10 @@ final class IOSAudioDeviceManager: AudioDeviceManaging {
         session.maximumInputNumberOfChannels
     }
 
+    var currentInputID: String? {
+        session.currentRoute.inputs.first?.uid
+    }
+
     private static func kind(of port: AVAudioSessionPortDescription) -> AudioInput.Kind {
         switch port.portType {
         case .builtInMic: .builtInMic

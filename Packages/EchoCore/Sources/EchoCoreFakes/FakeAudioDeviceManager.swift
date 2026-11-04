@@ -11,6 +11,8 @@ public final class FakeAudioDeviceManager: AudioDeviceManaging {
     public private(set) var builtInMode: BuiltInMicMode?
     public var latency = AudioLatency(inputSeconds: 0.004, outputSeconds: 0.006, ioBufferSeconds: 0.005)
     public var selectedInputChannelCount: Int { selectedInput?.channelCount ?? 0 }
+    /// The selected input; set it to nil or another id to act like iOS changing the route.
+    public var currentInputID: String?
     public var error: (any Error)?
     private var continuations: [AsyncStream<AudioSessionEvent>.Continuation] = []
 
@@ -33,6 +35,7 @@ public final class FakeAudioDeviceManager: AudioDeviceManaging {
     public func selectInput(id: String, builtInMode: BuiltInMicMode) throws {
         guard let input = inputs.first(where: { $0.id == id }) else { throw AudioDeviceError.inputUnavailable }
         selectedInput = input
+        currentInputID = input.id
         self.builtInMode = builtInMode
     }
 

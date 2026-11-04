@@ -641,6 +641,9 @@ Show a "Use wired headphones for monitoring" tip when auto-tune or a backing tra
 - Interruption `.began`: pause, flush to disk, add interruption marker. `.ended`: state `pausedByInterruption`,
   user taps Resume (never auto-resume) to continue the same take.
 - Route change (selected device disconnected): same as interruption; never silently switch to built-in mic.
+- Route change that keeps the recorded input (headphones unplugged, a speaker disconnected): recording continues on
+  the same input right away; the short gap (about 0.1 s) gets a route-change marker. If the input's rate or channels
+  changed, the take pauses like an interruption instead.
 
 ---
 
@@ -939,3 +942,5 @@ Record new user decisions here (date, decision, section updated).
   is the mono sum of the selected channels, stereo only for the built-in mic in Stereo mode; `ch<N>.caf` only when
   2+ channels are summed (§ 13.3). Low storage: no recording start below 500 MB free; auto-stop and save below
   200 MB (§ 15).
+- 2026-11-04: A route change that keeps the recorded input (output only) doesn't pause the take: it continues on the
+  same input with a marker at the gap; a lost input or a call still pauses until Resume (§ 13.7).

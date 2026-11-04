@@ -7,12 +7,14 @@ import Observation
 /// channels and the processed mixdown in a lock-free ring; a `TakeWriter` drains it every 50 ms into the take files,
 /// converting to 48 kHz when the input runs at another rate, and ends the take by itself when free space runs low.
 ///
-/// The configuration is locked while a take is open. Interruptions and route changes are F10.T03.
+/// The configuration is locked while a take is open. Interruptions and lost inputs pause the take, flush it to disk and
+/// mark it; only `resume()` continues it. A route change that keeps the recorded input restarts at once (SPEC § 13.7).
 @MainActor
 @Observable
 public final class AVRecordingEngine: RecordingEngine {
     public private(set) var state: RecordingState = .idle
     public private(set) var inputChannelCount = 0
+    @ObservationIgnored public var continuesAfterRouteChange: (@MainActor () -> Bool)?
 
     /// Seconds of input the ring holds while the writer is late (an I/O stall).
     static let ringSeconds = 8.0
@@ -32,6 +34,9 @@ public final class AVRecordingEngine: RecordingEngine {
     @ObservationIgnored private var take: OpenTake?
     /// A take the engine ended by itself, until `finishTake` collects it.
     @ObservationIgnored private var endedTake: RecordedTake?
+    /// The open take's interruptions.
+    @ObservationIgnored private var markers: [RecordingMetadata.Marker] = []
+    @ObservationIgnored private var configurationObserver: (any NSObjectProtocol)?
 
     private struct OpenTake {
         let writer: TakeWriter
@@ -64,9 +69,16 @@ public final class AVRecordingEngine: RecordingEngine {
         self.storageCheckInterval = storageCheckInterval
         self.manualInputFormat = manualInputFormat
         engine.attach(captureNode)
+        // The system stops the engine when the input or output changes (an interface unplugged, a new route).
+        configurationObserver = NotificationCenter.default.addObserver(
+            forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
+        ) { [weak self] _ in
+            MainActor.assumeIsolated { self?.handleConfigurationChange() }
+        }
     }
 
     isolated deinit {
+        if let configurationObserver { NotificationCenter.default.removeObserver(configurationObserver) }
         // Never leave a take open: close its files with what was captured.
         if let take {
             Task {
@@ -143,6 +155,7 @@ public final class AVRecordingEngine: RecordingEngine {
             throw RecordingError.cantCreateFiles
         }
         capture.setTakeOpen(true)
+        markers = []
         let capturedAtStart = capture.capturedFrames
         capture.setCapturing(true)
         // High priority whoever starts the take: at a lower one, a busy device delays the drain's timer by seconds.
@@ -161,16 +174,80 @@ public final class AVRecordingEngine: RecordingEngine {
         guard state == .recording, let take else { return }
         capture.setCapturing(false)
         state = .paused
-        Task { [writer = take.writer] in
-            await waitForLastCapturingCycle()
-            try? await writer.flush()
+        flush(take)
+    }
+
+    public func interrupt(_ kind: RecordingMetadata.Marker.Kind) {
+        switch state {
+        case .recording, .paused:
+            guard let take else { return }
+            capture.setCapturing(false)
+            markers.append(RecordingMetadata.Marker(time: elapsedSeconds, kind: kind))
+            state = .pausedByInterruption(kind)
+            flush(take)
+        case .pausedByInterruption(.routeChange) where kind == .interruption:
+            // The engine's configuration change can arrive before the session's interruption: a call is the cause.
+            markers[markers.count - 1].kind = .interruption
+            state = .pausedByInterruption(.interruption)
+        case .ready:
+            engine.stop()
+            state = .idle
+            inputChannelCount = 0
+        default:
+            break
         }
     }
 
-    public func resume() {
-        guard state == .paused else { return }
+    public func resume() throws {
+        switch state {
+        case .paused:
+            break
+        case .pausedByInterruption:
+            if !engine.isRunning { try restart() }
+        default:
+            throw RecordingError.noTake
+        }
         capture.setCapturing(true)
         state = .recording
+    }
+
+    /// The system stopped the engine for a route change. Internal for tests that simulate it.
+    func handleConfigurationChange() {
+        switch state {
+        case .recording, .paused, .ready:
+            guard continuesAfterRouteChange?() == true else { return interrupt(.routeChange) }
+            // Only the output changed: continue on the same input; the take has a short gap, marked.
+            do {
+                try restart()
+                if take != nil { markers.append(RecordingMetadata.Marker(time: elapsedSeconds, kind: .routeChange)) }
+            } catch {
+                interrupt(.routeChange)
+            }
+        default:
+            interrupt(.routeChange)
+        }
+    }
+
+    /// Starts the stopped engine again on an input that still matches the capture layout.
+    private func restart() throws {
+        let format = inputFormat
+        guard format.sampleRate == capture.sampleRate, Int(format.channelCount) == capture.inputChannelCount else {
+            throw RecordingError.inputChanged
+        }
+        do {
+            engine.prepare()
+            try engine.start()
+        } catch {
+            throw RecordingError.engineUnavailable
+        }
+    }
+
+    /// Writes out what was captured up to now and makes it durable on disk.
+    private func flush(_ take: OpenTake) {
+        Task(priority: .high) { [writer = take.writer] in
+            await waitForLastCapturingCycle()
+            try? await writer.flush()
+        }
     }
 
     public func finishTake() async throws -> RecordedTake {
@@ -180,7 +257,7 @@ public final class AVRecordingEngine: RecordingEngine {
             self.endedTake = nil
             state = engine.isRunning ? .ready : .idle
             return endedTake
-        case .recording, .paused:
+        case .recording, .paused, .pausedByInterruption:
             guard let take else { throw RecordingError.noTake }
             state = .finishing
             let recorded = await close(take, isLoopRunning: true)
@@ -200,7 +277,11 @@ public final class AVRecordingEngine: RecordingEngine {
 
     /// The writer's loop found the take must end (low storage, write failure).
     private func endTake(_ reason: TakeEndReason) async {
-        guard state == .recording || state == .paused, let take else { return }
+        switch state {
+        case .recording, .paused, .pausedByInterruption: break
+        default: return
+        }
+        guard let take else { return }
         state = .finishing
         endedTake = await close(take, isLoopRunning: false)
         state = .ended(reason)
@@ -213,7 +294,8 @@ public final class AVRecordingEngine: RecordingEngine {
             take.loop.cancel()
             await take.loop.value
         }
-        let recorded = await take.writer.finish()
+        var recorded = await take.writer.finish()
+        recorded.markers = markers
         capture.setTakeOpen(false)
         self.take = nil
         return recorded
