@@ -39,6 +39,14 @@ public actor CachedWaveformProvider: WaveformProviding {
         }
     }
 
+    public func totalBytes() throws -> Int64 {
+        try fileManager.allocatedSize(of: root)
+    }
+
+    public func removeEverything() throws {
+        try fileManager.removeContents(of: root)
+    }
+
     public func removeAll(projectID: UUID) throws {
         let folder = root.appending(path: projectID.uuidString)
         if fileManager.fileExists(atPath: folder.path) {

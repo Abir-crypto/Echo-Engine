@@ -454,8 +454,13 @@ Goal: live pitch correction and sing-along.
 ## F13 — Settings  [IN PROGRESS]
 Goal: complete Settings screen.
 
-- [ ] F13.T01 — Settings UI per canvas: Appearance, Tint, Presets link, Privacy toggles, Storage (sizes, Clear cache), Acknowledgements, Version (§ 14.2).
-- [ ] F13.T01a — Clear cache also removes waveform caches (`Library/Caches/Waveforms`, `WaveformProviding.removeAll`); project delete already does (F04 review).
+- [x] F13.T01 — Settings UI per canvas: Appearance, Tint, Presets link, Privacy toggles, Storage (sizes, Clear cache), Acknowledgements, Version (§ 14.2).
+  > Done: `SettingsModel` (projects = sum of `diskUsage`, cache = renders + waveforms, `clearCache`) + `SettingsView` per mockup (native segmented,
+  > tint swatches with names and a ring, Presets, consent switches, storage + Clear, Acknowledgements with RNNoise's bundled BSD-3 text, Version), no tab
+  > bar; Home routes to it (`HomeRoute.settings`, `-debugTab settings`). EchoCore `ConsentStore` → `UserDefaultsConsentStore` (off until answered; F14
+  > wires Firebase), `totalBytes`/`removeEverything` on both caches. Debug menu keeps only sample projects.
+- [x] F13.T01a — Clear cache also removes waveform caches (`Library/Caches/Waveforms`, `WaveformProviding.removeAll`); project delete already does (F04 review).
+  > Done: with T01 — Clear calls `removeEverything` on the render cache and the waveform cache, and the size shown counts both.
 - [ ] F13.T02 — Storage sizes computation; project info sheet with per-project breakdown (§ 15).
 
 **Checkpoint test:** every setting persists and applies instantly; Clear cache frees space and projects re-render on open.

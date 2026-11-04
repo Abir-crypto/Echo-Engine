@@ -3,23 +3,13 @@ import EchoCore
 import EchoCoreFakes
 import SwiftUI
 
-/// Temporary debug tools until the Settings screen exists (F13.T01): appearance, tint and sample projects.
-/// Debug builds only, so its labels are verbatim and stay out of the String Catalog.
+/// Debug tools in Settings: sample projects. Debug builds only, so its labels are verbatim and stay out of the String
+/// Catalog.
 struct DebugMenu: View {
     @Environment(AppContainer.self) private var container
 
     var body: some View {
         Menu {
-            Picker(selection: Binding(get: { container.settings.appearance }, set: { container.settings.appearance = $0 })) {
-                ForEach(Appearance.allCases, id: \.self) { Text(verbatim: $0.rawValue).tag($0) }
-            } label: {
-                Text(verbatim: "Appearance")
-            }
-            Picker(selection: Binding(get: { container.settings.tint }, set: { container.settings.tint = $0 })) {
-                ForEach(AppTint.allCases, id: \.self) { Text(verbatim: $0.rawValue).tag($0) }
-            } label: {
-                Text(verbatim: "Tint")
-            }
             Button {
                 Task { await DebugSampleProjects.add(to: container.projects) }
             } label: {

@@ -24,6 +24,20 @@ public actor FakeWaveformProvider: WaveformProviding {
         removedKeys.formUnion(keys)
     }
 
+    public private(set) var bytes: Int64 = 0
+    public private(set) var removedEverythingCount = 0
+
+    public func setBytes(_ bytes: Int64) {
+        self.bytes = bytes
+    }
+
+    public func totalBytes() -> Int64 { bytes }
+
+    public func removeEverything() {
+        bytes = 0
+        removedEverythingCount += 1
+    }
+
     public func removeAll(projectID: UUID) {
         removedProjectIDs.append(projectID)
     }

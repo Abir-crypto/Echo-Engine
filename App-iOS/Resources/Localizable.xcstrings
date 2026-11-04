@@ -89,6 +89,9 @@
     "AAC %@ kbps. The video is kept exactly as it is." : {
       "comment" : "Export quality caption when exporting a video: its new audio's bitrate; the picture is not re-encoded."
     },
+    "Acknowledgements" : {
+      "comment" : "Settings row and screen: third-party software and licenses."
+    },
     "Add enhancement" : {
       "comment" : "Editor Enhance section: row that opens the list of AI features; also that sheet's title."
     },
@@ -119,6 +122,9 @@
     "Always on: peaks never go above the ceiling." : {
       "comment" : "Gain and dynamics: caption under the limiter ceiling slider."
     },
+    "Amber" : {
+      "comment" : "Tint name."
+    },
     "Amount" : {
       "comment" : "De-esser: how strongly sibilance is reduced (slider)."
     },
@@ -127,6 +133,9 @@
     },
     "An enhancement couldn’t be applied. Free up some space, then try again." : {
       "comment" : "Editor alert when an AI enhancement fails to render (usually no space left)."
+    },
+    "Appearance" : {
+      "comment" : "Settings section: System, Dark or Light."
     },
     "Apple Music" : {
       "comment" : "Loudness target named after a platform; keep the brand name."
@@ -188,6 +197,9 @@
     "Bitrate" : {
       "comment" : "Export sheet, Custom quality: AAC bitrate in kbps."
     },
+    "Blue" : {
+      "comment" : "Tint name."
+    },
     "Bluetooth headphones add a delay. Wired headphones are best for monitoring." : {
       "comment" : "Monitor sheet note with Bluetooth headphones."
     },
@@ -245,6 +257,9 @@
     "Chromatic" : {
       "comment" : "Auto-tune key: every note is allowed."
     },
+    "Clear" : {
+      "comment" : "Clears the render cache."
+    },
     "Clear Voice" : {
       "comment" : "AI feature name: noise removal plus presence EQ and gentle compression."
     },
@@ -265,6 +280,9 @@
     },
     "Damping" : {
       "comment" : "Reverb: how quickly high frequencies fade in the room (slider)."
+    },
+    "Dark" : {
+      "comment" : "Appearance."
     },
     "De-esser" : {
       "comment" : "Gain and dynamics: section and switch title (reduces harsh s sounds)."
@@ -388,6 +406,9 @@
     "Gain and dynamics" : {
       "comment" : "Editor Adjust row and sheet title: input gain, gate, compressor, de-esser, limiter."
     },
+    "Green" : {
+      "comment" : "Tint name."
+    },
     "Hear yourself" : {
       "comment" : "Monitor switch title."
     },
@@ -462,6 +483,9 @@
     },
     "Level" : {
       "comment" : "Accessibility label of the recording level meter."
+    },
+    "Light" : {
+      "comment" : "Appearance."
     },
     "Limiter ceiling" : {
       "comment" : "Gain and dynamics: the limiter's maximum level (slider, dB)."
@@ -552,6 +576,9 @@
     },
     "Noise Suppression" : {
       "comment" : "AI feature name: removes background noise."
+    },
+    "Noise suppression. BSD 3-Clause License." : {
+      "comment" : "Acknowledgements: what RNNoise is for and its license."
     },
     "None" : {
       "comment" : "Backing track row: none chosen."
@@ -784,8 +811,14 @@
     "Presets you save in the editor appear here. Use Save as preset in the Enhance menu." : {
       "comment" : "Settings → Presets when there are no user presets."
     },
+    "Privacy" : {
+      "comment" : "Settings section: analytics and crash report consent."
+    },
     "Projects" : {
       "comment" : "Tab bar item and title of the projects screen."
+    },
+    "Projects aren’t included in iCloud backup. Export anything you want to keep." : {
+      "comment" : "Settings storage caption (SPEC § 14.2)."
     },
     "Projects couldn’t be loaded. Restart Echo Engine to try again." : {
       "comment" : "Error alert."
@@ -896,6 +929,9 @@
     "Rename project" : {
       "comment" : "Title of the rename dialog."
     },
+    "Render cache" : {
+      "comment" : "Settings storage row: enhancement renders and waveform caches."
+    },
     "Replaces the enhancements, adjustments and loudness. The trim stays, and Undo brings back what you had." : {
       "comment" : "Explains what applying a preset does."
     },
@@ -919,6 +955,9 @@
     },
     "Room size" : {
       "comment" : "Reverb: size of the simulated room (slider, percent)."
+    },
+    "Rose" : {
+      "comment" : "Tint name."
     },
     "Sample rate" : {
       "comment" : "Export sheet, Custom quality: 44.1 or 48 kHz."
@@ -956,6 +995,12 @@
     "Share" : {
       "comment" : "Save to: the share sheet."
     },
+    "Share crash reports" : {
+      "comment" : "Settings privacy switch."
+    },
+    "Share usage analytics" : {
+      "comment" : "Settings privacy switch."
+    },
     "Sing along to an instrumental. It plays in your headphones and isn’t recorded with your voice." : {
       "comment" : "Backing track sheet before a track is chosen."
     },
@@ -986,17 +1031,26 @@
     "Stop recording" : {
       "comment" : "Live Activity button and action: ends the recording."
     },
+    "Storage" : {
+      "comment" : "Settings section."
+    },
     "Strength" : {
       "comment" : "Slider and value label: how much of an AI step is applied (wet/dry)."
     },
     "Style" : {
       "comment" : "Auto-tune slider: Natural to Robotic."
     },
+    "System" : {
+      "comment" : "Appearance: follow the system."
+    },
     "Tap to return" : {
       "comment" : "Hint at the bottom of the dim recording screen."
     },
     "Target" : {
       "comment" : "Slider for the custom loudness target, in LUFS."
+    },
+    "Teal" : {
+      "comment" : "Tint name."
     },
     "That file can’t be played as a backing track. Choose an audio file such as M4A, MP3 or WAV." : {
       "comment" : "The chosen backing track file isn’t playable audio."
@@ -1073,6 +1127,9 @@
     "TikTok" : {
       "comment" : "Loudness target named after a platform; keep the brand name."
     },
+    "Tint" : {
+      "comment" : "Settings section: the accent color."
+    },
     "Title" : {
       "comment" : "Placeholder of the project title field."
     },
@@ -1106,6 +1163,12 @@
     "Use wired headphones for monitoring" : {
       "comment" : "Tip on the Record screen when monitoring timing matters over Bluetooth."
     },
+    "Used for buttons and processed audio." : {
+      "comment" : "Settings tint caption."
+    },
+    "Version" : {
+      "comment" : "Settings row: app version and build."
+    },
     "Video" : {
       "comment" : "Subtitle of the background export progress: a video is being made."
     },
@@ -1114,6 +1177,9 @@
     },
     "Video preview" : {
       "comment" : "Accessibility label of the editor video preview."
+    },
+    "Violet" : {
+      "comment" : "Tint name."
     },
     "Vocal only" : {
       "comment" : "Saves the take without the backing track."
@@ -1141,6 +1207,9 @@
     },
     "Yesterday" : {
       "comment" : "Project card date when the project changed yesterday."
+    },
+    "Your audio never leaves your device." : {
+      "comment" : "Settings privacy caption."
     },
     "Your export is saved, but the project couldn’t be deleted. You can delete it in Projects." : {
       "comment" : "Export alert when deleting the project after a successful export failed."

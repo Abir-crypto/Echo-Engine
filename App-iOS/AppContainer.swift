@@ -25,6 +25,8 @@ final class AppContainer {
     let deliveryPresenter: DeliveryPresenter
     let destinations: [DestinationKind: any ExportDestination]
     let settings: any AppSettingsStore
+    /// Analytics and crash report consent (SPEC § 16).
+    let consent: any ConsentStore
     let exportService: any ExportService
     let background: any BackgroundProcessing
     let presets: any PresetRepository
@@ -59,7 +61,8 @@ final class AppContainer {
         idleTimer: any IdleTimerControlling = UIKitIdleTimer(),
         recordingActivity: any RecordingActivityPresenting = LiveRecordingActivity(),
         recordedProjects: (any RecordedProjectBuilding)? = nil,
-        recovery: (any RecordingRecovering)? = nil
+        recovery: (any RecordingRecovering)? = nil,
+        consent: (any ConsentStore)? = nil
     ) {
         self.entitlements = entitlements
         self.capabilities = capabilities
@@ -84,6 +87,7 @@ final class AppContainer {
         self.presets = presets ?? FilePresetRepository(
             root: .presetsDirectory, builtIns: Self.builtInPresetsURL.flatMap { try? BuiltInPresets.load(from: $0) } ?? []
         )
+        self.consent = consent ?? UserDefaultsConsentStore(defaults: .standard)
         self.idleTimer = idleTimer
         self.recordingActivity = recordingActivity
         let recordedProjects = recordedProjects ?? RecordedProjectBuilder(repository: projects, inspector: inspector)
@@ -179,6 +183,16 @@ final class AppContainer {
             settings: settings,
             clock: dateProvider,
             title: { DisplayFormat.recordingTitle($0) }
+        )
+    }
+
+    func makeSettingsModel() -> SettingsModel {
+        let info = Bundle.main.infoDictionary
+        let version = info?["CFBundleShortVersionString"] as? String ?? ""
+        let build = info?["CFBundleVersion"] as? String ?? ""
+        return SettingsModel(
+            settings: settings, consent: consent, projects: projects, renders: renders, waveforms: waveforms,
+            version: "\(version) (\(build))"
         )
     }
 

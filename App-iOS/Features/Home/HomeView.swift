@@ -7,6 +7,7 @@ import EchoCoreFakes
 
 enum HomeRoute: Hashable {
     case project(UUID)
+    case settings
 }
 
 /// Projects tab (SPEC § 14.1, mockups `Design/screens/Home*.dc.html`). Import flow: SPEC § 10.
@@ -34,18 +35,23 @@ struct HomeView: View {
                 .toolbarTitleDisplayMode(.inlineLarge)
                 .toolbar {
                     ToolbarItem(placement: .topBarTrailing) {
-                        NavigationLink {
-                            SettingsView()
-                        } label: {
+                        NavigationLink(value: HomeRoute.settings) {
                             Label("Settings", systemImage: "gearshape")
                         }
                         // Circle-button glyphs use TextValue, not the tint (SPEC § 18.4).
                         .tint(.token(.textValue))
                     }
                 }
-                .task { await model.load() }
+                .task {
+                    await model.load()
+                    #if DEBUG
+                    if UserDefaults.standard.string(forKey: DebugRecordTab.tabArgument) == "settings" { path = [.settings] }
+                    #endif
+                }
                 .navigationDestination(for: HomeRoute.self) { route in
                     switch route {
+                    case .settings:
+                        SettingsScreen()
                     case .project(let id):
                         if let stored = model.projects.first(where: { $0.project.id == id }) {
                             EditorScreen(stored: stored)

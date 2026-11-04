@@ -103,3 +103,32 @@ struct EditingSourceSwitchTests {
         await #expect(throws: RecordingError.cantCreateProject) { try await builder.switchEditingSource(of: mix, to: .raw) }
     }
 }
+
+struct CacheAndConsentTests {
+    @Test func theRenderCacheMeasuresAndClearsEveryProject() async throws {
+        let root = try temporaryFolder()
+        let cache = FileRenderCache(root: root)
+        for project in [UUID(), UUID()] {
+            let file = try await cache.temporaryURL(projectID: project)
+            try Data(repeating: 1, count: 100_000).write(to: file)
+            _ = try await cache.store(file, for: RenderKey(hash: String(repeating: "a", count: 64))!, projectID: project)
+        }
+        #expect(try await cache.totalBytes() >= 200_000)
+        try await cache.removeEverything()
+        #expect(try await cache.totalBytes() == 0)
+        #expect(FileManager.default.fileExists(atPath: root.path()), "the folder itself stays")
+    }
+
+    @MainActor
+    @Test func consentIsOffUntilAnsweredAndRemembered() throws {
+        let defaults = try #require(UserDefaults(suiteName: "consent-\(UUID().uuidString)"))
+        let store = UserDefaultsConsentStore(defaults: defaults)
+        #expect(!store.hasAnswered)
+        #expect(!store.sharesAnalytics && !store.sharesCrashReports, "nothing is collected before the answer")
+        store.recordAnswer(analytics: true, crashReports: false)
+        let again = UserDefaultsConsentStore(defaults: defaults)
+        #expect(again.hasAnswered)
+        #expect(again.sharesAnalytics)
+        #expect(!again.sharesCrashReports)
+    }
+}

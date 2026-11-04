@@ -13,6 +13,10 @@ public protocol RenderCaching: Sendable {
     func remove(_ keys: Set<RenderKey>, projectID: UUID) async throws
     /// Deletes every render of the project (project deleted, Settings → Clear cache).
     func removeAll(projectID: UUID) async throws
+    /// Bytes every project's renders take (Settings → Storage, SPEC § 14.2).
+    func totalBytes() async throws -> Int64
+    /// Deletes every render of every project (Settings → Clear); they are made again when projects open (SPEC § 6.4).
+    func removeEverything() async throws
 }
 
 public struct RenderCacheEntry: Equatable, Sendable {

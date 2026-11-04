@@ -14,6 +14,10 @@ public protocol WaveformProviding: Sendable {
     func remove(keys: Set<String>, projectID: UUID) async throws
     /// Deletes every cached waveform of the project.
     func removeAll(projectID: UUID) async throws
+    /// Bytes every project's cached peaks take.
+    func totalBytes() async throws -> Int64
+    /// Deletes every project's cached peaks (Settings → Clear, with the renders); made again when needed.
+    func removeEverything() async throws
 }
 
 public enum WaveformError: Error, Equatable {

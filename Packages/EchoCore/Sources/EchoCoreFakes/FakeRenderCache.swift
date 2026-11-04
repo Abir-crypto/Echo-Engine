@@ -40,6 +40,22 @@ public actor FakeRenderCache: RenderCaching {
         }
     }
 
+    /// What `totalBytes` reports.
+    public var bytes: Int64 = 0
+    public private(set) var removedEverythingCount = 0
+
+    public func totalBytes() -> Int64 { bytes }
+
+    public func setBytes(_ bytes: Int64) {
+        self.bytes = bytes
+    }
+
+    public func removeEverything() {
+        renders.removeAll()
+        bytes = 0
+        removedEverythingCount += 1
+    }
+
     public func removeAll(projectID: UUID) {
         removedAllProjectIDs.append(projectID)
         for url in (renders.removeValue(forKey: projectID) ?? [:]).values { try? FileManager.default.removeItem(at: url) }

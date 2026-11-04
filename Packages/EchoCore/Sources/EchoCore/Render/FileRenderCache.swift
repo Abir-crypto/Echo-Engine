@@ -53,6 +53,14 @@ public actor FileRenderCache: RenderCaching {
         }
     }
 
+    public func totalBytes() throws -> Int64 {
+        try fileManager.allocatedSize(of: root)
+    }
+
+    public func removeEverything() throws {
+        try fileManager.removeContents(of: root)
+    }
+
     public func removeAll(projectID: UUID) throws {
         let folder = folder(projectID)
         if fileManager.fileExists(atPath: folder.path) {
