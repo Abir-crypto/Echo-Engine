@@ -19,6 +19,8 @@ public protocol AudioDeviceManaging: AnyObject {
     var selectedInputChannelCount: Int { get }
     /// The input the session records from right now (`AudioInput.id`); nil without one.
     var currentInputID: String? { get }
+    /// Whether the app may record (SPEC § 13): asks the person the first time, then answers at once.
+    func requestMicrophoneAccess() async -> Bool
 }
 
 /// An input the person can record from (SPEC § 13.2). Its name is the device's and only shown in the app.

@@ -25,7 +25,9 @@ public struct TakeSession: Codable, Equatable, Sendable {
         markers = try container.decodeIfPresent([RecordingMetadata.Marker].self, forKey: .markers) ?? []
     }
 
+    /// Creates the take folder if needed, so the marker exists before any audio does.
     public func write(to folder: TakeFolder) throws {
+        try FileManager().createDirectory(at: folder.url, withIntermediateDirectories: true)
         try JSONEncoder().encode(self).write(to: folder.session, options: .atomic)
     }
 

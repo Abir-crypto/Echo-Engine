@@ -65,6 +65,10 @@ final class IOSAudioDeviceManager: AudioDeviceManaging {
         session.currentRoute.inputs.first?.uid
     }
 
+    func requestMicrophoneAccess() async -> Bool {
+        await AVAudioApplication.requestRecordPermission()
+    }
+
     private static func kind(of port: AVAudioSessionPortDescription) -> AudioInput.Kind {
         switch port.portType {
         case .builtInMic: .builtInMic

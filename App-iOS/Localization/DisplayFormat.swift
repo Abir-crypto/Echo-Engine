@@ -91,6 +91,13 @@ enum DisplayFormat {
 
     /// When a project was last changed, for Home cards: "Edited today", "Yesterday", "21 Oct"; earlier years
     /// add the year.
+    /// A meter position (0…1 on `MeterScale`) as whole decibels: "-12 dB", "0 dB"; silence shows the meter's floor.
+    static func meterLevel(_ fraction: Double, locale: Locale = .autoupdatingCurrent) -> String {
+        let db = Int((MeterScale.floorDB * (1 - min(1, max(0, fraction.isFinite ? fraction : 0)))).rounded())
+        let number = db.formatted(.number.locale(locale))
+        return String(localized: "\(number) dB", locale: locale, comment: "A level in decibels, e.g. +2.5 dB.")
+    }
+
     /// Default title of a recorded project (SPEC § 5.4), e.g. "Recording, 28 Oct 2026, 15:42".
     static func recordingTitle(
         _ date: Date, timeZone: TimeZone = .autoupdatingCurrent, locale: Locale = .autoupdatingCurrent

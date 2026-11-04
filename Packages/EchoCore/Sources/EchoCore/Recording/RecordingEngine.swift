@@ -15,6 +15,8 @@ public protocol RecordingEngine: AnyObject, Observable {
     var inputChannelCount: Int { get }
     /// Seconds recorded in the open take, pauses excluded; 0 without one. Not observed: read it on every frame.
     var elapsedSeconds: Double { get }
+    /// The open take's interruption and route-change markers so far (they end up in `RecordedTake.markers`).
+    var markers: [RecordingMetadata.Marker] { get }
     /// Asked when the system stops the engine for a route change: true when the recorded input is still the session's
     /// current one, so recording continues on it right away with a marker at the gap (user decision, SPEC § 13.7).
     /// Otherwise (or when nil) the take pauses like an interruption.

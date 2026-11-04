@@ -14,22 +14,36 @@ struct RootView: View {
     let homeModel: HomeModel
     let importModel: ImportModel
     let recoveryModel: RecordingRecoveryModel
+    let recordModel: RecordModel
     @State private var selectedTab = AppTab.projects
+    /// A recorded or recovered project to open in the Editor.
+    @State private var projectToOpen: UUID?
 
     var body: some View {
         TabView(selection: $selectedTab) {
             Tab("Projects", systemImage: "square.grid.2x2", value: AppTab.projects) {
-                HomeView(model: homeModel, importModel: importModel, onRecord: { selectedTab = .record }, recovery: recoveryModel)
+                HomeView(
+                    model: homeModel, importModel: importModel, onRecord: { selectedTab = .record },
+                    openProjectID: projectToOpen, onOpenedProject: { projectToOpen = nil }
+                )
             }
             Tab("Record", systemImage: "mic", value: AppTab.record) {
-                RecordView()
+                RecordView(model: recordModel)
             }
         }
         .environment(container)
         // Takes the app was killed during (SPEC § 13.3).
         .recordingRecoveryAlerts(recoveryModel)
         .onChange(of: recoveryModel.recoveredProjectID) { _, id in
-            if id != nil { selectedTab = .projects }
+            guard let id else { return }
+            open(id)
+            recoveryModel.didOpenRecoveredProject()
+        }
+        // Stop opens the new recording in the Editor (SPEC § 13.3).
+        .onChange(of: recordModel.finishedProjectID) { _, id in
+            guard let id else { return }
+            open(id)
+            recordModel.didOpenFinishedProject()
         }
         .task {
             #if DEBUG
@@ -51,8 +65,25 @@ struct RootView: View {
             if UserDefaults.standard.bool(forKey: DebugLiveActivity.launchArgument) {
                 DebugLiveActivity.run(container)
             }
+            if UserDefaults.standard.string(forKey: DebugRecordTab.tabArgument) == "record" {
+                selectedTab = .record
+                for _ in 0..<50 where !recordModel.canRecord {
+                    try? await Task.sleep(for: .milliseconds(100))
+                }
+                if DebugRecordTab.usesFakes { DebugRecordTab.stageMockup(recordModel) }
+                if UserDefaults.standard.bool(forKey: DebugRecordTab.recordArgument) {
+                    await recordModel.record()
+                    (recordModel.engine as? FakeRecordingEngine)?.elapsedSeconds = 767
+                    if UserDefaults.standard.string(forKey: DebugRecordTab.sheetArgument) == "dim" { recordModel.isDimmed = true }
+                }
+            }
         }
         #endif
+    }
+
+    private func open(_ id: UUID) {
+        selectedTab = .projects
+        projectToOpen = id
     }
 }
 
@@ -62,7 +93,7 @@ private func previewRoot() -> RootView {
     let container = AppContainer(projects: FakeProjectRepository(projects: PreviewProjects.all()))
     return RootView(
         container: container, homeModel: container.makeHomeModel(), importModel: container.makeImportModel(),
-        recoveryModel: container.makeRecordingRecoveryModel()
+        recoveryModel: container.makeRecordingRecoveryModel(), recordModel: previewRecordModel()
     )
 }
 

@@ -94,6 +94,28 @@ enum DebugImport {
     static let launchArgument = "debugImportPath"
 }
 
+/// `-debugTab record` opens the Record tab at launch; with `-debugRecord YES` a take starts once it is ready.
+/// `-debugFakeRecorder YES` runs the tab on fakes (an interface with Host and Guest 1 at 12:47), to check the layout where
+/// no microphone works, e.g. a simulator whose Mac has only a Bluetooth headset as input.
+enum DebugRecordTab {
+    static let tabArgument = "debugTab"
+    static let recordArgument = "debugRecord"
+    static let fakeArgument = "debugFakeRecorder"
+    /// `-debugRecordSheet input|dim` opens the input sheet, or dim mode once recording.
+    static let sheetArgument = "debugRecordSheet"
+
+    static var usesFakes: Bool { UserDefaults.standard.bool(forKey: fakeArgument) }
+
+    /// The mockup's set-up on the fake interface.
+    @MainActor
+    static func stageMockup(_ model: RecordModel) {
+        model.selectInput(id: PreviewInputs.usb.id)
+        model.setChannel(1, isOn: true)
+        model.renameChannel(0, to: "Host")
+        model.renameChannel(1, to: "Guest 1")
+    }
+}
+
 /// `-debugLiveActivity YES` shows the recording Live Activity with a moving level and no recording, to check its
 /// layout (leave the app for the Dynamic Island, lock the device for the Lock Screen). Its Stop ends it.
 enum DebugLiveActivity {

@@ -14,8 +14,9 @@ struct HomeView: View {
     let model: HomeModel
     let importModel: ImportModel
     let onRecord: () -> Void
-    /// Opens a recovered recording in the Editor (SPEC § 13.3).
-    var recovery: RecordingRecoveryModel?
+    /// A recorded or recovered project to open in the Editor (SPEC § 13.3); `onOpenedProject` once it is.
+    var openProjectID: UUID?
+    var onOpenedProject: () -> Void = {}
 
     @State private var path: [HomeRoute] = []
     @State private var renaming: Project?
@@ -98,12 +99,12 @@ struct HomeView: View {
                 onDismissFailure: { importModel.failure = nil }
             )
         }
-        .onChange(of: recovery?.recoveredProjectID) { _, id in
+        .onChange(of: openProjectID) { _, id in
             guard let id else { return }
             Task {
                 await model.load()
-                path.append(.project(id))
-                recovery?.didOpenRecoveredProject()
+                path = [.project(id)]
+                onOpenedProject()
             }
         }
         .onChange(of: importModel.importedProject?.id) { _, id in

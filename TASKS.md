@@ -370,11 +370,17 @@ Goal: reliable capture from any input with recovery.
   > frame). `RecordedProjectBuilder` (Stop + recovery: clones the take as `working.caf`, overview, manifest, removes the marker); `TakeRecovery` (marker + no
   > manifest, oldest first; tidies saved/empty ones). App `RecordingRecoveryModel` + `.recordingRecoveryAlerts` (user decision, SPEC § 13.3/§ 20) opens the
   > project in the Editor; `DisplayFormat.recordingTitle`. `-debugUnfinishedTake YES`: alert seen in the sim; button taps (Delete → dialog) on device.
-- [ ] F10.T06 — Record screen UI per canvas + device/channel sheet + dim mode; Stop creates project and opens Editor.
-- [ ] F10.T06a — Low storage on Record (user decision, SPEC § 15): `RecordingError.notEnoughSpace` message with exact numbers; on
+- [x] F10.T06 — Record screen UI per canvas + device/channel sheet + dim mode; Stop creates project and opens Editor.
+  > Done: `RecordModel` (input/channels, meters 30/s falling 20 dB/s, record/pause/resume/stop, session marker + markers, idle timer, Live Activity + relay,
+  > self-ended takes → notice, typed problems) + `RecordView` per mockup (its F11/F12 rows come later), native `InputSheet` + `DimRecordingView` (user, SPEC
+  > § 18.5/§ 20), `LevelMeter`; Stop and Recover open the Editor via `RootView.projectToOpen`. Sim: this Mac's only input is Bluetooth → AURemoteIO init
+  > aborts (RPC timeout) in the simulator; `-debugTab record -debugFakeRecorder YES [-debugRecord YES] [-debugRecordSheet input|dim]` checks the layout.
+- [x] F10.T06a — Low storage on Record (user decision, SPEC § 15): `RecordingError.notEnoughSpace` message with exact numbers; on
   `.ended(.lowStorage)`/`.ended(.writeFailed)` finish the take like Stop and say why it stopped. Wire `AVRecordingEngine(storage:)` in `AppContainer`;
   meters get linear peaks (`MeterScale.fraction`). From F10.T02. Also (F10.T03–T05): `createFolder` + write `TakeSession` at start (and with each
   marker), `RecordingInterruptions.track`/`run`, idle timer, Live Activity + `RecordingStopRelay.handler`; Stop → `recordedProjects.buildProject`.
+  > Done: with T06 — space message with exact numbers, "Recording stopped" notice with Open recording, `makeRecordModel` wiring; markers,
+  > interruptions, idle timer, Live Activity and the builder all run through `RecordModel`.
 
 **Checkpoint test (real device required):** record with built-in mic (mono/stereo), a USB interface with 2 channels, AirPods; lock the phone mid-recording; take a call; unplug the interface; force-quit and recover.
 

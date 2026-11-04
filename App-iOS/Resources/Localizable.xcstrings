@@ -68,6 +68,9 @@
     "%lld-bit" : {
       "comment" : "A bit depth choice in the export sheet, e.g. 24-bit."
     },
+    "A call or another app is using the microphone. Resume when it’s finished." : {
+      "comment" : "Record screen: resuming failed because the microphone is busy."
+    },
     "AAC %@ kbps." : {
       "comment" : "Export quality caption for an AAC audio file, e.g. AAC 320 kbps."
     },
@@ -94,6 +97,9 @@
     },
     "After export" : {
       "comment" : "Export sheet section: what happens to the project once the export is saved."
+    },
+    "Allow the microphone" : {
+      "comment" : "Record screen title when the microphone isn’t allowed."
     },
     "Already reduces noise" : {
       "comment" : "Hint under Clear Voice when Noise Suppression is also in the stack."
@@ -167,6 +173,9 @@
     "Built-in" : {
       "comment" : "Apply preset: the presets that come with the app."
     },
+    "Built-in microphone" : {
+      "comment" : "Input sheet section: the built-in mic’s Mono or Stereo."
+    },
     "Built-in presets can’t be changed. Apply one, then save it as your own." : {
       "comment" : "Settings → Presets footer under the built-in presets."
     },
@@ -185,6 +194,21 @@
     "Changes couldn’t be saved. Free up some space, then try again." : {
       "comment" : "Editor error."
     },
+    "Channel %lld" : {
+      "comment" : "Default name of an input channel, e.g. Channel 2."
+    },
+    "Channels" : {
+      "comment" : "Section of the input sheet: the interface’s channels."
+    },
+    "Choose a channel to record in Input." : {
+      "comment" : "Record screen: no interface channel is chosen."
+    },
+    "Choose the channels to record and name them. They’re mixed into one recording, and each is also kept on its own." : {
+      "comment" : "Input sheet caption under the channels."
+    },
+    "Chooses the microphone and its channels." : {
+      "comment" : "VoiceOver hint of the input button."
+    },
     "Clear Voice" : {
       "comment" : "AI feature name: noise removal plus presence EQ and gentle compression."
     },
@@ -196,6 +220,9 @@
     },
     "Compressor" : {
       "comment" : "Gain and dynamics: section and switch title."
+    },
+    "Connect “%@” again to continue, or stop to save the recording." : {
+      "comment" : "The recorded input was disconnected; its name, e.g. USB interface."
     },
     "Custom" : {
       "comment" : "Loudness target the user sets with a slider."
@@ -224,6 +251,9 @@
     "Delete this recording?" : {
       "comment" : "Confirmation before deleting an unfinished recording."
     },
+    "Dim screen" : {
+      "comment" : "Button: shows the minimal dark recording screen."
+    },
     "Done" : {
       "comment" : "Closes a sheet; changes are already applied."
     },
@@ -235,6 +265,9 @@
     },
     "Echo Engine export" : {
       "comment" : "File name of an export whose project has no title."
+    },
+    "Echo Engine needs the microphone to record. Your recordings stay on your device." : {
+      "comment" : "Record screen text when the microphone isn’t allowed."
     },
     "Edited today" : {
       "comment" : "Project card date when the project changed today."
@@ -322,6 +355,9 @@
     "High shelf" : {
       "comment" : "EQ band type shown above its sliders."
     },
+    "Higher delay, not ideal with auto-tune or backing tracks" : {
+      "comment" : "Hint under a Bluetooth input."
+    },
     "Hold for original" : {
       "comment" : "Editor: press and hold to hear the original audio."
     },
@@ -340,11 +376,17 @@
     "In semitones. The voice keeps its natural character." : {
       "comment" : "Effects: caption under the pitch slider (formant-preserving pitch shift)."
     },
+    "Input" : {
+      "comment" : "Input device button before one is known."
+    },
     "Input gain" : {
       "comment" : "Gain and dynamics: level going into the chain (slider, dB)."
     },
     "Instagram" : {
       "comment" : "Loudness target named after a platform; keep the brand name."
+    },
+    "iOS records from one input at a time. To record several microphones, connect an audio interface and choose its channels." : {
+      "comment" : "Input sheet footer (SPEC § 13.2)."
     },
     "It can’t be undone." : {
       "comment" : "Delete confirmation message when the size is unknown."
@@ -357,6 +399,15 @@
     },
     "Keep, clear cache" : {
       "comment" : "After export: keep the project but delete its rendered enhancements (rebuilt when opened)."
+    },
+    "Left" : {
+      "comment" : "Left channel of the built-in mic in stereo."
+    },
+    "Less than %@ was free, so Echo Engine stopped and saved your recording." : {
+      "comment" : "Why recording stopped: the device ran out of space; the size, e.g. 200 MB."
+    },
+    "Level" : {
+      "comment" : "Accessibility label of the recording level meter."
     },
     "Limiter ceiling" : {
       "comment" : "Gain and dynamics: the limiter's maximum level (slider, dB)."
@@ -382,6 +433,9 @@
     "Mix" : {
       "comment" : "Reverb: how much room sound is mixed in (slider, percent)."
     },
+    "Mono" : {
+      "comment" : "Built-in mic records one channel."
+    },
     "Move down" : {
       "comment" : "VoiceOver action on an Enhance row: move it one step later."
     },
@@ -390,6 +444,9 @@
     },
     "Name" : {
       "comment" : "Placeholder of the preset name field."
+    },
+    "Name of %@" : {
+      "comment" : "VoiceOver label of a channel’s name field, e.g. Name of Channel 2."
     },
     "Need %@ more to edit this project. Free up space on your iPad, then come back. Your import is saved." : {
       "comment" : "Editor blocked by storage on iPad (SPEC § 9). %@ = missing space."
@@ -412,6 +469,9 @@
     "No enhancements" : {
       "comment" : "A preset without AI steps."
     },
+    "No microphone is available. Connect one to record." : {
+      "comment" : "Record screen: there is no input to record from."
+    },
     "Noise gate" : {
       "comment" : "Gain and dynamics: section and switch title."
     },
@@ -433,6 +493,9 @@
     "OK" : {
       "comment" : "Dismisses an alert."
     },
+    "Open recording" : {
+      "comment" : "Opens the recording that was stopped and saved."
+    },
     "Open Settings" : {
       "comment" : "Alert button that opens the app's page in the Settings app."
     },
@@ -444,6 +507,15 @@
     },
     "Pause" : {
       "comment" : "Accessibility label of the pause button."
+    },
+    "Paused" : {
+      "comment" : "Live Activity status: the recording is paused."
+    },
+    "Paused by a call or another app" : {
+      "comment" : "Recording status: an interruption paused the take."
+    },
+    "Paused: the input was disconnected" : {
+      "comment" : "Recording status: the recorded input went away."
     },
     "Peak" : {
       "comment" : "EQ band type (peaking filter) shown above its sliders."
@@ -511,11 +583,35 @@
     "Ratio" : {
       "comment" : "Compressor ratio slider, e.g. 3:1."
     },
+    "Ready to record" : {
+      "comment" : "Recording status before a take starts."
+    },
     "Record" : {
       "comment" : "Tab bar item and title of the record screen."
     },
+    "Record %@" : {
+      "comment" : "VoiceOver label of a channel’s switch, e.g. Record Channel 2."
+    },
+    "Recorded time" : {
+      "comment" : "VoiceOver label of the recording timer."
+    },
+    "Recording" : {
+      "comment" : "Live Activity status: the app is recording."
+    },
     "Recording, %@, %@" : {
       "comment" : "Default title of a recorded project: the date and time it was recorded, e.g. Recording, 28 Oct 2026, 15:42."
+    },
+    "Recording continues if you leave the app. Calls or apps that use the microphone may pause it. Your audio so far is always saved." : {
+      "comment" : "Card on the Record screen while recording."
+    },
+    "Recording couldn’t start. Close other apps that use the microphone, then try again." : {
+      "comment" : "Record screen: the audio engine didn’t start."
+    },
+    "Recording needs at least %@ free. You have %@." : {
+      "comment" : "Not enough space to start recording: the minimum and the free space, e.g. 500 MB and 320 MB."
+    },
+    "Recording stopped" : {
+      "comment" : "Alert title: the app ended the recording by itself."
     },
     "Recover" : {
       "comment" : "Makes a project of an unfinished recording and opens it."
@@ -553,8 +649,17 @@
     "Reset" : {
       "comment" : "Equalizer: returns every band to flat."
     },
+    "Resume" : {
+      "comment" : "Continues a paused recording."
+    },
+    "Return" : {
+      "comment" : "VoiceOver action: leaves the dim recording screen."
+    },
     "Reverb" : {
       "comment" : "Effects: switch title and Effects row value."
+    },
+    "Right" : {
+      "comment" : "Right channel of the built-in mic in stereo."
     },
     "Room size" : {
       "comment" : "Reverb: size of the simulated room (slider, percent)."
@@ -598,11 +703,17 @@
     "Standard" : {
       "comment" : "Audio quality preset: AAC 192 kbps."
     },
+    "Stereo" : {
+      "comment" : "Built-in mic records left and right."
+    },
     "Stop recording" : {
       "comment" : "Live Activity button and action: ends the recording."
     },
     "Strength" : {
       "comment" : "Slider and value label: how much of an AI step is applied (wet/dry)."
+    },
+    "Tap to return" : {
+      "comment" : "Hint at the bottom of the dim recording screen."
     },
     "Target" : {
       "comment" : "Slider for the custom loudness target, in LUFS."
@@ -637,6 +748,9 @@
     "The project couldn’t be renamed. Try again." : {
       "comment" : "Error alert."
     },
+    "The recording couldn’t be written any further. Everything up to then is saved." : {
+      "comment" : "Why recording stopped: a file couldn’t be written."
+    },
     "The video couldn’t be loaded from Photos. Make sure it’s downloaded from iCloud, then try again." : {
       "comment" : "Import error."
     },
@@ -657,6 +771,9 @@
     },
     "This project’s audio can’t be played. Import the file again to make a new project." : {
       "comment" : "Editor error."
+    },
+    "This recording couldn’t be saved as a project. It stays on your device, and Echo Engine offers it again the next time it opens." : {
+      "comment" : "Record screen: Stop couldn’t make the project."
     },
     "This video has no audio. Choose a video with sound." : {
       "comment" : "Import error (SPEC § 10)."

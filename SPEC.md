@@ -866,6 +866,7 @@ enum Appearance: String, CaseIterable { case system, dark, light }
   device/channel picker, auto-tune, backing track, presets): follow § 18.1–18.4; grouped rows, segmented controls,
   sliders with value labels; present as sheets with detents where short. If layout is unclear, ask the user.
   Equalizer, Gain and dynamics, Effects and Loudness are built natively from § 18 without Sleek (user decision).
+  So are the Record screen's device/channel sheet and dim mode (user decision).
   These screens may be designed in Sleek through the `design-mobile-apps` project skill (paid external service,
   user's account and API key): offer it when such a screen comes up and run it only after the user approves.
   Implement any Sleek design natively in SwiftUI with § 18 tokens; never use the skill's React Native/HTML
@@ -953,3 +954,4 @@ Record new user decisions here (date, decision, section updated).
   Not now (asks again next launch) (§ 13.3).
 - 2026-11-04: Recording Live Activity layout mirrors the Record screen: status, timer, 30-segment meter, round Stop;
   Dynamic Island compact = dot + timer + level bars (§ 13.7).
+- 2026-11-04: The device/channel sheet and dim mode are designed natively from § 18, without Sleek (§ 18.5).

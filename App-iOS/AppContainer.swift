@@ -157,6 +157,27 @@ final class AppContainer {
         )
     }
 
+    /// The Record tab's model with its own recording engine (SPEC § 13).
+    func makeRecordModel() -> RecordModel {
+        #if DEBUG
+        if DebugRecordTab.usesFakes { return previewRecordModel() }
+        #endif
+        let engine = AVRecordingEngine(storage: storage)
+        return RecordModel(
+            engine: engine,
+            devices: devices,
+            interruptions: RecordingInterruptions(devices: devices, engine: engine),
+            projects: projects,
+            builder: recordedProjects,
+            idleTimer: idleTimer,
+            activity: recordingActivity,
+            stopRelay: recordingStopRelay,
+            settings: settings,
+            clock: dateProvider,
+            title: { DisplayFormat.recordingTitle($0) }
+        )
+    }
+
     func makeRecordingRecoveryModel() -> RecordingRecoveryModel {
         RecordingRecoveryModel(recovery: recovery, title: { DisplayFormat.recordingTitle($0) })
     }

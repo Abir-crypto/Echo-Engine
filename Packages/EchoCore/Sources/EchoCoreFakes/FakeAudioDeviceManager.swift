@@ -14,6 +14,8 @@ public final class FakeAudioDeviceManager: AudioDeviceManaging {
     /// The selected input; set it to nil or another id to act like iOS changing the route.
     public var currentInputID: String?
     public var error: (any Error)?
+    public var microphoneAccess = true
+    public private(set) var microphoneRequests = 0
     private var continuations: [AsyncStream<AudioSessionEvent>.Continuation] = []
 
     public init(inputs: [AudioInput] = []) {
@@ -31,6 +33,11 @@ public final class FakeAudioDeviceManager: AudioDeviceManaging {
     }
 
     public func availableInputs() -> [AudioInput] { inputs }
+
+    public func requestMicrophoneAccess() async -> Bool {
+        microphoneRequests += 1
+        return microphoneAccess
+    }
 
     public func selectInput(id: String, builtInMode: BuiltInMicMode) throws {
         guard let input = inputs.first(where: { $0.id == id }) else { throw AudioDeviceError.inputUnavailable }

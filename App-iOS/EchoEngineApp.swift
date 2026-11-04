@@ -10,6 +10,7 @@ struct EchoEngineApp: App {
     @State private var homeModel: HomeModel
     @State private var importModel: ImportModel
     @State private var recoveryModel: RecordingRecoveryModel
+    @State private var recordModel: RecordModel
 
     init() {
         let container = AppContainer()
@@ -23,12 +24,16 @@ struct EchoEngineApp: App {
         _homeModel = State(initialValue: container.makeHomeModel())
         _importModel = State(initialValue: container.makeImportModel())
         _recoveryModel = State(initialValue: container.makeRecordingRecoveryModel())
+        _recordModel = State(initialValue: container.makeRecordModel())
     }
 
     var body: some Scene {
         WindowGroup {
             let tint = container.settings.tint
-            RootView(container: container, homeModel: homeModel, importModel: importModel, recoveryModel: recoveryModel)
+            RootView(
+                container: container, homeModel: homeModel, importModel: importModel, recoveryModel: recoveryModel,
+                recordModel: recordModel
+            )
                 .environment(\.appTint, tint)
                 .environment(\.deviceFamily, .current)
                 // System-tinted controls are mostly text and icons on Ground, so they use the text role.

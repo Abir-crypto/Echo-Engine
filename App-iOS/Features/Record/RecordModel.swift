@@ -1,0 +1,453 @@
+import EchoCore
+import Foundation
+import Observation
+
+/// The Record tab (SPEC § 13, mockup `Design/screens/Record.dc.html`): chooses the input and its channels, meters them,
+/// records a take and makes it a project on Stop. While a take is open it keeps the session marker (crash recovery),
+/// the idle timer, the Live Activity and its Stop in step with the engine, and finishes takes the engine ended by itself
+/// (low storage, write failure). Interruptions go through `RecordingInterruptions`.
+@MainActor
+@Observable
+final class RecordModel {
+    enum Problem: Equatable {
+        /// The person didn't allow the microphone.
+        case microphoneDenied
+        case noInput
+        /// Below the storage policy's start minimum (SPEC § 15).
+        case notEnoughSpace(availableBytes: Int64)
+        case cantStart
+        /// The take's input is gone; it continues once it's back (SPEC § 13.7).
+        case inputMissing(name: String)
+        /// A call or another app still holds the microphone.
+        case microphoneBusy
+        /// The take couldn't become a project; it stays on disk and is offered again at the next launch.
+        case cantSave
+    }
+
+    /// One channel of the input as the take records it.
+    struct Channel: Identifiable, Equatable {
+        /// The input channel (0-based).
+        let index: Int
+        var name: String
+        var isOn: Bool
+        var id: Int { index }
+    }
+
+    private(set) var inputs: [AudioInput] = []
+    private(set) var selectedInputID: String?
+    private(set) var builtInMode: BuiltInMicMode = .mono
+    private(set) var channels: [Channel] = []
+    /// Meter position (0…1) of every input channel, falling back slowly after a peak.
+    private(set) var levels: [Double] = []
+    private(set) var problem: Problem?
+    /// Why the engine ended a take by itself; the take was saved as `noticeProjectID`.
+    private(set) var stopNotice: TakeEndReason?
+    private(set) var noticeProjectID: UUID?
+    /// A finished recording to open in the Editor.
+    private(set) var finishedProjectID: UUID?
+    private(set) var isStarting = false
+    private(set) var isFinishing = false
+    var isDimmed = false
+
+    @ObservationIgnored let engine: any RecordingEngine
+    @ObservationIgnored private let devices: any AudioDeviceManaging
+    @ObservationIgnored private let interruptions: RecordingInterruptions
+    @ObservationIgnored private let projects: any ProjectRepository
+    @ObservationIgnored private let builder: any RecordedProjectBuilding
+    @ObservationIgnored private let idleTimer: any IdleTimerControlling
+    @ObservationIgnored private let activity: any RecordingActivityPresenting
+    @ObservationIgnored private let stopRelay: RecordingStopRelay
+    @ObservationIgnored private let settings: any AppSettingsStore
+    @ObservationIgnored private let clock: any DateProviding
+    @ObservationIgnored private let title: (Date) -> String
+    @ObservationIgnored private var take: OpenTake?
+    @ObservationIgnored private var isOnScreen = false
+    @ObservationIgnored private var meterTask: Task<Void, Never>?
+    @ObservationIgnored private var listeningTasks: [Task<Void, Never>] = []
+
+    private struct OpenTake {
+        let id: UUID
+        let folder: TakeFolder
+        var session: TakeSession
+    }
+
+    /// How far a meter falls per update (30 a second): 20 dB a second over the meter's 60 dB.
+    static let meterFall = 20.0 / 30 / -MeterScale.floorDB
+
+    /// `title` makes the default title from the time a take started (SPEC § 5.4).
+    init(
+        engine: any RecordingEngine,
+        devices: any AudioDeviceManaging,
+        interruptions: RecordingInterruptions,
+        projects: any ProjectRepository,
+        builder: any RecordedProjectBuilding,
+        idleTimer: any IdleTimerControlling,
+        activity: any RecordingActivityPresenting,
+        stopRelay: RecordingStopRelay,
+        settings: any AppSettingsStore,
+        clock: any DateProviding,
+        title: @escaping (Date) -> String
+    ) {
+        self.engine = engine
+        self.devices = devices
+        self.interruptions = interruptions
+        self.projects = projects
+        self.builder = builder
+        self.idleTimer = idleTimer
+        self.activity = activity
+        self.stopRelay = stopRelay
+        self.settings = settings
+        self.clock = clock
+        self.title = title
+    }
+
+    // MARK: State
+
+    var state: RecordingState { engine.state }
+    var selectedInput: AudioInput? { inputs.first { $0.id == selectedInputID } }
+    /// The channels the take records, in take order.
+    var recordedChannels: [Channel] { channels.filter(\.isOn) }
+    /// A take is open: the input and channels are locked (SPEC § 13.2).
+    var hasTake: Bool { take != nil }
+    var canChangeInput: Bool { take == nil && !isStarting && problem != .microphoneDenied }
+    var canRecord: Bool { take == nil && !isStarting && state == .ready && !recordedChannels.isEmpty }
+    var canResume: Bool {
+        switch state {
+        case .paused: true
+        case .pausedByInterruption: interruptions.canResume
+        default: false
+        }
+    }
+    /// Whether the selected built-in mic can record stereo.
+    var offersStereo: Bool { selectedInput?.kind == .builtInMic && selectedInput?.supportsStereo == true }
+    /// Channels to choose from: only interfaces with several.
+    var offersChannelChoice: Bool { selectedInput?.kind != .builtInMic && channels.count > 1 }
+
+    func level(of channel: Channel) -> Double {
+        levels.indices.contains(channel.index) ? levels[channel.index] : 0
+    }
+
+    // MARK: Screen
+
+    /// The tab appeared: asks for the microphone, sets up the session and the input, starts the meters.
+    func appear() async {
+        isOnScreen = true
+        defer { updateIdleTimer() }
+        guard take == nil else { return }
+        guard await devices.requestMicrophoneAccess() else {
+            problem = .microphoneDenied
+            return
+        }
+        if problem == .microphoneDenied { problem = nil }
+        do {
+            try devices.activateForRecording()
+        } catch {
+            problem = .cantStart
+            return
+        }
+        startListening()
+        refreshInputs()
+        configure()
+        startMeters()
+    }
+
+    /// The tab went away: the screen may lock again; without a take the engine stops.
+    func disappear() {
+        isOnScreen = false
+        updateIdleTimer()
+        guard take == nil else { return }
+        stopMeters()
+        engine.shutDown()
+    }
+
+    // MARK: Input
+
+    func selectInput(id: String) {
+        guard canChangeInput, id != selectedInputID else { return }
+        selectedInputID = id
+        channels = []
+        configure()
+    }
+
+    func setBuiltInMode(_ mode: BuiltInMicMode) {
+        guard canChangeInput, mode != builtInMode else { return }
+        builtInMode = mode
+        channels = []
+        configure()
+    }
+
+    func setChannel(_ index: Int, isOn: Bool) {
+        guard canChangeInput, let position = channels.firstIndex(where: { $0.index == index }) else { return }
+        channels[position].isOn = isOn
+        prepareEngine()
+    }
+
+    func renameChannel(_ index: Int, to name: String) {
+        guard canChangeInput, let position = channels.firstIndex(where: { $0.index == index }) else { return }
+        channels[position].name = name
+    }
+
+    // MARK: Take
+
+    func record() async {
+        guard canRecord else { return }
+        isStarting = true
+        defer { isStarting = false }
+        problem = nil
+        let id = UUID()
+        let session = TakeSession(startedAt: clock.now, channelNames: recordedChannels.map(channelName))
+        do {
+            let folder = try await projects.createFolder(for: id).takeFolder
+            // The marker exists before any audio does, so a kill from here on leaves a take to recover.
+            try session.write(to: folder)
+            if let selectedInputID { interruptions.track(inputID: selectedInputID, builtInMode: builtInMode) }
+            try engine.startTake(in: folder)
+            take = OpenTake(id: id, folder: folder, session: session)
+        } catch {
+            try? await projects.delete(id: id)
+            if case RecordingError.notEnoughSpace(let available) = error {
+                problem = .notEnoughSpace(availableBytes: available)
+            } else {
+                problem = .cantStart
+            }
+            return
+        }
+        activity.start(tint: settings.tint)
+        stopRelay.handler = { [weak self] in await self?.stop() }
+        updateIdleTimer()
+    }
+
+    func pause() {
+        engine.pause()
+        updateIdleTimer()
+    }
+
+    func resume() {
+        problem = nil
+        do {
+            if case .pausedByInterruption = state {
+                try interruptions.resume()
+            } else {
+                try engine.resume()
+            }
+        } catch RecordingError.inputChanged {
+            problem = .inputMissing(name: selectedInput?.name ?? "")
+        } catch RecordingError.engineUnavailable {
+            problem = .microphoneBusy
+        } catch {
+            problem = .cantStart
+        }
+        updateIdleTimer()
+    }
+
+    /// Ends the take and makes it a project, then opens it (`finishedProjectID`). Also the Live Activity's Stop.
+    func stop() async {
+        await finish(notice: nil)
+    }
+
+    func didOpenFinishedProject() {
+        finishedProjectID = nil
+    }
+
+    /// Opens the take the engine ended by itself.
+    func openNoticeProject() {
+        finishedProjectID = noticeProjectID
+        dismissNotice()
+    }
+
+    func dismissNotice() {
+        stopNotice = nil
+        noticeProjectID = nil
+    }
+
+    func dismissProblem() {
+        problem = nil
+    }
+
+    // MARK: Meters and take upkeep
+
+    /// One meter update (30 a second while the tab shows or a take is open): levels, the take's marker file, the Live
+    /// Activity, and takes the engine ended by itself.
+    func tick() {
+        let peaks = engine.takePeakLevels()
+        levels = peaks.enumerated().map { index, peak in
+            let previous = levels.indices.contains(index) ? levels[index] : 0
+            return max(MeterScale.fraction(forPeak: peak), previous - Self.meterFall)
+        }
+        updateIdleTimer()
+        guard var take, !isFinishing else { return }
+        if case .ended(let reason) = state {
+            Task { await finish(notice: reason) }
+            return
+        }
+        if engine.markers != take.session.markers {
+            take.session.markers = engine.markers
+            self.take = take
+            try? take.session.write(to: take.folder)
+        }
+        let loudest = recordedChannels.map(level(of:)).max() ?? 0
+        activity.update(elapsedSeconds: engine.elapsedSeconds, isPaused: state != .recording, level: loudest)
+    }
+
+    private func finish(notice: TakeEndReason?) async {
+        guard let take, !isFinishing else { return }
+        isFinishing = true
+        defer { isFinishing = false }
+        isDimmed = false
+        var session = take.session
+        do {
+            let recorded = try await engine.finishTake()
+            session.markers = recorded.markers
+            let project = try await builder.buildProject(
+                id: take.id, title: title(session.startedAt), session: session, editingSource: .processed
+            )
+            if let notice {
+                stopNotice = notice
+                noticeProjectID = project.id
+            } else {
+                finishedProjectID = project.id
+            }
+        } catch RecordingError.emptyTake {
+            // Stopped before any audio arrived: nothing to keep.
+            try? await projects.delete(id: take.id)
+        } catch {
+            // The take and its marker stay: the next launch offers to recover it.
+            problem = .cantSave
+        }
+        self.take = nil
+        activity.end()
+        stopRelay.handler = nil
+        updateIdleTimer()
+        if !isOnScreen {
+            stopMeters()
+            engine.shutDown()
+        }
+    }
+
+    // MARK: Engine set-up
+
+    private func startListening() {
+        guard listeningTasks.isEmpty else { return }
+        let events = devices.sessionEvents()
+        listeningTasks = [
+            Task { [interruptions] in await interruptions.run() },
+            Task { [weak self] in
+                for await event in events {
+                    self?.handle(event)
+                }
+            },
+        ]
+    }
+
+    func handle(_ event: AudioSessionEvent) {
+        switch event {
+        case .availableInputsChanged:
+            let previous = selectedInputID
+            refreshInputs()
+            if take == nil, isOnScreen, selectedInputID != previous { configure() }
+        case .interruptionEnded:
+            // Without a take the interruption stopped the meters; start them again.
+            guard take == nil, isOnScreen, state == .idle else { return }
+            try? devices.activateForRecording()
+            configure()
+        case .interruptionBegan, .inputDeviceRemoved, .outputDeviceRemoved:
+            break
+        }
+    }
+
+    private func refreshInputs() {
+        inputs = devices.availableInputs()
+        guard selectedInputID.map({ id in !inputs.contains { $0.id == id } }) ?? true else { return }
+        // The input in use (a headset just plugged in), else the built-in mic, else any.
+        let current = devices.currentInputID.flatMap { id in inputs.first { $0.id == id } }
+        selectedInputID = (current ?? inputs.first { $0.kind == .builtInMic } ?? inputs.first)?.id
+        channels = []
+    }
+
+    /// Routes the session to the selected input, lists its channels and starts metering them.
+    private func configure() {
+        guard take == nil else { return }
+        guard let input = selectedInput else {
+            problem = .noInput
+            engine.shutDown()
+            return
+        }
+        if problem == .noInput { problem = nil }
+        do {
+            try devices.selectInput(id: input.id, builtInMode: builtInMode)
+        } catch {
+            problem = .noInput
+            return
+        }
+        if channels.isEmpty {
+            channels = Self.channels(for: input, mode: builtInMode, count: devices.selectedInputChannelCount)
+        }
+        prepareEngine()
+    }
+
+    private func prepareEngine() {
+        do {
+            try engine.prepare(configuration)
+            if problem == .cantStart { problem = nil }
+        } catch RecordingError.channelsUnavailable where builtInMode == .stereo {
+            // This device doesn't deliver stereo after all.
+            builtInMode = .mono
+            channels = []
+            configure()
+        } catch {
+            problem = .cantStart
+        }
+    }
+
+    /// The take's configuration; with no channel chosen, the first one is metered (nothing can be recorded then).
+    private var configuration: RecordingConfiguration {
+        if selectedInput?.kind == .builtInMic, builtInMode == .stereo, channels.count == 2 { return .builtInStereo }
+        let chosen = recordedChannels.map(\.index)
+        return .mono(channels: chosen.isEmpty ? [0] : chosen)
+    }
+
+    private func channelName(_ channel: Channel) -> String {
+        let name = channel.name.trimmingCharacters(in: .whitespacesAndNewlines)
+        return name.isEmpty ? Self.defaultName(ofChannel: channel.index) : name
+    }
+
+    static func defaultName(ofChannel index: Int) -> String {
+        String(localized: "Channel \(index + 1)", comment: "Default name of an input channel, e.g. Channel 2.")
+    }
+
+    /// The built-in mic records one mono or a left and right channel; an interface offers each of its channels, the
+    /// first one chosen; a headset is one channel.
+    static func channels(for input: AudioInput, mode: BuiltInMicMode, count: Int) -> [Channel] {
+        if input.kind == .builtInMic {
+            guard mode == .stereo, input.supportsStereo else { return [Channel(index: 0, name: input.name, isOn: true)] }
+            return [
+                Channel(index: 0, name: String(localized: "Left", comment: "Left channel of the built-in mic in stereo."), isOn: true),
+                Channel(index: 1, name: String(localized: "Right", comment: "Right channel of the built-in mic in stereo."), isOn: true),
+            ]
+        }
+        guard count > 1 else { return [Channel(index: 0, name: input.name, isOn: true)] }
+        return (0..<count).map { Channel(index: $0, name: defaultName(ofChannel: $0), isOn: $0 == 0) }
+    }
+
+    private func startMeters() {
+        guard meterTask == nil else { return }
+        meterTask = Task { [weak self] in
+            while !Task.isCancelled {
+                self?.tick()
+                try? await Task.sleep(for: .milliseconds(33))
+            }
+        }
+    }
+
+    private func stopMeters() {
+        meterTask?.cancel()
+        meterTask = nil
+        levels = []
+    }
+
+    /// The screen stays on only while recording on this tab (SPEC § 13.7).
+    private func updateIdleTimer() {
+        let keepsOn = isOnScreen && state == .recording
+        if idleTimer.keepsScreenOn != keepsOn { idleTimer.keepsScreenOn = keepsOn }
+    }
+}

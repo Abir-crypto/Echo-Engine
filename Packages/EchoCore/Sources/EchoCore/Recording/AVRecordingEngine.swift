@@ -34,8 +34,7 @@ public final class AVRecordingEngine: RecordingEngine {
     @ObservationIgnored private var take: OpenTake?
     /// A take the engine ended by itself, until `finishTake` collects it.
     @ObservationIgnored private var endedTake: RecordedTake?
-    /// The open take's interruptions.
-    @ObservationIgnored private var markers: [RecordingMetadata.Marker] = []
+    @ObservationIgnored public private(set) var markers: [RecordingMetadata.Marker] = []
     @ObservationIgnored private var configurationObserver: (any NSObjectProtocol)?
 
     private struct OpenTake {
