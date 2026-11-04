@@ -6,12 +6,12 @@ import EchoCoreFakes
 #endif
 
 /// Record tab (SPEC § 13.1, mockup `Design/screens/Record.dc.html`): input pill, status and timer, a named meter per
-/// recorded channel, the background message while a take is open, Pause and Record/Stop, and dim mode. The mockup's
-/// Noise reduction, Auto-tune and Backing track rows arrive with their features (F11.T03, F12).
+/// recorded channel, the background message while a take is open, Pause and Record/Stop, and dim mode. Settings rows:
+/// Noise reduction, Input gain and, with headphones, Monitor (SPEC § 13.4); Auto-tune and Backing track come with F12.
 struct RecordView: View {
     let model: RecordModel
 
-    @State private var showsInputSheet = false
+    @State private var sheet: RecordSheet?
 
     var body: some View {
         NavigationStack {
@@ -35,12 +35,17 @@ struct RecordView: View {
         .task {
             await model.appear()
             #if DEBUG
-            if UserDefaults.standard.string(forKey: DebugRecordTab.sheetArgument) == "input" { showsInputSheet = true }
+            if let name = UserDefaults.standard.string(forKey: DebugRecordTab.sheetArgument) { sheet = RecordSheet(rawValue: name) }
             #endif
         }
         .onDisappear { model.disappear() }
-        .sheet(isPresented: $showsInputSheet) {
-            InputSheet(model: model)
+        .sheet(item: $sheet) { sheet in
+            switch sheet {
+            case .input: InputSheet(model: model)
+            case .noiseReduction: NoiseReductionSheet(model: model)
+            case .inputGain: InputGainSheet(model: model)
+            case .monitor: MonitorSheet(model: model)
+            }
         }
         .fullScreenCover(isPresented: Binding(get: { model.isDimmed }, set: { model.isDimmed = $0 })) {
             DimRecordingView(model: model)
@@ -71,6 +76,8 @@ struct RecordView: View {
 
     private var recorder: some View {
         VStack(spacing: 16) {
+            RecordSettingsRows(model: model, open: { sheet = $0 })
+
             VStack(spacing: 6) {
                 RecordingStatus(state: model.state, hasTake: model.hasTake)
                 RecordingTimer(engine: model.engine)
@@ -108,7 +115,7 @@ struct RecordView: View {
 
     private var inputButton: some View {
         Button {
-            showsInputSheet = true
+            sheet = .input
         } label: {
             HStack(spacing: 6) {
                 Text(model.selectedInput?.name ?? String(localized: "Input", comment: "Input device button before one is known."))

@@ -13,6 +13,7 @@ public final class FakeAudioDeviceManager: AudioDeviceManaging {
     public var selectedInputChannelCount: Int { selectedInput?.channelCount ?? 0 }
     /// The selected input; set it to nil or another id to act like iOS changing the route.
     public var currentInputID: String?
+    public var outputKind = AudioOutputKind.speaker
     public var error: (any Error)?
     public var microphoneAccess = true
     public private(set) var microphoneRequests = 0

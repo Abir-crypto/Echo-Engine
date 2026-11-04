@@ -19,11 +19,15 @@ struct RecordModelTests {
         let idleTimer: FakeIdleTimer
         let activity: FakeRecordingActivity
         let relay: RecordingStopRelay
+        let settings: FakeAppSettingsStore
     }
 
     private func fixture(
-        inputs: [AudioInput]? = nil, builder: FakeRecordedProjectBuilder = FakeRecordedProjectBuilder()
+        inputs: [AudioInput]? = nil, builder: FakeRecordedProjectBuilder = FakeRecordedProjectBuilder(),
+        recording: RecordingSettings = RecordingSettings()
     ) -> Fixture {
+        let settings = FakeAppSettingsStore(tint: .teal)
+        settings.recording = recording
         let devices = FakeAudioDeviceManager(inputs: inputs ?? [builtIn, usb])
         let engine = FakeRecordingEngine(inputChannels: 2, peaks: [0.5, 0.05])
         let projects = FakeProjectRepository()
@@ -33,12 +37,12 @@ struct RecordModelTests {
         let model = RecordModel(
             engine: engine, devices: devices, interruptions: RecordingInterruptions(devices: devices, engine: engine),
             projects: projects, builder: builder, idleTimer: idleTimer, activity: activity, stopRelay: relay,
-            settings: FakeAppSettingsStore(tint: .teal), clock: FakeClock(now: started),
+            settings: settings, clock: FakeClock(now: started),
             title: { "Recording at \($0.timeIntervalSince1970)" }
         )
         return Fixture(
             model: model, engine: engine, devices: devices, projects: projects, builder: builder, idleTimer: idleTimer,
-            activity: activity, relay: relay
+            activity: activity, relay: relay, settings: settings
         )
     }
 
@@ -301,5 +305,54 @@ struct RecordModelTests {
         #expect(folder.flatMap { try? TakeSession.read(from: $0).parameterChanges } == [
             .init(time: 0, parameter: .inputGain, value: -3), .init(time: 0, parameter: .suppression, value: 1),
         ], "the take starts from them")
+    }
+
+    // MARK: Monitoring and remembered settings (F11.T03)
+
+    @Test func monitoringOnlyPlaysThroughHeadphones() async {
+        let fixture = fixture()
+        await fixture.model.appear()
+        #expect(!fixture.model.offersMonitoring, "the speaker: no Monitor row")
+        fixture.model.setMonitoring(true)
+        #expect(fixture.engine.monitorVolume == 0, "never through the speaker")
+
+        fixture.devices.outputKind = .wiredHeadphones
+        fixture.model.handle(.availableInputsChanged)
+        #expect(fixture.model.offersMonitoring)
+        #expect(fixture.engine.monitorVolume == 0.8)
+        fixture.model.setMonitorVolume(0.5)
+        #expect(fixture.engine.monitorVolume == 0.5)
+
+        fixture.devices.outputKind = .speaker
+        fixture.model.handle(.outputDeviceRemoved)
+        #expect(fixture.engine.monitorVolume == 0, "unplugged: silent at once")
+        #expect(fixture.settings.recording == RecordingSettings(isMonitoring: true, monitorVolume: 0.5), "remembered")
+    }
+
+    @Test func monitoringStartsOff() async {
+        let fixture = fixture()
+        fixture.devices.outputKind = .wiredHeadphones
+        await fixture.model.appear()
+        #expect(!fixture.model.isMonitoring)
+        #expect(fixture.engine.monitorVolume == 0)
+    }
+
+    @Test func settingsCarryOverToTheNextRecording() async {
+        let fixture = fixture(recording: RecordingSettings(suppression: .high, inputGainDB: 3))
+        await fixture.model.appear()
+        #expect(fixture.engine.suppression.level == .high)
+        #expect(fixture.engine.inputGainDB == 3)
+        fixture.model.setSuppression(.standard)
+        fixture.model.setInputGain(-2)
+        fixture.model.commitInputGain()
+        #expect(fixture.settings.recording.suppression == .standard)
+        #expect(fixture.settings.recording.inputGainDB == -2)
+    }
+
+    @Test func theRowCaptionSaysWhatRuns() {
+        #expect(SuppressionCaption(state: SuppressionState(level: .high, effective: .standard, usesVoiceProcessing: true)) != nil)
+        #expect(SuppressionCaption(state: SuppressionState(level: .standard, effective: .standard, usesVoiceProcessing: false)) != nil)
+        #expect(SuppressionCaption(state: SuppressionState(level: .standard, effective: .standard, usesVoiceProcessing: true)) == nil)
+        #expect(SuppressionCaption(state: .off) == nil)
     }
 }

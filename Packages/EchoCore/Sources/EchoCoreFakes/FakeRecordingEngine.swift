@@ -42,6 +42,11 @@ public final class FakeRecordingEngine: RecordingEngine {
     }
 
     public private(set) var inputGainDB: Double = 0
+    public private(set) var monitorVolume: Double = 0
+
+    public func setMonitorVolume(_ volume: Double) {
+        monitorVolume = min(1, max(0, volume))
+    }
 
     public func setInputGain(_ db: Double) {
         inputGainDB = min(24, max(-24, db))

@@ -65,6 +65,15 @@ final class IOSAudioDeviceManager: AudioDeviceManaging {
         session.currentRoute.inputs.first?.uid
     }
 
+    var outputKind: AudioOutputKind {
+        switch session.currentRoute.outputs.first?.portType {
+        case .builtInSpeaker?, .builtInReceiver?, nil: .speaker
+        case .headphones?, .usbAudio?, .lineOut?: .wiredHeadphones
+        case .bluetoothA2DP?, .bluetoothHFP?, .bluetoothLE?: .bluetooth
+        default: .other
+        }
+    }
+
     func requestMicrophoneAccess() async -> Bool {
         await AVAudioApplication.requestRecordPermission()
     }

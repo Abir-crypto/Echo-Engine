@@ -37,6 +37,7 @@ public final class AVRecordingEngine: RecordingEngine {
     @ObservationIgnored public private(set) var markers: [RecordingMetadata.Marker] = []
     public private(set) var suppression = SuppressionState.off
     public private(set) var inputGainDB: Double = 0
+    public private(set) var monitorVolume: Double = 0
     @ObservationIgnored private var isVoiceProcessingOn = false
     @ObservationIgnored private var configurationObserver: (any NSObjectProtocol)?
 
@@ -131,8 +132,8 @@ public final class AVRecordingEngine: RecordingEngine {
         engine.disconnectNodeOutput(captureNode)
         engine.connect(engine.inputNode, to: captureNode, format: format)
         engine.connect(captureNode, to: engine.mainMixerNode, format: monitorFormat)
-        // Monitoring through headphones is F11.T03; until then nothing is heard.
-        engine.mainMixerNode.outputVolume = 0
+        // Silent unless monitoring is on (headphones only; the caller decides).
+        engine.mainMixerNode.outputVolume = Float(monitorVolume)
         do {
             engine.prepare()
             try engine.start()
@@ -143,6 +144,11 @@ public final class AVRecordingEngine: RecordingEngine {
         inputChannelCount = Int(format.channelCount)
         state = .ready
         applySuppression()
+    }
+
+    public func setMonitorVolume(_ volume: Double) {
+        monitorVolume = min(1, max(0, volume))
+        engine.mainMixerNode.outputVolume = Float(monitorVolume)
     }
 
     public func setInputGain(_ db: Double) {

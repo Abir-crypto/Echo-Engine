@@ -119,6 +119,9 @@
     "Apple Music" : {
       "comment" : "Loudness target named after a platform; keep the brand name."
     },
+    "Apple’s voice processing with a noise gate. Good for speech in a quiet room." : {
+      "comment" : "Noise reduction sheet: what Standard does."
+    },
     "Applied top to bottom" : {
       "comment" : "Caption next to the Enhance title: steps run in list order."
     },
@@ -167,6 +170,9 @@
     "Bitrate" : {
       "comment" : "Export sheet, Custom quality: AAC bitrate in kbps."
     },
+    "Bluetooth headphones add a delay. Wired headphones are best for monitoring." : {
+      "comment" : "Monitor sheet note with Bluetooth headphones."
+    },
     "Both" : {
       "comment" : "Export as: the video and a separate audio file."
     },
@@ -186,7 +192,7 @@
       "comment" : "Cancel button."
     },
     "Can’t recover this recording" : {
-      "comment" : "Alert title: an unfinished recording couldn’t be made a project."
+      "comment" : "Alert title: an unfinished recording couldn't be made a project."
     },
     "Change strength" : {
       "comment" : "VoiceOver action on an Enhance row."
@@ -194,11 +200,14 @@
     "Changes couldn’t be saved. Free up some space, then try again." : {
       "comment" : "Editor error."
     },
+    "Changing to or from Standard during a recording leaves a short gap." : {
+      "comment" : "Noise reduction sheet note during a take."
+    },
     "Channel %lld" : {
       "comment" : "Default name of an input channel, e.g. Channel 2."
     },
     "Channels" : {
-      "comment" : "Section of the input sheet: the interface’s channels."
+      "comment" : "Section of the input sheet: the interface's channels."
     },
     "Choose a channel to record in Input." : {
       "comment" : "Record screen: no interface channel is chosen."
@@ -349,8 +358,14 @@
     "Gain and dynamics" : {
       "comment" : "Editor Adjust row and sheet title: input gain, gate, compressor, de-esser, limiter."
     },
+    "Hear yourself" : {
+      "comment" : "Monitor switch title."
+    },
     "High" : {
       "comment" : "EQ band chip: the high shelf band."
+    },
+    "High needs a wired or built-in microphone, so Standard is used." : {
+      "comment" : "Caption under Noise reduction: High can’t run at this input’s rate."
     },
     "High shelf" : {
       "comment" : "EQ band type shown above its sliders."
@@ -433,6 +448,9 @@
     "Mix" : {
       "comment" : "Reverb: how much room sound is mixed in (slider, percent)."
     },
+    "Monitor" : {
+      "comment" : "Record settings row and sheet title: hearing yourself in headphones."
+    },
     "Mono" : {
       "comment" : "Built-in mic records one channel."
     },
@@ -446,7 +464,7 @@
       "comment" : "Placeholder of the preset name field."
     },
     "Name of %@" : {
-      "comment" : "VoiceOver label of a channel’s name field, e.g. Name of Channel 2."
+      "comment" : "VoiceOver label of a channel's name field, e.g. Name of Channel 2."
     },
     "Need %@ more to edit this project. Free up space on your iPad, then come back. Your import is saved." : {
       "comment" : "Editor blocked by storage on iPad (SPEC § 9). %@ = missing space."
@@ -475,6 +493,9 @@
     "Noise gate" : {
       "comment" : "Gain and dynamics: section and switch title."
     },
+    "Noise reduction" : {
+      "comment" : "Record settings row and sheet title."
+    },
     "Noise Suppression" : {
       "comment" : "AI feature name: removes background noise."
     },
@@ -488,10 +509,13 @@
       "comment" : "Leaves an unfinished recording for the next launch."
     },
     "Off" : {
-      "comment" : "Value of an Adjust row when nothing in it is on; also the Loudness option that turns Auto Level off."
+      "comment" : "Value of a row when nothing in it is on (Adjust, Record settings and Monitor); the Loudness option that turns Auto Level off; the noise reduction level Off."
     },
     "OK" : {
       "comment" : "Dismisses an alert."
+    },
+    "Only through headphones, never the speaker." : {
+      "comment" : "Monitor sheet caption."
     },
     "Open recording" : {
       "comment" : "Opens the recording that was stopped and saved."
@@ -544,6 +568,9 @@
     "Plays the enhancements up to this one." : {
       "comment" : "VoiceOver hint of an Enhance row (per-step A/B)."
     },
+    "Plays what’s recorded into your headphones." : {
+      "comment" : "Monitor switch caption."
+    },
     "Podcast" : {
       "comment" : "Loudness target for podcasts."
     },
@@ -590,7 +617,7 @@
       "comment" : "Tab bar item and title of the record screen."
     },
     "Record %@" : {
-      "comment" : "VoiceOver label of a channel’s switch, e.g. Record Channel 2."
+      "comment" : "VoiceOver label of a channel's switch, e.g. Record Channel 2."
     },
     "Recorded time" : {
       "comment" : "VoiceOver label of the recording timer."
@@ -613,11 +640,36 @@
     "Recording stopped" : {
       "comment" : "Alert title: the app ended the recording by itself."
     },
+    "recording.noiseReduction.high" : {
+      "comment" : "Noise reduction level: on-device noise removal.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "High"
+          }
+        }
+      }
+    },
+    "recording.noiseReduction.standard" : {
+      "comment" : "Noise reduction level: Apple voice processing and a noise gate.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Standard"
+          }
+        }
+      }
+    },
+    "Records the microphone as it is." : {
+      "comment" : "Noise reduction sheet: what Off does."
+    },
     "Recover" : {
       "comment" : "Makes a project of an unfinished recording and opens it."
     },
     "Recover recording?" : {
-      "comment" : "Alert title at launch: a recording didn’t finish because the app closed."
+      "comment" : "Alert title at launch: a recording didn't finish because the app closed."
     },
     "Redo" : {
       "comment" : "Accessibility label of the redo button."
@@ -633,6 +685,9 @@
     },
     "Removes noise and makes speech crisper and more even." : {
       "comment" : "One-line description of Clear Voice in Add enhancement."
+    },
+    "Removes steady noise like fans and traffic, on your iPhone. While monitoring you hear yourself about 30 ms later." : {
+      "comment" : "Noise reduction sheet: what High does."
     },
     "Rename" : {
       "comment" : "Rename action for a project."
@@ -684,6 +739,9 @@
     },
     "Saving…" : {
       "comment" : "Export sheet title while the file goes to Photos, Files or the share sheet."
+    },
+    "Set it so your loudest parts stay out of the red. It changes the processed recording; the original keeps the microphone’s level." : {
+      "comment" : "Input gain sheet caption."
     },
     "Settings" : {
       "comment" : "Settings button and screen title."
@@ -811,6 +869,9 @@
     "Update Echo Engine to use it." : {
       "comment" : "Description of a step made by a newer app version."
     },
+    "Use wired headphones for monitoring" : {
+      "comment" : "Tip on the Record screen when monitoring timing matters over Bluetooth."
+    },
     "Video" : {
       "comment" : "Subtitle of the background export progress: a video is being made."
     },
@@ -823,8 +884,17 @@
     "Voice Leveler" : {
       "comment" : "AI feature name: evens out speaker levels."
     },
+    "Volume" : {
+      "comment" : "Monitor volume slider."
+    },
     "Waveform" : {
       "comment" : "Accessibility label of the editor waveform."
+    },
+    "With High noise reduction you hear yourself about 30 ms later." : {
+      "comment" : "Monitor sheet note with High noise reduction."
+    },
+    "With this input, Standard uses a noise gate only." : {
+      "comment" : "Caption under Noise reduction: voice processing can’t run with this input."
     },
     "Yesterday" : {
       "comment" : "Project card date when the project changed yesterday."

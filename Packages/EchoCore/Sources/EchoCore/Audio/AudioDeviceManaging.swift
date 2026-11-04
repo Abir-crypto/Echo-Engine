@@ -19,6 +19,8 @@ public protocol AudioDeviceManaging: AnyObject {
     var selectedInputChannelCount: Int { get }
     /// The input the session records from right now (`AudioInput.id`); nil without one.
     var currentInputID: String? { get }
+    /// Where the session plays now: monitoring is only ever heard through headphones (SPEC § 13.4).
+    var outputKind: AudioOutputKind { get }
     /// Whether the app may record (SPEC § 13): asks the person the first time, then answers at once.
     func requestMicrophoneAccess() async -> Bool
 }
@@ -46,6 +48,21 @@ public struct AudioInput: Identifiable, Equatable, Sendable {
 
     /// Bluetooth: "Higher delay, not ideal with auto-tune or backing tracks" (SPEC § 13.2).
     public var hasHigherDelay: Bool { kind == .bluetooth }
+}
+
+/// The kind of output the session plays through.
+public enum AudioOutputKind: Equatable, Sendable {
+    /// The built-in speaker or receiver: monitoring would feed back.
+    case speaker
+    /// Wired or USB headphones, or an interface's outputs: the lowest delay.
+    case wiredHeadphones
+    /// Bluetooth headphones: monitoring works, with a noticeable delay.
+    case bluetooth
+    /// AirPlay, a car, HDMI.
+    case other
+
+    /// Whether monitoring may play here: anything but the speaker.
+    public var allowsMonitoring: Bool { self == .wiredHeadphones || self == .bluetooth }
 }
 
 public enum BuiltInMicMode: String, Codable, Sendable {

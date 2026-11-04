@@ -387,7 +387,7 @@ Goal: reliable capture from any input with recovery.
 
 ---
 
-## F11 — Live processing in Record  [IN PROGRESS]
+## F11 — Live processing in Record  [DONE]
 Goal: live suppression, gain, leveling, clip protection.
 
 - [x] F11.T01 — Suppression tiers Off/Standard/High (live RNNoise ring buffer), voice-processing fallback rule (§ 13.4).
@@ -400,13 +400,17 @@ Goal: live suppression, gain, leveling, clip protection.
   > below −50 dBFS) → `LimiterKernel` at −1 dBFS; recorded latency 1,512 @ 48 kHz (monitor: 72, or 1,512 with High). Meters show the input gain.
   > Gain through the parameter tree (`setInputGain`). `RecordingMetadata.parameterChanges` (lenient) + `TakeSession`: start values, each tier change
   > and released gain slider (`RecordModel.setSuppression`/`setInputGain`/`commitInputGain`). Older tests now check alignment, not sample equality.
-- [ ] F11.T03 — Monitoring through headphones; wired-headphones tip; settings rows UI.
+- [x] F11.T03 — Monitoring through headphones; wired-headphones tip; settings rows UI.
+  > Done: `AudioOutputKind` (`IOSAudioDeviceManager.outputKind`); engine `setMonitorVolume` = main mixer volume, kept across `prepare`. `RecordModel`:
+  > monitor plays only when on and through headphones (speaker → 0 at once on unplug), `RecordingSettings` (suppression, gain, monitor on/volume) remembered in
+  > `AppSettingsStore` and applied at appear. UI: rows Noise reduction / Input gain / Monitor (headphones only) + fallback caption, sheets for each; wired tip
+  > waits for F12's auto-tune/backing track (`needsTightMonitoring`). Own keys `recording.noiseReduction.*` (EQ "High"/export "Standard" differ).
 
 **Checkpoint test (device):** record in a noisy room at each tier; shout to confirm no clipping in processed take; raw take untouched.
 
 ---
 
-## F12 — Auto-tune & backing tracks  [TODO]
+## F12 — Auto-tune & backing tracks  [IN PROGRESS]
 Goal: live pitch correction and sing-along.
 
 - [ ] F12.T01 — YIN pitch detector kernel + tests on synthetic tones.

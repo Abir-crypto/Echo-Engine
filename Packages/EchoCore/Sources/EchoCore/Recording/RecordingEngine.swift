@@ -26,6 +26,9 @@ public protocol RecordingEngine: AnyObject, Observable {
     /// The input gain before live processing (SPEC § 13.4), −24…+24 dB; ramped, any time. The meters show it.
     var inputGainDB: Double { get }
     func setInputGain(_ db: Double)
+    /// How loud the processed signal plays back to the person (SPEC § 13.4), 0…1; 0 is silent. Kept across `prepare`.
+    var monitorVolume: Double { get }
+    func setMonitorVolume(_ volume: Double)
     /// Asked when the system stops the engine for a route change: true when the recorded input is still the session's
     /// current one, so recording continues on it right away with a marker at the gap (user decision, SPEC § 13.7).
     /// Otherwise (or when nil) the take pauses like an interruption.

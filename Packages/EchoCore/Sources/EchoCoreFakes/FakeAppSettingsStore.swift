@@ -7,6 +7,7 @@ import Observation
 public final class FakeAppSettingsStore: AppSettingsStore {
     public var appearance: Appearance
     public var tint: AppTint
+    public var recording = RecordingSettings()
     public private(set) var exportChoices: [MediaType: ExportChoices] = [:]
 
     public init(appearance: Appearance = .default, tint: AppTint = .default) {

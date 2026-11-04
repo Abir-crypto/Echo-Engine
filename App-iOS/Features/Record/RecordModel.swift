@@ -48,6 +48,8 @@ final class RecordModel {
     private(set) var isStarting = false
     private(set) var isFinishing = false
     var isDimmed = false
+    /// Where the session plays: monitoring needs headphones (SPEC § 13.4).
+    private(set) var outputKind = AudioOutputKind.speaker
 
     @ObservationIgnored let engine: any RecordingEngine
     @ObservationIgnored private let devices: any AudioDeviceManaging
@@ -146,6 +148,10 @@ final class RecordModel {
             return
         }
         startListening()
+        // The settings of the last recording carry over (SPEC § 13.4).
+        engine.setSuppression(settings.recording.suppression)
+        engine.setInputGain(settings.recording.inputGainDB)
+        refreshOutput()
         refreshInputs()
         configure()
         startMeters()
@@ -279,6 +285,7 @@ final class RecordModel {
     func setSuppression(_ level: SuppressionLevel) {
         guard level != engine.suppression.level else { return }
         engine.setSuppression(level)
+        settings.recording.suppression = level
         log(.suppression, level.parameterChangeValue)
     }
 
@@ -289,7 +296,40 @@ final class RecordModel {
 
     /// The slider was released: one entry in the take's log.
     func commitInputGain() {
+        settings.recording.inputGainDB = engine.inputGainDB
         log(.inputGain, engine.inputGainDB)
+    }
+
+    // MARK: Monitoring (SPEC § 13.4)
+
+    var isMonitoring: Bool { settings.recording.isMonitoring }
+    var monitorVolume: Double { settings.recording.monitorVolume }
+    /// The Monitor row shows only with headphones: never through the speaker.
+    var offersMonitoring: Bool { outputKind.allowsMonitoring }
+    /// "Use wired headphones for monitoring": timing-critical monitoring over Bluetooth or AirPlay.
+    var showsWiredHeadphonesTip: Bool {
+        isMonitoring && needsTightMonitoring && outputKind != .wiredHeadphones && outputKind != .speaker
+    }
+    /// Auto-tune or a backing track is on (F12): then monitoring delay matters.
+    private var needsTightMonitoring: Bool { false }
+
+    func setMonitoring(_ isOn: Bool) {
+        settings.recording.isMonitoring = isOn
+        applyMonitor()
+    }
+
+    func setMonitorVolume(_ volume: Double) {
+        settings.recording.monitorVolume = min(1, max(0, volume))
+        applyMonitor()
+    }
+
+    private func refreshOutput() {
+        outputKind = devices.outputKind
+        applyMonitor()
+    }
+
+    private func applyMonitor() {
+        engine.setMonitorVolume(isMonitoring && outputKind.allowsMonitoring ? monitorVolume : 0)
     }
 
     /// Adds a setting to the open take's log (SPEC § 13.3) and to its marker file.
@@ -378,6 +418,7 @@ final class RecordModel {
     func handle(_ event: AudioSessionEvent) {
         switch event {
         case .availableInputsChanged:
+            refreshOutput()
             let previous = selectedInputID
             refreshInputs()
             if take == nil, isOnScreen, selectedInputID != previous { configure() }
@@ -386,7 +427,10 @@ final class RecordModel {
             guard take == nil, isOnScreen, state == .idle else { return }
             try? devices.activateForRecording()
             configure()
-        case .interruptionBegan, .inputDeviceRemoved, .outputDeviceRemoved:
+        case .outputDeviceRemoved:
+            // Headphones unplugged: silent at once, before anything reaches the speaker.
+            refreshOutput()
+        case .interruptionBegan, .inputDeviceRemoved:
             break
         }
     }
