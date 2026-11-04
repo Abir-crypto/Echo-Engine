@@ -82,6 +82,18 @@ public actor FileProjectRepository: ProjectRepository {
         try? Data(contentsOf: folder(for: id).thumbnail)
     }
 
+    public func storage(id: UUID) throws -> ProjectStorage {
+        let stored = try load(id: id)
+        let folder = folder(for: id)
+        let source = stored.project.sourceFileName.hasPrefix("takes/") ? 0 : try fileManager.allocatedSize(of: folder.source(fileName: stored.project.sourceFileName))
+        return ProjectStorage(
+            source: source,
+            working: try fileManager.allocatedSize(of: folder.working),
+            takes: try fileManager.allocatedSize(of: folder.takes),
+            folder: try fileManager.allocatedSize(of: folder.url)
+        )
+    }
+
     public func diskUsage(id: UUID) throws -> Int64 {
         let folder = folder(for: id)
         guard fileManager.fileExists(atPath: folder.url.path) else { throw ProjectRepositoryError.notFound }

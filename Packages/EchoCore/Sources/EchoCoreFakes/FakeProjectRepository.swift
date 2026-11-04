@@ -11,6 +11,8 @@ public actor FakeProjectRepository: ProjectRepository {
     public private(set) var createdFolderIDs: [UUID] = []
     /// Reported by `diskUsage(id:)`; 0 when missing.
     public var diskUsageByID: [UUID: Int64]
+    /// Reported by `storage(id:)`; all zero when missing.
+    public var storageByID: [UUID: ProjectStorage] = [:]
     public var overviewsByID: [UUID: [Float]]
     public var thumbnailsByID: [UUID: Data]
     private let clock: any DateProviding
@@ -58,6 +60,15 @@ public actor FakeProjectRepository: ProjectRepository {
         try FileManager.default.createDirectory(at: folder.url, withIntermediateDirectories: true)
         createdFolderIDs.append(id)
         return folder
+    }
+
+    public func storage(id: UUID) throws -> ProjectStorage {
+        guard stored[id] != nil else { throw ProjectRepositoryError.notFound }
+        return storageByID[id] ?? ProjectStorage(source: 0, working: 0, takes: 0, folder: 0)
+    }
+
+    public func setStorage(_ storage: ProjectStorage, for id: UUID) {
+        storageByID[id] = storage
     }
 
     public func rename(id: UUID, to title: String) throws {

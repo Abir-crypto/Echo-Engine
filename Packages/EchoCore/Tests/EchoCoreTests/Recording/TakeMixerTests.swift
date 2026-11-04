@@ -132,3 +132,41 @@ struct CacheAndConsentTests {
         #expect(!again.sharesCrashReports)
     }
 }
+
+struct ProjectStorageTests {
+    private func project(_ id: UUID, origin: ProjectOrigin, source: String) -> Project {
+        Project(
+            id: id, title: "P", mediaType: .audio, origin: origin, sourceFileName: source,
+            sourceInfo: SourceInfo(duration: 1, container: "", audioCodec: "lpcm", videoCodec: nil, byteSize: 0, channelCount: 1, sampleRate: 48_000),
+            createdAt: Date()
+        )
+    }
+
+    @Test func importedProjectsCountTheirOriginal() async throws {
+        let repository = FileProjectRepository(root: try temporaryFolder(), migrator: ProjectMigrator(), clock: FakeClock())
+        let id = UUID()
+        let folder = try await repository.createFolder(for: id)
+        try Data(repeating: 1, count: 300_000).write(to: folder.source(fileName: "source.wav"))
+        try Data(repeating: 2, count: 200_000).write(to: folder.working)
+        try await repository.save(project(id, origin: .imported, source: "source.wav"))
+        let storage = try await repository.storage(id: id)
+        #expect(storage.source >= 300_000)
+        #expect(storage.working >= 200_000)
+        #expect(storage.takes == 0)
+        #expect(storage.folder >= storage.source + storage.working)
+        #expect(storage.folder == (try await repository.diskUsage(id: id)))
+    }
+
+    @Test func recordingsCountTheirTakes() async throws {
+        let repository = FileProjectRepository(root: try temporaryFolder(), migrator: ProjectMigrator(), clock: FakeClock())
+        let id = UUID()
+        let folder = try await repository.createFolder(for: id)
+        try FileManager.default.createDirectory(at: folder.takes, withIntermediateDirectories: true)
+        try Data(repeating: 1, count: 400_000).write(to: folder.takeFolder.processed)
+        try Data(repeating: 1, count: 400_000).write(to: folder.takeFolder.raw)
+        try await repository.save(project(id, origin: .recorded, source: "takes/processed.caf"))
+        let storage = try await repository.storage(id: id)
+        #expect(storage.source == 0, "a recording's original is its takes")
+        #expect(storage.takes >= 800_000)
+    }
+}

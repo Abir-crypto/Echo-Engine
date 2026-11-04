@@ -451,7 +451,7 @@ Goal: live pitch correction and sing-along.
 
 ---
 
-## F13 — Settings  [IN PROGRESS]
+## F13 — Settings  [DONE]
 Goal: complete Settings screen.
 
 - [x] F13.T01 — Settings UI per canvas: Appearance, Tint, Presets link, Privacy toggles, Storage (sizes, Clear cache), Acknowledgements, Version (§ 14.2).
@@ -461,13 +461,16 @@ Goal: complete Settings screen.
   > wires Firebase), `totalBytes`/`removeEverything` on both caches. Debug menu keeps only sample projects.
 - [x] F13.T01a — Clear cache also removes waveform caches (`Library/Caches/Waveforms`, `WaveformProviding.removeAll`); project delete already does (F04 review).
   > Done: with T01 — Clear calls `removeEverything` on the render cache and the waveform cache, and the size shown counts both.
-- [ ] F13.T02 — Storage sizes computation; project info sheet with per-project breakdown (§ 15).
+- [x] F13.T02 — Storage sizes computation; project info sheet with per-project breakdown (§ 15).
+  > Done: `ProjectRepository.storage(id:)` → `ProjectStorage` (original — 0 for recordings —, working audio, takes, whole folder; the size helper now
+  > measures single files too). `HomeModel.storage(of:)` adds the project's renders. Home card menu "Info" → `ProjectInfoSheet` (duration, format via
+  > the container's UTType description, created; Original / Working audio / Recordings / Enhancements / Total). Settings totals came with T01.
 
 **Checkpoint test:** every setting persists and applies instantly; Clear cache frees space and projects re-render on open.
 
 ---
 
-## F14 — Analytics, crash reporting, consent  [TODO]
+## F14 — Analytics, crash reporting, consent  [IN PROGRESS]
 Goal: privacy-respecting telemetry.
 
 - [ ] F14.T01 — Ask user for `GoogleService-Info.plist`; add Firebase SPM (Analytics, Crashlytics only), dSYM upload phase, Info.plist flags (§ 16).

@@ -47,3 +47,17 @@ struct SettingsModelTests {
         #expect(!consent.sharesCrashReports)
     }
 }
+
+@MainActor
+struct ProjectInfoTests {
+    @Test func theInfoSheetMeasuresTheProject() async {
+        let project = PreviewProjects.all()[0]
+        let repository = FakeProjectRepository(projects: [project])
+        await repository.setStorage(ProjectStorage(source: 900, working: 300, takes: 0, folder: 1_250), for: project.id)
+        let model = HomeModel(repository: repository, storage: FakeStorageEstimator(), waveforms: FakeWaveformProvider(), renders: FakeRenderCache())
+        let storage = await model.storage(of: project.id)
+        #expect(storage?.folder == ProjectStorage(source: 900, working: 300, takes: 0, folder: 1_250))
+        #expect(storage?.renders == 0)
+        #expect(await model.storage(of: UUID()) == nil, "a missing project can't be measured")
+    }
+}

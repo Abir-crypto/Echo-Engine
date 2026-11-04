@@ -19,11 +19,32 @@ public protocol ProjectRepository: Sendable {
     /// Bytes the project folder occupies on disk (manifest, media, takes, thumbnail): what deleting it frees,
     /// apart from its renders.
     func diskUsage(id: UUID) async throws -> Int64
+    /// What the project's folder holds, by part (SPEC § 15: the project info sheet).
+    func storage(id: UUID) async throws -> ProjectStorage
     /// The saved waveform overview levels (0...1), or `nil` when the project has none.
     func waveformOverview(id: UUID) async -> [Float]?
     /// JPEG data of the video frame thumbnail, or `nil` when the project has none.
     func thumbnail(id: UUID) async -> Data?
     func folder(for id: UUID) -> ProjectFolder
+}
+
+/// The parts of a project folder on disk, in bytes (SPEC § 15).
+public struct ProjectStorage: Equatable, Sendable {
+    /// The imported original; 0 for recordings, whose originals are the takes.
+    public var source: Int64
+    /// `working.caf`.
+    public var working: Int64
+    /// Recording takes (`takes/`).
+    public var takes: Int64
+    /// The whole folder: the parts above plus the manifest, thumbnail and overview.
+    public var folder: Int64
+
+    public init(source: Int64, working: Int64, takes: Int64, folder: Int64) {
+        self.source = source
+        self.working = working
+        self.takes = takes
+        self.folder = folder
+    }
 }
 
 /// A project as read from disk.

@@ -90,6 +90,13 @@ final class HomeModel {
         }
     }
 
+    /// The project info sheet's sizes (SPEC § 15): the folder's parts and the project's renders.
+    func storage(of id: UUID) async -> (folder: ProjectStorage, renders: Int64)? {
+        guard let folder = try? await repository.storage(id: id) else { return nil }
+        let renders = ((try? await self.renders.entries(projectID: id)) ?? []).reduce(0) { $0 + $1.bytes }
+        return (folder, renders)
+    }
+
     /// What deleting the project frees, or `nil` if it can't be measured.
     func diskUsage(of id: UUID) async -> Int64? {
         try? await repository.diskUsage(id: id)

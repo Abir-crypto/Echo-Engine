@@ -1,6 +1,9 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "%@ · %@, %@ kHz" : {
+      "comment" : "Project info format: container, channels and sample rate, e.g. QuickTime movie · Stereo, 48 kHz."
+    },
     "%@ %lld-bit, %@." : {
       "comment" : "Export quality caption for a lossless file: format, bit depth, sample rate, e.g. FLAC 24-bit, 48 kHz."
     },
@@ -27,6 +30,9 @@
     },
     "%@:1" : {
       "comment" : "A compression ratio, e.g. 3:1."
+    },
+    "%lld channels" : {
+      "comment" : "Project info: number of audio channels (3 or more)."
     },
     "%lld kbps" : {
       "comment" : "An AAC bitrate choice in the export sheet, e.g. 320 kbps."
@@ -275,6 +281,9 @@
     "Connect “%@” again to continue, or stop to save the recording." : {
       "comment" : "The recorded input was disconnected; its name, e.g. USB interface."
     },
+    "Created" : {
+      "comment" : "Project info row."
+    },
     "Custom" : {
       "comment" : "Loudness target the user sets with a slider."
     },
@@ -305,11 +314,17 @@
     "Delete this recording?" : {
       "comment" : "Confirmation before deleting an unfinished recording."
     },
+    "Details" : {
+      "comment" : "Project info section."
+    },
     "Dim screen" : {
       "comment" : "Button: shows the minimal dark recording screen."
     },
     "Done" : {
       "comment" : "Closes a sheet; changes are already applied."
+    },
+    "Duration" : {
+      "comment" : "Project info row."
     },
     "Echo Engine can’t add videos to your photo library. Allow it in Settings, then try again." : {
       "comment" : "Export alert when Photos access was denied; offers Open Settings."
@@ -337,6 +352,12 @@
     },
     "Enhancement from a newer version" : {
       "comment" : "Name of a stack step made by a newer app version."
+    },
+    "Enhancements" : {
+      "comment" : "Project info: cached renders of the AI steps."
+    },
+    "Enhancements are made again when needed. Projects aren’t included in iCloud backup." : {
+      "comment" : "Project info storage caption."
     },
     "Equalizer" : {
       "comment" : "Editor Adjust row and sheet title."
@@ -389,7 +410,7 @@
       "comment" : "VoiceOver value of the Equalizer row when no band is changed."
     },
     "Format" : {
-      "comment" : "Export sheet, Custom quality: the audio file format (AAC, WAV, FLAC, ALAC)."
+      "comment" : "A format: the export's audio file format (AAC, WAV, FLAC, ALAC), or the project info row with container and audio."
     },
     "Frees %@" : {
       "comment" : "How much space an After export choice frees, e.g. Frees 1.4 GB."
@@ -444,6 +465,31 @@
     },
     "In semitones. The voice keeps its natural character." : {
       "comment" : "Effects: caption under the pitch slider (formant-preserving pitch shift)."
+    },
+    "Info" : {
+      "comment" : "Home card context menu: shows the project info sheet."
+    },
+    "info.mono" : {
+      "comment" : "Project info: one audio channel.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Mono"
+          }
+        }
+      }
+    },
+    "info.stereo" : {
+      "comment" : "Project info: two audio channels.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Stereo"
+          }
+        }
+      }
     },
     "Input" : {
       "comment" : "Input device button before one is known."
@@ -742,6 +788,9 @@
     "Open Settings" : {
       "comment" : "Alert button that opens the app's page in the Settings app."
     },
+    "Original" : {
+      "comment" : "Project info: the imported file."
+    },
     "Original pitch" : {
       "comment" : "VoiceOver value of the pitch slider at 0."
     },
@@ -892,6 +941,9 @@
           }
         }
       }
+    },
+    "Recordings" : {
+      "comment" : "Project info: the recorded takes."
     },
     "Records the microphone as it is." : {
       "comment" : "Noise reduction sheet: what Off does."
@@ -1133,6 +1185,9 @@
     "Title" : {
       "comment" : "Placeholder of the project title field."
     },
+    "Total" : {
+      "comment" : "Project info: everything the project takes."
+    },
     "Touch and hold to hear the original audio." : {
       "comment" : "VoiceOver hint for Hold for original."
     },
@@ -1204,6 +1259,9 @@
     },
     "With this input, Standard uses a noise gate only." : {
       "comment" : "Caption under Noise reduction: voice processing can’t run with this input."
+    },
+    "Working audio" : {
+      "comment" : "Project info: the extracted audio being edited."
     },
     "Yesterday" : {
       "comment" : "Project card date when the project changed yesterday."

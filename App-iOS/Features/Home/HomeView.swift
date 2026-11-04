@@ -23,6 +23,7 @@ struct HomeView: View {
     @State private var renaming: Project?
     @State private var newTitle = ""
     @State private var deleting: PendingDeletion?
+    @State private var info: Project?
     @State private var choosesPhotos = false
     @State private var choosesFiles = false
     @State private var photoItem: PhotosPickerItem?
@@ -96,6 +97,9 @@ struct HomeView: View {
             if case .success(let url) = result {
                 importModel.importFile(at: url)
             }
+        }
+        .sheet(item: $info) { project in
+            ProjectInfoSheet(project: project, model: model)
         }
         .sheet(isPresented: .constant(importModel.phase != .idle || importModel.failure != nil)) {
             ImportProgressView(
@@ -191,6 +195,9 @@ struct HomeView: View {
 
     @ViewBuilder
     private func menu(for stored: StoredProject) -> some View {
+        Button("Info", systemImage: "info.circle") {
+            info = stored.project
+        }
         if !stored.isReadOnly {
             Button("Rename", systemImage: "pencil") {
                 newTitle = stored.project.title
