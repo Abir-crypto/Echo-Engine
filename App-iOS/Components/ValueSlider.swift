@@ -16,9 +16,12 @@ struct ValueSlider: View {
     let format: (Float) -> String
     /// What VoiceOver reads instead of `format` (e.g. "2 semitones higher").
     var spokenValue: ((Float) -> String)?
+    /// Time and frequency run left to right in every language, like the waveforms and the EQ graph (SPEC § 17).
+    var isLeftToRight = false
     let onEditingEnded: () -> Void
 
     @Environment(\.appTint) private var tint
+    @Environment(\.layoutDirection) private var layoutDirection
     /// VoiceOver steps move the slider by this fraction of its travel.
     private static let accessibilityStep = 0.05
 
@@ -40,6 +43,7 @@ struct ValueSlider: View {
                 if !editing { onEditingEnded() }
             }
             .tint(tint.fill)
+            .environment(\.layoutDirection, isLeftToRight ? .leftToRight : layoutDirection)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 10)

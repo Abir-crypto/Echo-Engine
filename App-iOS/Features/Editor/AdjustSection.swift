@@ -152,23 +152,34 @@ extension EditorModel {
     }
 }
 
+/// Points forward when closed and down when open, in either layout direction (a rotation isn't mirrored for RTL).
+private struct DisclosureChevron: View {
+    let isExpanded: Bool
+    @Environment(\.layoutDirection) private var layoutDirection
+
+    var body: some View {
+        Image(systemName: "chevron.forward")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(.token(.iconMuted))
+            .rotationEffect(.degrees(isExpanded ? (layoutDirection == .rightToLeft ? -90 : 90) : 0))
+            .accessibilityHidden(true)
+    }
+}
+
 /// "Advanced" rows that open in place, sized like the other rows.
 struct AdvancedDisclosureStyle: DisclosureGroupStyle {
     func makeBody(configuration: Configuration) -> some View {
         VStack(spacing: 0) {
             Button {
-                withAnimation(.snappy) { configuration.isExpanded.toggle() }
+                // Opens without motion when Reduce Motion is on (SPEC § 17).
+                withAnimation(UIAccessibility.isReduceMotionEnabled ? nil : .snappy) { configuration.isExpanded.toggle() }
             } label: {
                 HStack {
                     configuration.label
                         .font(.body)
                         .foregroundStyle(.token(.textPrimary))
                     Spacer()
-                    Image(systemName: "chevron.forward")
-                        .font(.footnote.weight(.semibold))
-                        .foregroundStyle(.token(.iconMuted))
-                        .rotationEffect(.degrees(configuration.isExpanded ? 90 : 0))
-                        .accessibilityHidden(true)
+                    DisclosureChevron(isExpanded: configuration.isExpanded)
                 }
                 .padding(.horizontal, 14)
                 .frame(minHeight: 52)

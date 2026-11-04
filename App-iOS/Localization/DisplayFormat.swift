@@ -12,7 +12,8 @@ import Foundation
 enum DisplayFormat {
     /// File size, e.g. "2.4 GB" (decimal units, as shown by Files and Settings).
     static func fileSize(_ bytes: Int64, locale: Locale = .autoupdatingCurrent) -> String {
-        bytes.formatted(.byteCount(style: .file).locale(locale))
+        // A number even for nothing ("0 bytes", not "Zero kB").
+        bytes.formatted(.byteCount(style: .file, spellsOutZero: false).locale(locale))
     }
 
     /// Media duration: "4:05" below one hour, "1:02:03" from one hour.

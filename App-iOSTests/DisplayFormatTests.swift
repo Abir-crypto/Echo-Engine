@@ -34,6 +34,7 @@ struct DisplayFormatTests {
     @Test func fileSizeUsesDecimalUnitsAndLocaleSeparators() {
         #expect(DisplayFormat.fileSize(2_400_000_000, locale: english) == "2.4 GB")
         #expect(DisplayFormat.fileSize(2_400_000_000, locale: german) == "2,4\u{00A0}GB")
+        #expect(DisplayFormat.fileSize(0, locale: english).hasPrefix("0"))
     }
 
     @Test(arguments: [

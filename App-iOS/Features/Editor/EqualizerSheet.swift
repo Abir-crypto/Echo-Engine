@@ -113,7 +113,8 @@ struct EqualizerSheet: View {
             GroupedRows {
                 ValueSlider(
                     title: "Frequency", value: model.binding(\.eq[index].frequencyHz), range: EQBand.frequencyRange,
-                    scale: .logarithmic, format: { DisplayFormat.frequency($0) }, onEditingEnded: model.finishAdjusting
+                    scale: .logarithmic, format: { DisplayFormat.frequency($0) }, isLeftToRight: true,
+                    onEditingEnded: model.finishAdjusting
                 )
                 RowSeparator()
                 ValueSlider(

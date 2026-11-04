@@ -97,7 +97,7 @@ private struct SettingRow: View {
                 value
                     .font(.subheadline)
                     .foregroundStyle(isOff ? .token(.textTertiary) : .token(.textValue))
-                Image(systemName: "chevron.right")
+                Image(systemName: "chevron.forward")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(.token(.iconMuted))
                     .accessibilityHidden(true)
@@ -518,6 +518,7 @@ struct BackingTrackSheet: View {
                                 value: Binding(get: { Float(model.backingTrackStart) }, set: { model.setBackingTrackStart(Double($0)) }),
                                 range: 0...Float(max(track.duration, 1)), step: 0.5,
                                 format: { DisplayFormat.duration(Double($0)) },
+                                isLeftToRight: true,
                                 onEditingEnded: { model.commitBackingTrackStart() }
                             )
                             .disabled(model.hasTake)

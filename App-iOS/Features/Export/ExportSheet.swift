@@ -139,7 +139,9 @@ private struct ExportForm: View {
                         Text(String(localized: "export.quality.high", defaultValue: "High", comment: "Audio quality preset: AAC 320 kbps."))
                             .tag(AudioQuality.high)
                         Text("Lossless").tag(AudioQuality.lossless)
-                        Text("Custom").tag(AudioQuality.custom)
+                        // Its own key: quality and the loudness target's "Custom" agree with different genders.
+                        Text(String(localized: "export.quality.custom", defaultValue: "Custom", comment: "Audio quality: the person's own format settings."))
+                            .tag(AudioQuality.custom)
                     } label: {
                         Text("Audio quality")
                     }

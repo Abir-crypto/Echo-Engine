@@ -395,6 +395,17 @@
     "Export video" : {
       "comment" : "Export sheet primary button when exporting the video."
     },
+    "export.quality.custom" : {
+      "comment" : "Audio quality: the person's own format settings.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Custom"
+          }
+        }
+      }
+    },
     "export.quality.high" : {
       "comment" : "Audio quality preset: AAC 320 kbps.",
       "localizations" : {
