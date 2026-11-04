@@ -25,7 +25,8 @@ struct CaptureCoreTests {
         #expect(planes.count == 3, "two raw channels, then the processed mixdown")
         #expect(planes[0][10] == Float(3) * 0.1 + 10e-4)
         #expect(planes[1][10] == Float(1) * 0.1 + 10e-4)
-        #expect(planes[2] == output[0])
+        #expect(planes[2] == [Float](repeating: 0, count: 256), "the processed mixdown runs the live chain's latency behind")
+        #expect(harness.core.processedLatencyFrames == 1_440)
         #expect(harness.core.capturedFrames == 256)
     }
 
@@ -38,7 +39,7 @@ struct CaptureCoreTests {
         #expect(harness.output(128).map { $0[0] } == [0.25, -0.5])
         let planes = harness.readAll()
         #expect(planes.map(\.count) == [128, 128, 128, 128])
-        #expect(planes.map { $0[64] } == [0.25, -0.5, 0.25, -0.5])
+        #expect(planes.map { $0[64] } == [0.25, -0.5, 0, 0], "processed is still inside the live chain's latency")
     }
 
     @Test func metersEveryInputChannelButQueuesNothingWhileNotCapturing() throws {

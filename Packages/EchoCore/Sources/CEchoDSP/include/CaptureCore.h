@@ -17,6 +17,13 @@ extern "C" {
 /// Most channels of one input device that can be metered and recorded.
 #define EE_CAPTURE_MAX_INPUT_CHANNELS 32
 
+/// Live processing parameters (SPEC § 13.4), set through the capture Audio Unit's parameter tree.
+typedef CF_ENUM(uint64_t, EECaptureParameter) {
+    /// 0 Off, 1 Standard (noise gate), 2 High (RNNoise).
+    EECaptureParameterSuppression = 0,
+    EECaptureParameterCount = 1,
+};
+
 typedef struct EECaptureCore EECaptureCore;
 
 EECaptureCore *EECaptureCoreCreate(void);
@@ -35,6 +42,14 @@ int32_t EECaptureCoreMixdownChannelCount(const EECaptureCore *core);
 int32_t EECaptureCoreMaximumFrames(const EECaptureCore *core);
 /// Planes in the ring, per frame: the selected raw channels in take order, then the processed mixdown's channels.
 int32_t EECaptureCorePlaneCount(const EECaptureCore *core);
+/// How far the processed planes are behind the raw ones, in frames; constant for the configuration. The writer removes it.
+int32_t EECaptureCoreProcessedLatencyFrames(const EECaptureCore *core);
+/// Whether High (RNNoise) can run at the configured rate (44.1 kHz or more); below, it acts as Standard.
+bool EECaptureCoreSupportsHigh(const EECaptureCore *core);
+
+/// Any thread: the render thread picks the value up at its next cycle.
+void EECaptureCoreSetParameter(EECaptureCore *core, uint64_t address, float value);
+float EECaptureCoreParameter(const EECaptureCore *core, uint64_t address);
 
 /// Any thread. While a take is open the layout can't change (a restarted engine keeps writing into the same ring).
 void EECaptureCoreSetTakeOpen(EECaptureCore *core, bool isOpen);

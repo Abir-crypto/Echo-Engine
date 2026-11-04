@@ -62,7 +62,10 @@ struct AVRecordingEngineTests {
         #expect(try readSamples(folder.channel(1)).channels == [first])
         #expect(try readSamples(folder.channel(2)).channels == [[Float](repeating: 0.25, count: 48_000)])
         #expect(try readSamples(folder.raw).channels == [first.map { $0 + 0.25 }])
-        #expect(try readSamples(folder.processed).channels == [first.map { $0 + 0.25 }])
+        let sum = first.map { $0 + 0.25 }
+        #expect(try readSamples(folder.processed).channels == [Array(sum[..<46_560]) + [Float](repeating: 0, count: 1_440)],
+                "live processing off: on the raw timeline, the last 30 ms still in the chain")
+        #expect(engine.suppression == .off)
     }
 
     @Test func pausedAudioIsLeftOutOfTheTake() async throws {
@@ -272,5 +275,36 @@ struct AVRecordingEngineTests {
         engine.handleConfigurationChange()
         #expect(engine.state == .ready)
         #expect(engine.engine.isRunning)
+    }
+
+    // MARK: Noise reduction (SPEC § 13.4)
+
+    @Test func theChosenLevelOutlivesPrepareAndFallsBackWithoutVoiceProcessing() throws {
+        let (engine, _) = try makeEngine()
+        engine.setSuppression(.standard)
+        #expect(engine.suppression.level == .standard, "kept until the engine runs")
+        try engine.prepare(.mono(channels: [0]))
+        #expect(engine.suppression == SuppressionState(level: .standard, effective: .standard, usesVoiceProcessing: false))
+        #expect(engine.suppression.isGateOnly, "offline there is no voice processing: the gate alone")
+        engine.setSuppression(.high)
+        #expect(engine.suppression.effective == .high)
+    }
+
+    @Test func highCleansTheProcessedTakeOnly() async throws {
+        let noise = TestSignal.noise(amplitude: 0.05, frames: 96_000)
+        let (engine, _) = try makeEngine { _, frame in noise[frame % noise.count] }
+        engine.setSuppression(.high)
+        try engine.prepare(.mono(channels: [0]))
+        let folder = TakeFolder(url: try temporaryFolder())
+        try render(engine, frames: 48_000)   // RNNoise settles before the take
+        try engine.startTake(in: folder)
+        try render(engine, frames: 48_000)
+        _ = try await engine.finishTake()
+
+        func rms(_ samples: [Float]) -> Float { (samples.reduce(0) { $0 + $1 * $1 } / Float(samples.count)).squareRoot() }
+        let raw = try readSamples(folder.raw).channels[0]
+        let processed = try readSamples(folder.processed).channels[0]
+        #expect(abs(rms(raw) - rms(Array(noise[48_000...]))) < 1e-4, "the raw take is untouched")
+        #expect(20 * log10(rms(Array(processed[..<40_000])) / rms(raw)) < -15)
     }
 }

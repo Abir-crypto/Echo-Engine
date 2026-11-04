@@ -29,6 +29,8 @@ extension RecordingMetadata {
             case interruption
             /// The selected input device disconnected (SPEC § 13.7).
             case routeChange
+            /// Noise reduction changed to or from Standard: the audio restarted, leaving a short gap (SPEC § 13.4).
+            case processingChange
             case unknown
         }
 

@@ -16,6 +16,7 @@
 #include "ReverbKernel.hpp"
 #include "TruePeakDetector.hpp"
 #include "LoudnessMeter.hpp"
+#include "LiveChain.hpp"
 #include "Denoiser.h"
 #include "AudioUnitEffect.h"
 #include "SourceSwitch.h"

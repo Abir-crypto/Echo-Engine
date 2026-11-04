@@ -54,6 +54,13 @@ struct CAFWriterTests {
 struct TakeWriterTests {
     private let files = FileManager()
 
+    /// The processed file with live processing off: the input on the raw file's timeline, with silence for the last
+    /// moment still inside the live chain when the take ended.
+    private func processedOff(_ input: [Float]) -> [Float] {
+        let latency = 1_440
+        return Array(input[..<(input.count - latency)]) + [Float](repeating: 0, count: latency)
+    }
+
     /// Configures a core for `configuration` on an input of `inputs` channels at `rate`, captures `frames` frames of
     /// `signal`, then writes the take.
     private func record(
@@ -95,7 +102,7 @@ struct TakeWriterTests {
         #expect(take.channelFileCount == 0)
         let expected = (0..<24_000).map { 0.5 * sin(Float($0) * 0.01) }
         #expect(try readSamples(take.folder.raw).channels == [expected])
-        #expect(try readSamples(take.folder.processed).channels == [expected])
+        #expect(try readSamples(take.folder.processed).channels == [processedOff(expected)])
     }
 
     @Test func severalChannelsAreSummedAndEachKeptInTakeOrder() async throws {
@@ -110,7 +117,7 @@ struct TakeWriterTests {
         #expect(try readSamples(take.folder.channel(2)).channels == [second])
         let sum = zip(first, second).map(+)
         #expect(try readSamples(take.folder.raw).channels == [sum])
-        #expect(try readSamples(take.folder.processed).channels == [sum], "no live processing yet (F11)")
+        #expect(try readSamples(take.folder.processed).channels == [processedOff(sum)], "live processing off")
     }
 
     @Test func builtInStereoRecordsAStereoMixdown() async throws {

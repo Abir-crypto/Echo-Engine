@@ -34,6 +34,22 @@ public final class RecordingCaptureAudioUnit: AUAudioUnit {
         inputBusArray = AUAudioUnitBusArray(audioUnit: self, busType: .input, busses: [inputBus])
         outputBusArray = AUAudioUnitBusArray(audioUnit: self, busType: .output, busses: [outputBus])
         maximumFramesToRender = 4_096
+
+        // Live processing (SPEC § 13.4): changes reach the render thread through the parameter tree only.
+        let suppression = AUParameterTree.createParameter(
+            withIdentifier: "suppression", name: "suppression", address: EECaptureParameter.suppression.rawValue,
+            min: 0, max: 2, unit: .indexed, unitName: nil, flags: [.flag_IsReadable, .flag_IsWritable],
+            valueStrings: ["off", "standard", "high"], dependentParameters: nil
+        )
+        let tree = AUParameterTree.createTree(withChildren: [suppression])
+        tree.implementorValueObserver = { [core] parameter, value in core.setParameter(parameter.address, value) }
+        tree.implementorValueProvider = { [core] parameter in core.parameter(parameter.address) }
+        parameterTree = tree
+    }
+
+    /// Sets a live processing parameter (`EECaptureParameter`) through the tree; it ramps where it applies.
+    public func setParameter(_ address: EECaptureParameter, _ value: AUValue) {
+        parameterTree?.parameter(withAddress: address.rawValue)?.value = value
     }
 
     public override var inputBusses: AUAudioUnitBusArray { inputBusArray }
@@ -119,6 +135,23 @@ public final class CaptureCore: @unchecked Sendable {
     public var maximumFrames: Int { Int(EECaptureCoreMaximumFrames(pointer)) }
     /// Planes per frame: the selected raw channels in take order, then the processed mixdown's channels.
     public var planeCount: Int { Int(EECaptureCorePlaneCount(pointer)) }
+    /// How far the processed planes are behind the raw ones; the writer removes it.
+    public var processedLatencyFrames: Int { Int(EECaptureCoreProcessedLatencyFrames(pointer)) }
+    /// High (RNNoise) runs at 44.1 kHz or more; below, it acts as Standard.
+    public var supportsHigh: Bool { EECaptureCoreSupportsHigh(pointer) }
+
+    func setParameter(_ address: AUParameterAddress, _ value: AUValue) {
+        EECaptureCoreSetParameter(pointer, address, value)
+    }
+
+    func parameter(_ address: AUParameterAddress) -> AUValue {
+        EECaptureCoreParameter(pointer, address)
+    }
+
+    /// Tests without an Audio Unit: sets a parameter directly.
+    public func setParameterForTesting(_ address: EECaptureParameter, _ value: Float) {
+        EECaptureCoreSetParameter(pointer, address.rawValue, value)
+    }
 
     /// While a take is open its layout can't change.
     public func setTakeOpen(_ isOpen: Bool) {

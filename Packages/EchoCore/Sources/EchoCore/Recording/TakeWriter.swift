@@ -24,6 +24,11 @@ actor TakeWriter {
     private let buffers: ReadBuffers
     private let droppedAtStart: Int64
     private var isFinished = false
+    /// The processed planes run this many frames behind the raw ones (live processing's constant delay): they are
+    /// skipped at the start and made up with silence at the end, so every file shares one timeline.
+    private var processedFramesToSkip: Int
+    private var rawInputFrames = 0
+    private var processedInputFrames = 0
 
     /// Creates the take's files in `folder`, which must exist; fails without touching files already there.
     init(core: CaptureCore, folder: TakeFolder, configuration: RecordingConfiguration) throws {
@@ -51,6 +56,7 @@ actor TakeWriter {
         self.configuration = configuration
         buffers = ReadBuffers(planeCount: core.planeCount, frames: Self.chunkFrames)
         droppedAtStart = core.droppedFrames
+        processedFramesToSkip = core.processedLatencyFrames
     }
 
     /// Writes everything queued so far.
@@ -102,6 +108,15 @@ actor TakeWriter {
     /// before stays in the take.
     func finish() -> RecordedTake {
         try? drain()
+        // The last moment of processed audio is still inside the live chain: silence keeps the files the same length.
+        let missing = rawInputFrames - processedInputFrames
+        if missing > 0 {
+            let silence = [Float](repeating: 0, count: missing)
+            silence.withUnsafeBufferPointer { samples in
+                let channels = Array(repeating: samples.baseAddress!, count: configuration.mixdownChannelCount)
+                try? processed.append(channels, frames: missing)
+            }
+        }
         isFinished = true
         for stream in [raw, processed] + channelStreams {
             stream.finish()
@@ -136,7 +151,14 @@ actor TakeWriter {
             rawChannels = [UnsafePointer(mixdown)]
         }
         try raw.append(rawChannels, frames: frames)
-        try processed.append((selectedCount..<selectedCount + configuration.mixdownChannelCount).map(plane), frames: frames)
+        rawInputFrames += frames
+        let skipped = min(processedFramesToSkip, frames)
+        processedFramesToSkip -= skipped
+        if skipped < frames {
+            let processedChannels = (selectedCount..<selectedCount + configuration.mixdownChannelCount).map { plane($0) + skipped }
+            try processed.append(processedChannels, frames: frames - skipped)
+            processedInputFrames += frames - skipped
+        }
         for (index, stream) in channelStreams.enumerated() {
             try stream.append([plane(index)], frames: frames)
         }

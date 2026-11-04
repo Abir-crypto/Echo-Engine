@@ -12,6 +12,9 @@ public final class FakeRecordingEngine: RecordingEngine {
     public private(set) var inputChannelCount = 0
     public var elapsedSeconds: Double = 0
     public var continuesAfterRouteChange: (@MainActor () -> Bool)?
+    public private(set) var suppression = SuppressionState.off
+    /// High needs 44.1 kHz; set false to act like a Bluetooth headset.
+    public var supportsHigh = true
     /// Channels the input offers once prepared.
     public var inputChannels: Int
     public var peaks: [Float]
@@ -36,6 +39,13 @@ public final class FakeRecordingEngine: RecordingEngine {
         self.configuration = configuration
         inputChannelCount = inputChannels
         state = .ready
+    }
+
+    public func setSuppression(_ level: SuppressionLevel) {
+        let effective: SuppressionLevel = level == .high && !supportsHigh ? .standard : level
+        suppression = SuppressionState(
+            level: level, effective: effective, usesVoiceProcessing: effective == .standard && inputChannels == 1
+        )
     }
 
     public func takePeakLevels() -> [Float] {

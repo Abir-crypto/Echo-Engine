@@ -35,6 +35,8 @@ public final class AVRecordingEngine: RecordingEngine {
     /// A take the engine ended by itself, until `finishTake` collects it.
     @ObservationIgnored private var endedTake: RecordedTake?
     @ObservationIgnored public private(set) var markers: [RecordingMetadata.Marker] = []
+    public private(set) var suppression = SuppressionState.off
+    @ObservationIgnored private var isVoiceProcessingOn = false
     @ObservationIgnored private var configurationObserver: (any NSObjectProtocol)?
 
     private struct OpenTake {
@@ -103,6 +105,11 @@ public final class AVRecordingEngine: RecordingEngine {
         engine.stop()
         state = .idle
         inputChannelCount = 0
+        // The input's own format decides the layout; voice processing returns once it's known to fit.
+        if isVoiceProcessingOn {
+            try? engine.inputNode.setVoiceProcessingEnabled(false)
+            isVoiceProcessingOn = false
+        }
         let format = inputFormat
         guard format.sampleRate > 0, format.channelCount > 0, Int(format.channelCount) <= CaptureCore.maximumInputChannels,
               let monitorFormat = AVAudioFormat(
@@ -134,6 +141,48 @@ public final class AVRecordingEngine: RecordingEngine {
         self.configuration = configuration
         inputChannelCount = Int(format.channelCount)
         state = .ready
+        applySuppression()
+    }
+
+    public func setSuppression(_ level: SuppressionLevel) {
+        suppression.level = level
+        // Without a running engine the level waits for `prepare`.
+        guard state != .idle else { return }
+        applySuppression()
+    }
+
+    /// Runs the chosen level as far as this input allows (SPEC § 13.4).
+    private func applySuppression() {
+        let level = suppression.level
+        let effective: SuppressionLevel = level == .high && !capture.supportsHigh ? .standard : level
+        // Apple voice processing takes one channel; offline rendering has none.
+        let wantsVoiceProcessing = effective == .standard && inputChannelCount == 1 && manualInputFormat == nil
+        if wantsVoiceProcessing != isVoiceProcessingOn { setVoiceProcessing(wantsVoiceProcessing) }
+        captureUnit.setParameter(.suppression, effective.parameterValue)
+        suppression = SuppressionState(level: level, effective: effective, usesVoiceProcessing: isVoiceProcessingOn)
+    }
+
+    /// Restarts the engine with voice processing on or off; it can only be switched while stopped. Its own level control
+    /// stays off (the live leveler sets the level). A format the open layout can't take leaves it off. During a take the
+    /// gap is marked.
+    private func setVoiceProcessing(_ isOn: Bool) {
+        let input = engine.inputNode
+        engine.stop()
+        do {
+            try input.setVoiceProcessingEnabled(isOn)
+            if isOn { input.isVoiceProcessingAGCEnabled = false }
+            let format = input.outputFormat(forBus: 0)
+            if format.sampleRate != capture.sampleRate || Int(format.channelCount) != capture.inputChannelCount {
+                try input.setVoiceProcessingEnabled(false)
+            }
+        } catch {
+            try? input.setVoiceProcessingEnabled(false)
+        }
+        isVoiceProcessingOn = input.isVoiceProcessingEnabled
+        engine.connect(input, to: captureNode, format: input.outputFormat(forBus: 0))
+        engine.prepare()
+        try? engine.start()
+        if take != nil { markers.append(RecordingMetadata.Marker(time: elapsedSeconds, kind: .processingChange)) }
     }
 
     public func takePeakLevels() -> [Float] {

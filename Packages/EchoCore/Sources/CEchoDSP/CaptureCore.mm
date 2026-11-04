@@ -1,5 +1,7 @@
 #import "CaptureCore.h"
 
+#include "LiveChain.hpp"
+
 #include <algorithm>
 #include <atomic>
 #include <cmath>
@@ -52,10 +54,27 @@ struct EECaptureCore {
     int64_t silenceFrames = 0;
 
     // Render scratch: the pulled input (`inputChannelCount` × `maximumFrames`), the monitor output for hosts that pass
-    // no buffers, and the input buffer list.
+    // no buffers, the recorded processed signal, and the input buffer list.
     std::vector<float> inputScratch;
     std::vector<float> outputScratch;
+    std::vector<float> recordedScratch;
     std::vector<uint8_t> inputListStorage;
+
+    echo::dsp::LiveChain chain;
+    /// Latest value per parameter, and whether the render thread has yet to apply it.
+    std::atomic<float> parameters[EECaptureParameterCount];
+    std::atomic<bool> hasPending{false};
+
+    /// Render thread.
+    void applyParameters() noexcept {
+        if (!hasPending.exchange(false, std::memory_order_acquire)) { return; }
+        const int tier = static_cast<int>(parameters[EECaptureParameterSuppression].load(std::memory_order_relaxed));
+        chain.setTier(static_cast<echo::dsp::SuppressionTier>(std::clamp(tier, 0, 2)));
+    }
+
+    float *recordedChannel(int channel) noexcept {
+        return recordedScratch.data() + static_cast<size_t>(channel) * static_cast<size_t>(maximumFrames);
+    }
 
     int planeCount() const noexcept { return selectedCount + mixdownChannelCount; }
 
@@ -85,13 +104,17 @@ struct EECaptureCore {
                 for (int frame = 0; frame < frames; ++frame) { output[0][frame] += samples[frame]; }
             }
         }
-        // Live processing (SPEC § 13.4, F11) runs here, on `output` in place: it is the processed mixdown.
+        // Live processing (SPEC § 13.4): `output` becomes the monitor signal; the recorded one is a constant latency later.
+        applyParameters();
+        float *recorded[kMaxMixdownChannels] = {};
+        for (int channel = 0; channel < mixdownChannelCount; ++channel) { recorded[channel] = recordedChannel(channel); }
+        chain.process(output, recorded, mixdownChannelCount, frames);
 
         if (isCapturing.load(std::memory_order_acquire)) {
             capturedFrames.fetch_add(frames, std::memory_order_relaxed);
             const float *planes[kMaxPlanes] = {};
             for (int index = 0; index < selectedCount; ++index) { planes[index] = input[selected[index]]; }
-            for (int channel = 0; channel < mixdownChannelCount; ++channel) { planes[selectedCount + channel] = output[channel]; }
+            for (int channel = 0; channel < mixdownChannelCount; ++channel) { planes[selectedCount + channel] = recorded[channel]; }
             push(planes, frames);
         }
         renderCycles.fetch_add(1, std::memory_order_release);
@@ -132,6 +155,7 @@ struct EECaptureCore {
 EECaptureCore *EECaptureCoreCreate(void) {
     auto core = new EECaptureCore();
     for (auto &peak : core->peaks) { peak.store(0); }
+    for (auto &parameter : core->parameters) { parameter.store(0); }
     return core;
 }
 
@@ -174,6 +198,9 @@ bool EECaptureCoreConfigure(EECaptureCore *core, double sampleRate, int32_t inpu
     core->silenceFrames = 0;
     core->inputScratch.assign(static_cast<size_t>(inputChannelCount) * static_cast<size_t>(maximumFrames), 0.0f);
     core->outputScratch.assign(static_cast<size_t>(kMaxMixdownChannels) * static_cast<size_t>(maximumFrames), 0.0f);
+    core->recordedScratch.assign(static_cast<size_t>(kMaxMixdownChannels) * static_cast<size_t>(maximumFrames), 0.0f);
+    core->chain.prepare(sampleRate, mixdownChannelCount, maximumFrames);
+    core->hasPending.store(true);
     core->inputListStorage.assign(offsetof(AudioBufferList, mBuffers) + sizeof(AudioBuffer) * static_cast<size_t>(inputChannelCount), 0);
     for (auto &peak : core->peaks) { peak.store(0); }
     core->isConfigured = true;
@@ -186,6 +213,22 @@ int32_t EECaptureCoreInputChannelCount(const EECaptureCore *core) { return core-
 int32_t EECaptureCoreMixdownChannelCount(const EECaptureCore *core) { return core->mixdownChannelCount; }
 int32_t EECaptureCoreMaximumFrames(const EECaptureCore *core) { return core->maximumFrames; }
 int32_t EECaptureCorePlaneCount(const EECaptureCore *core) { return core->planeCount(); }
+
+int32_t EECaptureCoreProcessedLatencyFrames(const EECaptureCore *core) {
+    return core->isConfigured ? core->chain.recordedLatencyFrames() : 0;
+}
+
+bool EECaptureCoreSupportsHigh(const EECaptureCore *core) { return core->isConfigured && core->chain.supportsHigh(); }
+
+void EECaptureCoreSetParameter(EECaptureCore *core, uint64_t address, float value) {
+    if (address >= EECaptureParameterCount || !std::isfinite(value)) { return; }
+    core->parameters[address].store(value, std::memory_order_relaxed);
+    core->hasPending.store(true, std::memory_order_release);
+}
+
+float EECaptureCoreParameter(const EECaptureCore *core, uint64_t address) {
+    return address < EECaptureParameterCount ? core->parameters[address].load(std::memory_order_relaxed) : 0;
+}
 
 void EECaptureCoreSetTakeOpen(EECaptureCore *core, bool isOpen) { core->isTakeOpen.store(isOpen, std::memory_order_release); }
 

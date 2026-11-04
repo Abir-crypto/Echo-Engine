@@ -390,7 +390,11 @@ Goal: reliable capture from any input with recovery.
 ## F11 — Live processing in Record  [IN PROGRESS]
 Goal: live suppression, gain, leveling, clip protection.
 
-- [ ] F11.T01 — Suppression tiers Off/Standard/High (live RNNoise ring buffer), voice-processing fallback rule (§ 13.4).
+- [x] F11.T01 — Suppression tiers Off/Standard/High (live RNNoise ring buffer), voice-processing fallback rule (§ 13.4).
+  > Done: C++ `LiveChain` in the capture core (Off / gate / RNNoise in 480-frame blocks): monitor output early, recorded output a constant 1,440 frames
+  > late (the writer skips them and pads the end), High changes fade out, wait for RNNoise, fade in; tier via the capture unit's parameter tree. Engine
+  > `setSuppression` → `SuppressionState` (High below 44.1 kHz → Standard; voice processing only for one-channel inputs, AGC off, restart + `processingChange`
+  > marker during a take). User decisions SPEC § 13.4/§ 20. Voice processing itself is device-only (the sim here can't record).
 - [ ] F11.T02 — Input gain, gentle live leveler, clip limiter; ramped live parameter changes; parameter change log.
 - [ ] F11.T03 — Monitoring through headphones; wired-headphones tip; settings rows UI.
 

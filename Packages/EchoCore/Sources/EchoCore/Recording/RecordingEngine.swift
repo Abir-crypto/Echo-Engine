@@ -17,6 +17,12 @@ public protocol RecordingEngine: AnyObject, Observable {
     var elapsedSeconds: Double { get }
     /// The open take's interruption and route-change markers so far (they end up in `RecordedTake.markers`).
     var markers: [RecordingMetadata.Marker] { get }
+    /// The noise reduction running (SPEC § 13.4).
+    var suppression: SuppressionState { get }
+    /// Chooses the noise reduction; kept across `prepare` and applied at once, during a take too (ramped; a change to or
+    /// from Standard with voice processing restarts the audio briefly and marks the take). Falls back as `suppression`
+    /// tells.
+    func setSuppression(_ level: SuppressionLevel)
     /// Asked when the system stops the engine for a route change: true when the recorded input is still the session's
     /// current one, so recording continues on it right away with a marker at the gap (user decision, SPEC § 13.7).
     /// Otherwise (or when nil) the take pauses like an interruption.

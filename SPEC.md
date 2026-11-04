@@ -617,6 +617,14 @@ report findings at the F11 checkpoint.
 
 Show a "Use wired headphones for monitoring" tip when auto-tune or a backing track is on and output is not wired.
 
+- Standard keeps Apple voice processing (user decision): with it on, `raw.caf` is what voice processing delivers;
+  switching to or from Standard during a take restarts the audio (a short gap, marked); it is only used with
+  one-channel inputs (stereo built-in mic and interfaces fall back to the noise gate, as above).
+- The processed take has the same timeline as `raw.caf` whatever the tier (its constant processing delay is removed
+  when writing). Monitoring hears the chain without High's extra delay unless High is on.
+- Monitoring (user decision): a "Monitor" row (Off/On with volume) appears while headphones are connected; it starts
+  Off, is remembered, and turns on when a backing track is loaded (F12). Never through the built-in speaker.
+
 ### 13.5 Auto-tune
 
 - Loop per frame: YIN pitch detection (confidence > 0.8 else pass-through) → nearest allowed note in scale →
@@ -955,3 +963,6 @@ Record new user decisions here (date, decision, section updated).
 - 2026-11-04: Recording Live Activity layout mirrors the Record screen: status, timer, 30-segment meter, round Stop;
   Dynamic Island compact = dot + timer + level bars (§ 13.7).
 - 2026-11-04: The device/channel sheet and dim mode are designed natively from § 18, without Sleek (§ 18.5).
+- 2026-11-04: Recording's Standard tier stays Apple voice processing with its limits (processed raw take, marked gap
+  when switching mid-take, one-channel inputs only); monitoring starts Off behind a Monitor row shown with headphones,
+  remembered, on with a backing track (§ 13.4).
