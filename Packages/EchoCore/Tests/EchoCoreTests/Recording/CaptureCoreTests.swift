@@ -20,13 +20,14 @@ struct CaptureCoreTests {
 
         let output = harness.output(256)
         #expect(output.count == 1)
-        #expect(output[0][10] == Float(3) * 0.1 + 10e-4 + (Float(1) * 0.1 + 10e-4), "channel 3 + channel 1")
+        // The monitor is the mixdown through the live chain: the limiter's 72-frame look-ahead, the leveler barely moved.
+        #expect(abs(output[0][10 + 72] - (Float(3) * 0.1 + 10e-4 + (Float(1) * 0.1 + 10e-4))) < 1e-3, "channel 3 + channel 1")
         let planes = harness.readAll()
         #expect(planes.count == 3, "two raw channels, then the processed mixdown")
         #expect(planes[0][10] == Float(3) * 0.1 + 10e-4)
         #expect(planes[1][10] == Float(1) * 0.1 + 10e-4)
         #expect(planes[2] == [Float](repeating: 0, count: 256), "the processed mixdown runs the live chain's latency behind")
-        #expect(harness.core.processedLatencyFrames == 1_440)
+        #expect(harness.core.processedLatencyFrames == processedLatency48k)
         #expect(harness.core.capturedFrames == 256)
     }
 
@@ -36,7 +37,8 @@ struct CaptureCoreTests {
         harness.core.setCapturing(true)
         harness.process(128)
 
-        #expect(harness.output(128).map { $0[0] } == [0.25, -0.5])
+        #expect(harness.output(128).map { $0[100] }.enumerated().allSatisfy { abs($1 - [0.25, -0.5][$0]) < 1e-3 },
+                "left and right, a limiter look-ahead later")
         let planes = harness.readAll()
         #expect(planes.map(\.count) == [128, 128, 128, 128])
         #expect(planes.map { $0[64] } == [0.25, -0.5, 0, 0], "processed is still inside the live chain's latency")

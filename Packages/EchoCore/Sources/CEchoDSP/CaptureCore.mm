@@ -70,7 +70,13 @@ struct EECaptureCore {
         if (!hasPending.exchange(false, std::memory_order_acquire)) { return; }
         const int tier = static_cast<int>(parameters[EECaptureParameterSuppression].load(std::memory_order_relaxed));
         chain.setTier(static_cast<echo::dsp::SuppressionTier>(std::clamp(tier, 0, 2)));
+        const float gainDB = std::clamp(parameters[EECaptureParameterInputGain].load(std::memory_order_relaxed), -24.0f, 24.0f);
+        chain.setInputGainDB(gainDB);
+        meterGain = echo::dsp::dbToLinear(gainDB);
     }
+
+    /// The input gain as the meters show it.
+    float meterGain = 1;
 
     float *recordedChannel(int channel) noexcept {
         return recordedScratch.data() + static_cast<size_t>(channel) * static_cast<size_t>(maximumFrames);
@@ -86,11 +92,13 @@ struct EECaptureCore {
 
     /// One render cycle of at most `maximumFrames` frames. Real-time safe.
     void render(const float *const *input, float *const *output, int frames) noexcept {
+        applyParameters();
+        // Meters show each channel as it goes into processing: after the input gain (SPEC § 13.4).
         for (int channel = 0; channel < inputChannelCount; ++channel) {
             const float *samples = input[channel];
             float peak = 0;
             for (int frame = 0; frame < frames; ++frame) { peak = std::max(peak, std::fabs(samples[frame])); }
-            raisePeak(peaks[channel], peak);
+            raisePeak(peaks[channel], peak * meterGain);
         }
 
         const size_t bytes = static_cast<size_t>(frames) * sizeof(float);
@@ -105,7 +113,6 @@ struct EECaptureCore {
             }
         }
         // Live processing (SPEC § 13.4): `output` becomes the monitor signal; the recorded one is a constant latency later.
-        applyParameters();
         float *recorded[kMaxMixdownChannels] = {};
         for (int channel = 0; channel < mixdownChannelCount; ++channel) { recorded[channel] = recordedChannel(channel); }
         chain.process(output, recorded, mixdownChannelCount, frames);

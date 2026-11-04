@@ -32,6 +32,9 @@ public struct SuppressionState: Equatable, Sendable {
 }
 
 extension SuppressionLevel {
+    /// Its value in `RecordingMetadata.ParameterChange` (0 Off, 1 Standard, 2 High).
+    public var parameterChangeValue: Double { Double(parameterValue) }
+
     /// The capture unit's `EECaptureParameterSuppression` value.
     var parameterValue: Float {
         switch self {

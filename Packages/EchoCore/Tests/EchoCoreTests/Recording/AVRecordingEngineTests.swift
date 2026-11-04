@@ -62,9 +62,9 @@ struct AVRecordingEngineTests {
         #expect(try readSamples(folder.channel(1)).channels == [first])
         #expect(try readSamples(folder.channel(2)).channels == [[Float](repeating: 0.25, count: 48_000)])
         #expect(try readSamples(folder.raw).channels == [first.map { $0 + 0.25 }])
-        let sum = first.map { $0 + 0.25 }
-        #expect(try readSamples(folder.processed).channels == [Array(sum[..<46_560]) + [Float](repeating: 0, count: 1_440)],
-                "live processing off: on the raw timeline, the last 30 ms still in the chain")
+        let processed = try readSamples(folder.processed).channels[0]
+        #expect(processed.count == 48_000)
+        #expect(processed.suffix(processedLatency48k).allSatisfy { $0 == 0 }, "the last moment was still in the live chain")
         #expect(engine.suppression == .off)
     }
 

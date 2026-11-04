@@ -18,6 +18,7 @@ LiveChain::LiveChain() noexcept {
     gate_.setRangeDB(-20);
     gate_.setAttackMs(2);
     gate_.setReleaseMs(200);
+    limiter_.setCeilingDB(-1);
 }
 
 LiveChain::~LiveChain() {
@@ -30,7 +31,10 @@ void LiveChain::prepare(double sampleRate, int channelCount, int maximumFrames) 
     channelCount_ = std::clamp(channelCount, 1, kMaxChannels);
     maximumFrames_ = std::max(1, maximumFrames);
     supportsHigh_ = sampleRate >= 44'100;
+    gain_.prepare(sampleRate);
     gate_.prepare(sampleRate);
+    leveler_.prepare(sampleRate);
+    limiter_.prepare(sampleRate);
     for (int channel = 0; channel < kMaxChannels; ++channel) {
         if (denoisers_[channel] == nullptr && channel < channelCount_ && supportsHigh_) {
             denoisers_[channel] = EEDenoiserCreate();
@@ -43,7 +47,10 @@ void LiveChain::prepare(double sampleRate, int channelCount, int maximumFrames) 
 }
 
 void LiveChain::reset() noexcept {
+    gain_.reset();
     gate_.reset();
+    leveler_.reset();
+    limiter_.reset();
     std::memset(frameIn_, 0, sizeof(frameIn_));
     std::memset(frameOut_, 0, sizeof(frameOut_));
     framePosition_ = 0;
@@ -123,12 +130,15 @@ void LiveChain::runHigh(float* samples, int channel, int frameCount) noexcept {
 void LiveChain::process(float* const* channels, float* const* recorded, int channelCount, int frameCount) noexcept {
     const int count = std::min(channelCount, channelCount_);
     const bool isHigh = active_ == SuppressionTier::high;
+    gain_.process(channels, count, frameCount);
     if (isHigh) {
         for (int channel = 0; channel < count; ++channel) { runHigh(channels[channel], channel, frameCount); }
         framePosition_ = (framePosition_ + frameCount) % 480;
     } else {
         gate_.process(channels, count, frameCount);
     }
+    leveler_.process(channels, count, frameCount);
+    limiter_.process(channels, count, frameCount);
     // One fade for every channel; the recorded signal fades with the monitor.
     for (int frame = 0; frame < frameCount; ++frame) {
         const float fade = nextFade();

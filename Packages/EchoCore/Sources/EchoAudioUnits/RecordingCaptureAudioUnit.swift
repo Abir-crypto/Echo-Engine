@@ -41,7 +41,12 @@ public final class RecordingCaptureAudioUnit: AUAudioUnit {
             min: 0, max: 2, unit: .indexed, unitName: nil, flags: [.flag_IsReadable, .flag_IsWritable],
             valueStrings: ["off", "standard", "high"], dependentParameters: nil
         )
-        let tree = AUParameterTree.createTree(withChildren: [suppression])
+        let inputGain = AUParameterTree.createParameter(
+            withIdentifier: "inputGain", name: "inputGain", address: EECaptureParameter.inputGain.rawValue,
+            min: -24, max: 24, unit: .decibels, unitName: nil, flags: [.flag_IsReadable, .flag_IsWritable, .flag_CanRamp],
+            valueStrings: nil, dependentParameters: nil
+        )
+        let tree = AUParameterTree.createTree(withChildren: [suppression, inputGain])
         tree.implementorValueObserver = { [core] parameter, value in core.setParameter(parameter.address, value) }
         tree.implementorValueProvider = { [core] parameter in core.parameter(parameter.address) }
         parameterTree = tree

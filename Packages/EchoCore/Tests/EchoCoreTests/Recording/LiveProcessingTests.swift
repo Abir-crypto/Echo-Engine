@@ -38,14 +38,19 @@ struct LiveProcessingTests {
         (samples.reduce(0) { $0 + $1 * $1 } / Float(max(1, samples.count))).squareRoot()
     }
 
+    /// A tone at the leveler's −20 dBFS target, so its gain stays near 0 dB.
+    private func targetTone(_ frames: Int, rate: Float = 48_000) -> [Float] {
+        (0..<frames).map { 0.1414 * sin(2 * .pi * 220 * Float($0) / rate) }
+    }
+
     @Test func theProcessedTakeIsAConstantLatencyBehindTheRawOne() throws {
         let core = try core()
-        let latency = core.processedLatencyFrames
-        #expect(latency == 1_440, "RNNoise's framing and its own delay")
-        let input = (0..<9_600).map { Float($0 % 977) / 977 - 0.5 }
+        #expect(core.processedLatencyFrames == processedLatency48k, "RNNoise's framing and delay, and the limiter's look-ahead")
+        let input = targetTone(48_000)
         let off = run(core, input)
-        #expect(Array(off.processed[latency...]) == Array(off.raw[..<(off.raw.count - latency)]), "Off: the input, later")
-        #expect(off.monitor == input, "the monitor isn't delayed without High")
+        let shifted = Array(off.processed[processedLatency48k...])
+        #expect(alignment(off.raw, shifted, over: 4_800..<40_000) > 0.999, "Off: the input, a constant latency later")
+        #expect(alignment(input, Array(off.monitor[72...]), over: 4_800..<40_000) > 0.999, "the monitor only waits for the limiter")
     }
 
     @Test func highFollowsTheSameTimeline() throws {
@@ -77,7 +82,7 @@ struct LiveProcessingTests {
     @Test func standardGatesQuietPartsOnly() throws {
         let core = try core()
         let quiet = TestSignal.noise(amplitude: 0.001, frames: 48_000)   // about −65 dBFS: below the gate
-        let loud = (0..<48_000).map { 0.5 * sin(Float($0) * 0.05) }
+        let loud = targetTone(48_000)
         let standard = run(core, quiet + loud, tier: 1)
         #expect(rms(standard.monitor[24_000..<48_000]) < rms(quiet[24_000...]) * 0.2, "the gate closes on noise")
         #expect(abs(rms(standard.monitor[72_000..<96_000]) - rms(loud[24_000...])) < 0.01, "speech-level audio passes")
@@ -87,7 +92,7 @@ struct LiveProcessingTests {
         let core = try core()
         let voice = try TestSignal.voice()
         let result = run(core, voice, tier: 0, switchAt: 48_128, to: 2)
-        #expect(Array(result.monitor[..<48_128]) == Array(voice[..<48_128]), "Off until the switch")
+        #expect(rms(result.monitor[24_000..<48_000]) > 0.01, "Off: speech before the switch")
         let silent = result.monitor[48_128 + 480..<48_128 + 1_440 + 480]
         #expect(silent.allSatisfy { $0 == 0 }, "silent while RNNoise fills")
         #expect(rms(result.monitor[96_000...]) > 0.01, "speech comes back through High")
@@ -98,10 +103,55 @@ struct LiveProcessingTests {
     @Test func belowFullRateHighRunsAsStandard() throws {
         let core = try core(rate: 16_000)
         #expect(!core.supportsHigh)
-        let loud = (0..<16_000).map { 0.5 * sin(Float($0) * 0.1) }
+        let loud = targetTone(16_000, rate: 16_000)
         let result = run(core, loud, tier: 2)
-        // Once the gate has opened (2 ms attack), loud audio passes unchanged: no RNNoise at 16 kHz.
-        let difference = zip(result.monitor[1_600...], loud[1_600...]).map { abs($0 - $1) }.max() ?? 1
-        #expect(difference < 1e-3)
+        // The gate (no RNNoise at 16 kHz) passes speech-level audio, a limiter look-ahead later.
+        let latency = core.processedLatencyFrames - 1_440
+        #expect(alignment(loud, Array(result.monitor[latency...]), over: 1_600..<14_000) > 0.999)
+        #expect(abs(rms(result.monitor[4_000..<15_000]) - rms(loud[4_000..<15_000])) < 0.01)
+    }
+
+    // MARK: Gain, leveler, limiter (F11.T02)
+
+    @Test func theLevelerMovesTowardMinus20ByAtMost6dB() throws {
+        func settledLevel(_ amplitude: Float) throws -> Float {
+            let core = try core()
+            let tone = (0..<480_000).map { amplitude * sin(2 * .pi * 220 * Float($0) / 48_000) }
+            let processed = run(core, tone).processed
+            return 20 * log10(rms(processed[400_000..<470_000]))
+        }
+        let quietTone: Float = 0.0355   // −32 dBFS RMS
+        let loudTone: Float = 0.56      // −8 dBFS RMS
+        #expect(abs(try settledLevel(quietTone) - -26) < 1, "raised by the 6 dB maximum")
+        #expect(abs(try settledLevel(loudTone) - -14) < 1, "lowered by the 6 dB maximum")
+        #expect(abs(try settledLevel(0.1414) - -20) < 1, "left at the target")
+    }
+
+    @Test func theLevelerNeverRaisesQuietNoise() throws {
+        let core = try core()
+        let noise = TestSignal.noise(amplitude: 0.002, frames: 480_000)   // about −59 dBFS
+        let off = run(core, noise).processed
+        let change = 20 * log10(rms(off[400_000..<470_000]) / rms(noise[400_000..<470_000]))
+        #expect(abs(change) < 0.5, "the gain held: \(change) dB")
+    }
+
+    @Test func theClipLimiterKeepsPeaksBelowMinus1dBFS() throws {
+        let core = try core()
+        core.setParameterForTesting(.inputGain, 12)
+        let loud = (0..<96_000).map { 0.5 * sin(2 * .pi * 220 * Float($0) / 48_000) }   // 2.0 after the gain
+        let processed = run(core, loud).processed
+        let peak = processed[48_000...].map(abs).max() ?? 0
+        #expect(peak <= 0.8913 + 0.005, "ceiling −1 dBFS, peak \(peak)")
+        #expect(peak > 0.8, "limited, not silenced")
+    }
+
+    @Test func theMetersShowTheInputGain() throws {
+        let core = try core()
+        let harness = CaptureHarness(core: core, frames: 512)
+        core.setParameterForTesting(.inputGain, 6)
+        harness.fill(512) { _, _ in 0.25 }
+        harness.process(512)
+        let peak = try #require(core.takePeaks().first)
+        #expect(abs(peak - 0.25 * 1.9953) < 1e-3, "+6 dB")
     }
 }

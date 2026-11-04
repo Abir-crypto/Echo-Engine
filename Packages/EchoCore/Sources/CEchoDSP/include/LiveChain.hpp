@@ -1,7 +1,10 @@
 #pragma once
 
 #include "DSPMath.hpp"
+#include "GainKernel.hpp"
 #include "GateKernel.hpp"
+#include "LimiterKernel.hpp"
+#include "LiveLevelerKernel.hpp"
 #include "SmoothedValue.hpp"
 
 #include <vector>
@@ -19,7 +22,8 @@ enum class SuppressionTier : int {
     high = 2,
 };
 
-/// The live processing chain of a recording (SPEC § 13.4): suppression tier. It has two outputs: the monitor signal, as
+/// The live processing chain of a recording (SPEC § 13.4): input gain → suppression tier → gentle leveler → clip limiter
+/// (−1 dBFS, fast). It has two outputs: the monitor signal, as
 /// early as the tier allows, and the recorded signal, always `recordedLatencyFrames()` behind the input whatever the
 /// tier, so the processed take keeps one timeline when the tier changes. Changing to or from High fades out, waits for
 /// RNNoise to fill, and fades back in.
@@ -37,13 +41,16 @@ public:
     void prepare(double sampleRate, int channelCount, int maximumFrames);
     /// Render thread.
     void setTier(SuppressionTier tier) noexcept;
+    /// −24…+24 dB, ramped. Render thread.
+    void setInputGainDB(float db) noexcept { gain_.setGainDB(db); }
+    float levelerGainDB() const noexcept { return leveler_.gainDB(); }
     SuppressionTier tier() const noexcept { return target_; }
     bool supportsHigh() const noexcept { return supportsHigh_; }
 
     /// Processes `channels` in place into the monitor signal and writes the recorded signal into `recorded`.
     void process(float* const* channels, float* const* recorded, int channelCount, int frameCount) noexcept;
     /// How far the recorded signal is behind the input, in frames: constant for the session.
-    int recordedLatencyFrames() const noexcept { return kHighLatencyFrames; }
+    int recordedLatencyFrames() const noexcept { return kHighLatencyFrames + limiter_.latencyFrames(); }
     void reset() noexcept;
 
 private:
@@ -53,7 +60,10 @@ private:
     void beginTransition() noexcept;
     float nextFade() noexcept;
 
+    GainKernel gain_;
     GateKernel gate_;
+    LiveLevelerKernel leveler_;
+    LimiterKernel limiter_;
     EEDenoiser* denoisers_[kMaxChannels] = {};
     float frameIn_[kMaxChannels][480] = {};
     float frameOut_[kMaxChannels][480] = {};

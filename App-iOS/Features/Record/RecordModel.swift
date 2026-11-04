@@ -195,7 +195,14 @@ final class RecordModel {
         defer { isStarting = false }
         problem = nil
         let id = UUID()
-        let session = TakeSession(startedAt: clock.now, channelNames: recordedChannels.map(channelName))
+        // The processing settings from the start, for re-processing later (SPEC § 13.3).
+        let session = TakeSession(
+            startedAt: clock.now, channelNames: recordedChannels.map(channelName),
+            parameterChanges: [
+                .init(time: 0, parameter: .inputGain, value: engine.inputGainDB),
+                .init(time: 0, parameter: .suppression, value: engine.suppression.level.parameterChangeValue),
+            ]
+        )
         do {
             let folder = try await projects.createFolder(for: id).takeFolder
             // The marker exists before any audio does, so a kill from here on leaves a take to recover.
@@ -262,6 +269,35 @@ final class RecordModel {
 
     func dismissProblem() {
         problem = nil
+    }
+
+    // MARK: Live processing (SPEC § 13.4)
+
+    var suppression: SuppressionState { engine.suppression }
+    var inputGainDB: Double { engine.inputGainDB }
+
+    func setSuppression(_ level: SuppressionLevel) {
+        guard level != engine.suppression.level else { return }
+        engine.setSuppression(level)
+        log(.suppression, level.parameterChangeValue)
+    }
+
+    /// While the slider moves: ramped, not logged.
+    func setInputGain(_ db: Double) {
+        engine.setInputGain(db)
+    }
+
+    /// The slider was released: one entry in the take's log.
+    func commitInputGain() {
+        log(.inputGain, engine.inputGainDB)
+    }
+
+    /// Adds a setting to the open take's log (SPEC § 13.3) and to its marker file.
+    private func log(_ parameter: RecordingMetadata.ParameterChange.Parameter, _ value: Double) {
+        guard var take else { return }
+        take.session.parameterChanges.append(.init(time: engine.elapsedSeconds, parameter: parameter, value: value))
+        self.take = take
+        try? take.session.write(to: take.folder)
     }
 
     // MARK: Meters and take upkeep

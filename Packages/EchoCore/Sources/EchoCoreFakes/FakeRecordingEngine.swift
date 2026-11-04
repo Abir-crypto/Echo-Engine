@@ -41,6 +41,12 @@ public final class FakeRecordingEngine: RecordingEngine {
         state = .ready
     }
 
+    public private(set) var inputGainDB: Double = 0
+
+    public func setInputGain(_ db: Double) {
+        inputGainDB = min(24, max(-24, db))
+    }
+
     public func setSuppression(_ level: SuppressionLevel) {
         let effective: SuppressionLevel = level == .high && !supportsHigh ? .standard : level
         suppression = SuppressionState(

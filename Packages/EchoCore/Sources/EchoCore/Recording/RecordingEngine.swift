@@ -23,6 +23,9 @@ public protocol RecordingEngine: AnyObject, Observable {
     /// from Standard with voice processing restarts the audio briefly and marks the take). Falls back as `suppression`
     /// tells.
     func setSuppression(_ level: SuppressionLevel)
+    /// The input gain before live processing (SPEC § 13.4), −24…+24 dB; ramped, any time. The meters show it.
+    var inputGainDB: Double { get }
+    func setInputGain(_ db: Double)
     /// Asked when the system stops the engine for a route change: true when the recorded input is still the session's
     /// current one, so recording continues on it right away with a marker at the gap (user decision, SPEC § 13.7).
     /// Otherwise (or when nil) the take pauses like an interruption.

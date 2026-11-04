@@ -36,6 +36,7 @@ public final class AVRecordingEngine: RecordingEngine {
     @ObservationIgnored private var endedTake: RecordedTake?
     @ObservationIgnored public private(set) var markers: [RecordingMetadata.Marker] = []
     public private(set) var suppression = SuppressionState.off
+    public private(set) var inputGainDB: Double = 0
     @ObservationIgnored private var isVoiceProcessingOn = false
     @ObservationIgnored private var configurationObserver: (any NSObjectProtocol)?
 
@@ -142,6 +143,11 @@ public final class AVRecordingEngine: RecordingEngine {
         inputChannelCount = Int(format.channelCount)
         state = .ready
         applySuppression()
+    }
+
+    public func setInputGain(_ db: Double) {
+        inputGainDB = min(24, max(-24, db))
+        captureUnit.setParameter(.inputGain, AUValue(inputGainDB))
     }
 
     public func setSuppression(_ level: SuppressionLevel) {

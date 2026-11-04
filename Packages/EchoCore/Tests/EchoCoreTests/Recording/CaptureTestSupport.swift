@@ -136,6 +136,23 @@ func readSamples(_ url: URL) throws -> (format: AVAudioFormat, channels: [[Float
     return (file.fileFormat, channels)
 }
 
+/// How alike two signals are at zero lag (Pearson correlation over `range`): the processed take follows the raw one's
+/// timeline when this is near 1, though the leveler and limiter change its level.
+func alignment(_ raw: [Float], _ processed: [Float], over range: Range<Int>) -> Float {
+    let a = raw[range], b = processed[range]
+    let meanA = a.reduce(0, +) / Float(a.count), meanB = b.reduce(0, +) / Float(b.count)
+    var covariance: Float = 0, varianceA: Float = 0, varianceB: Float = 0
+    for (x, y) in zip(a, b) {
+        covariance += (x - meanA) * (y - meanB)
+        varianceA += (x - meanA) * (x - meanA)
+        varianceB += (y - meanB) * (y - meanB)
+    }
+    return covariance / max(1e-12, (varianceA * varianceB).squareRoot())
+}
+
+/// The live chain's constant delay at 48 kHz: RNNoise's 1,440 frames and the clip limiter's 72.
+let processedLatency48k = 1_512
+
 /// A new empty folder in the temporary directory.
 func temporaryFolder() throws -> URL {
     let url = FileManager.default.temporaryDirectory.appending(path: "EchoRecordingTests-\(UUID().uuidString)", directoryHint: .isDirectory)

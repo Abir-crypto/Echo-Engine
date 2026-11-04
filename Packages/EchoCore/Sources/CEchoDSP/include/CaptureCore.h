@@ -21,7 +21,9 @@ extern "C" {
 typedef CF_ENUM(uint64_t, EECaptureParameter) {
     /// 0 Off, 1 Standard (noise gate), 2 High (RNNoise).
     EECaptureParameterSuppression = 0,
-    EECaptureParameterCount = 1,
+    /// −24…+24 dB, ramped. The meters show it too.
+    EECaptureParameterInputGain = 1,
+    EECaptureParameterCount = 2,
 };
 
 typedef struct EECaptureCore EECaptureCore;

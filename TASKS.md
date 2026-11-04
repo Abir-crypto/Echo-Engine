@@ -395,7 +395,11 @@ Goal: live suppression, gain, leveling, clip protection.
   > late (the writer skips them and pads the end), High changes fade out, wait for RNNoise, fade in; tier via the capture unit's parameter tree. Engine
   > `setSuppression` → `SuppressionState` (High below 44.1 kHz → Standard; voice processing only for one-channel inputs, AGC off, restart + `processingChange`
   > marker during a take). User decisions SPEC § 13.4/§ 20. Voice processing itself is device-only (the sim here can't record).
-- [ ] F11.T02 — Input gain, gentle live leveler, clip limiter; ramped live parameter changes; parameter change log.
+- [x] F11.T02 — Input gain, gentle live leveler, clip limiter; ramped live parameter changes; parameter change log.
+  > Done: `LiveChain` = input gain (±24 dB, ramped) → tier → `LiveLevelerKernel` (toward −20 dBFS RMS, ±6 dB, lowers in ~1 s, raises in ~3 s, holds
+  > below −50 dBFS) → `LimiterKernel` at −1 dBFS; recorded latency 1,512 @ 48 kHz (monitor: 72, or 1,512 with High). Meters show the input gain.
+  > Gain through the parameter tree (`setInputGain`). `RecordingMetadata.parameterChanges` (lenient) + `TakeSession`: start values, each tier change
+  > and released gain slider (`RecordModel.setSuppression`/`setInputGain`/`commitInputGain`). Older tests now check alignment, not sample equality.
 - [ ] F11.T03 — Monitoring through headphones; wired-headphones tip; settings rows UI.
 
 **Checkpoint test (device):** record in a noisy room at each tier; shout to confirm no clipping in processed take; raw take untouched.

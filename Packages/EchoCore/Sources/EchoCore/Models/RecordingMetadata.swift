@@ -7,11 +7,24 @@ public struct RecordingMetadata: Codable, Equatable, Sendable {
     /// Which mixdown take became `working.caf`.
     public var editingSource: Take
     public var markers: [Marker]
+    /// Live processing settings over the take (SPEC § 13.3), for re-processing later. Added in F11: lenient.
+    public var parameterChanges: [ParameterChange]
 
-    public init(channelNames: [String], editingSource: Take = .processed, markers: [Marker] = []) {
+    public init(
+        channelNames: [String], editingSource: Take = .processed, markers: [Marker] = [], parameterChanges: [ParameterChange] = []
+    ) {
         self.channelNames = channelNames
         self.editingSource = editingSource
         self.markers = markers
+        self.parameterChanges = parameterChanges
+    }
+
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        channelNames = try container.decode([String].self, forKey: .channelNames)
+        editingSource = try container.decode(Take.self, forKey: .editingSource)
+        markers = try container.decode([Marker].self, forKey: .markers)
+        parameterChanges = try container.decodeIfPresent([ParameterChange].self, forKey: .parameterChanges) ?? []
     }
 }
 
@@ -20,6 +33,28 @@ extension RecordingMetadata {
     public enum Take: String, Codable, Sendable, UnknownCaseDecodable {
         case raw, processed
         case unknown
+    }
+
+    /// A live processing setting from a point of the take on (SPEC § 13.3).
+    public struct ParameterChange: Codable, Equatable, Sendable {
+        public enum Parameter: String, Codable, Sendable, UnknownCaseDecodable {
+            /// dB.
+            case inputGain
+            /// 0 Off, 1 Standard, 2 High.
+            case suppression
+            case unknown
+        }
+
+        /// Seconds from the start of the take.
+        public var time: Double
+        public var parameter: Parameter
+        public var value: Double
+
+        public init(time: Double, parameter: Parameter, value: Double) {
+            self.time = time
+            self.parameter = parameter
+            self.value = value
+        }
     }
 
     /// A point on the recording timeline, in seconds from the start of the take.

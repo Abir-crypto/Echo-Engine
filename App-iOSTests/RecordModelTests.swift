@@ -140,7 +140,10 @@ struct RecordModelTests {
         #expect(fixture.model.hasTake)
         #expect(!fixture.model.canChangeInput, "locked while recording")
         let folder = try #require(fixture.engine.takeFolder)
-        #expect(try TakeSession.read(from: folder) == TakeSession(startedAt: started, channelNames: ["Host", "Guest 1"]))
+        #expect(try TakeSession.read(from: folder) == TakeSession(
+            startedAt: started, channelNames: ["Host", "Guest 1"],
+            parameterChanges: [.init(time: 0, parameter: .inputGain, value: 0), .init(time: 0, parameter: .suppression, value: 0)]
+        ))
         #expect(fixture.idleTimer.keepsScreenOn)
         #expect(fixture.activity.isShown)
         #expect(fixture.activity.tint == .teal)
@@ -264,5 +267,39 @@ struct RecordModelTests {
         #expect(!recording.idleTimer.keepsScreenOn, "the screen may lock away from the tab")
         await recording.model.appear()
         #expect(recording.idleTimer.keepsScreenOn)
+    }
+
+    // MARK: Live processing (F11.T02)
+
+    @Test func processingChangesDuringATakeAreLogged() async throws {
+        let fixture = await recordingOnInterface()
+        fixture.engine.elapsedSeconds = 7
+        fixture.model.setSuppression(.high)
+        fixture.model.setInputGain(3)
+        fixture.model.setInputGain(4.5)
+        fixture.model.commitInputGain()
+        #expect(fixture.engine.suppression.level == .high)
+        #expect(fixture.engine.inputGainDB == 4.5)
+        let folder = try #require(fixture.engine.takeFolder)
+        #expect(try TakeSession.read(from: folder).parameterChanges.suffix(2) == [
+            .init(time: 7, parameter: .suppression, value: 2), .init(time: 7, parameter: .inputGain, value: 4.5),
+        ], "one entry per released slider")
+        await fixture.model.stop()
+        let call = try #require(await fixture.builder.calls.first)
+        #expect(call.session.parameterChanges.count == 4, "the log goes into the project")
+    }
+
+    @Test func settingsBeforeATakeAreNotLogged() async {
+        let fixture = fixture()
+        await fixture.model.appear()
+        fixture.model.setSuppression(.standard)
+        fixture.model.setInputGain(-3)
+        fixture.model.commitInputGain()
+        #expect(fixture.engine.suppression.level == .standard)
+        await fixture.model.record()
+        let folder = fixture.engine.takeFolder
+        #expect(folder.flatMap { try? TakeSession.read(from: $0).parameterChanges } == [
+            .init(time: 0, parameter: .inputGain, value: -3), .init(time: 0, parameter: .suppression, value: 1),
+        ], "the take starts from them")
     }
 }

@@ -26,7 +26,10 @@ public actor FakeRecordedProjectBuilder: RecordedProjectBuilding {
                 duration: 1, container: "com.apple.coreaudio-format", audioCodec: "lpcm", videoCodec: nil, byteSize: 0,
                 channelCount: 1, sampleRate: 48_000
             ),
-            recording: RecordingMetadata(channelNames: session.channelNames, editingSource: editingSource, markers: session.markers),
+            recording: RecordingMetadata(
+                channelNames: session.channelNames, editingSource: editingSource, markers: session.markers,
+                parameterChanges: session.parameterChanges
+            ),
             createdAt: session.startedAt
         )
     }

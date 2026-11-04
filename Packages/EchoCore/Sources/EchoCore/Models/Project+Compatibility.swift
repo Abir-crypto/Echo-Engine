@@ -7,6 +7,9 @@ extension Project {
             || origin == .unknown
             || outputLoudness?.isUnknown == true
             || clips.contains { clip in clip.manual.eq.contains { $0.kind == .unknown } }
-            || recording.map { $0.editingSource == .unknown || $0.markers.contains { $0.kind == .unknown } } == true
+            || recording.map { recording in
+                recording.editingSource == .unknown || recording.markers.contains { $0.kind == .unknown }
+                    || recording.parameterChanges.contains { $0.parameter == .unknown }
+            } == true
     }
 }

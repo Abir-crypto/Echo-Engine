@@ -50,7 +50,10 @@ public struct RecordedProjectBuilder: RecordedProjectBuilding {
                 origin: .recorded,
                 sourceFileName: "takes/\(source.lastPathComponent)",
                 sourceInfo: inspection.sourceInfo,
-                recording: RecordingMetadata(channelNames: session.channelNames, editingSource: editingSource, markers: session.markers),
+                recording: RecordingMetadata(
+                    channelNames: session.channelNames, editingSource: editingSource, markers: session.markers,
+                    parameterChanges: session.parameterChanges
+                ),
                 createdAt: session.startedAt
             )
             try await repository.save(project)

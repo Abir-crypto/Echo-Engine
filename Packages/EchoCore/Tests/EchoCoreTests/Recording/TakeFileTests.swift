@@ -54,11 +54,12 @@ struct CAFWriterTests {
 struct TakeWriterTests {
     private let files = FileManager()
 
-    /// The processed file with live processing off: the input on the raw file's timeline, with silence for the last
-    /// moment still inside the live chain when the take ended.
-    private func processedOff(_ input: [Float]) -> [Float] {
-        let latency = 1_440
-        return Array(input[..<(input.count - latency)]) + [Float](repeating: 0, count: latency)
+    /// The processed file follows the raw file's timeline at the same length; its last moment, still inside the live
+    /// chain when the take ended, is silent.
+    private func expectProcessedFollows(_ raw: [Float], _ processed: [Float], sourceLocation: SourceLocation = #_sourceLocation) {
+        #expect(processed.count == raw.count, sourceLocation: sourceLocation)
+        #expect(alignment(raw, processed, over: 4_800..<(raw.count - 2_000)) > 0.99, sourceLocation: sourceLocation)
+        #expect(processed.suffix(processedLatency48k).allSatisfy { $0 == 0 }, sourceLocation: sourceLocation)
     }
 
     /// Configures a core for `configuration` on an input of `inputs` channels at `rate`, captures `frames` frames of
@@ -102,7 +103,7 @@ struct TakeWriterTests {
         #expect(take.channelFileCount == 0)
         let expected = (0..<24_000).map { 0.5 * sin(Float($0) * 0.01) }
         #expect(try readSamples(take.folder.raw).channels == [expected])
-        #expect(try readSamples(take.folder.processed).channels == [processedOff(expected)])
+        expectProcessedFollows(expected, try readSamples(take.folder.processed).channels[0])
     }
 
     @Test func severalChannelsAreSummedAndEachKeptInTakeOrder() async throws {
@@ -117,7 +118,7 @@ struct TakeWriterTests {
         #expect(try readSamples(take.folder.channel(2)).channels == [second])
         let sum = zip(first, second).map(+)
         #expect(try readSamples(take.folder.raw).channels == [sum])
-        #expect(try readSamples(take.folder.processed).channels == [processedOff(sum)], "live processing off")
+        expectProcessedFollows(sum, try readSamples(take.folder.processed).channels[0])
     }
 
     @Test func builtInStereoRecordsAStereoMixdown() async throws {
@@ -174,5 +175,21 @@ struct RecordingConfigurationTests {
         #expect(RecordingConfiguration.mono(channels: [0, 3]).writesChannelFiles)
         #expect(!RecordingConfiguration.builtInStereo.writesChannelFiles, "left and right are already in raw.caf")
         #expect(RecordingConfiguration.builtInStereo.mixdownChannelCount == 2)
+    }
+}
+
+struct RecordingMetadataTests {
+    @Test func manifestsWithoutTheParameterLogStillOpen() throws {
+        let json = #"{"channelNames": ["Host"], "editingSource": "processed", "markers": []}"#
+        let metadata = try JSONDecoder().decode(RecordingMetadata.self, from: Data(json.utf8))
+        #expect(metadata == RecordingMetadata(channelNames: ["Host"]))
+    }
+
+    @Test func theLogRoundTrips() throws {
+        let metadata = RecordingMetadata(
+            channelNames: [], markers: [.init(time: 2, kind: .processingChange)],
+            parameterChanges: [.init(time: 1.5, parameter: .inputGain, value: 6)]
+        )
+        #expect(try JSONDecoder().decode(RecordingMetadata.self, from: JSONEncoder().encode(metadata)) == metadata)
     }
 }
