@@ -53,6 +53,23 @@ struct RecordView: View {
             DimRecordingView(model: model)
         }
         .alert(
+            Text("Save the recording", comment: "Alert title after a take sung over a backing track."),
+            isPresented: Binding(get: { model.pendingSave != nil }, set: { _ in })
+        ) {
+            Button {
+                Task { await model.saveRecording(withBackingTrack: false) }
+            } label: {
+                Text("Vocal only", comment: "Saves the take without the backing track.")
+            }
+            Button {
+                Task { await model.saveRecording(withBackingTrack: true) }
+            } label: {
+                Text("With backing track", comment: "Saves the take mixed with the backing track.")
+            }
+        } message: {
+            Text("Your voice is always kept on its own as well.")
+        }
+        .alert(
             Text("Recording stopped", comment: "Alert title: the app ended the recording by itself."),
             isPresented: Binding(get: { model.stopNotice != nil }, set: { if !$0 { model.dismissNotice() } }),
             presenting: model.stopNotice

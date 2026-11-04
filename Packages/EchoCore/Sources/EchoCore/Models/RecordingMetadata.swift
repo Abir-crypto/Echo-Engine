@@ -37,6 +37,8 @@ extension RecordingMetadata {
     /// A mixdown take (SPEC § 13.3).
     public enum Take: String, Codable, Sendable, UnknownCaseDecodable {
         case raw, processed
+        /// The processed take mixed with its backing track (SPEC § 13.6).
+        case mix
         case unknown
     }
 

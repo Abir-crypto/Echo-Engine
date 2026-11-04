@@ -122,7 +122,7 @@ final class RecordModel {
     /// A take is open: the input and channels are locked (SPEC § 13.2).
     var hasTake: Bool { take != nil }
     var canChangeInput: Bool { take == nil && !isStarting && problem != .microphoneDenied }
-    var canRecord: Bool { take == nil && !isStarting && state == .ready && !recordedChannels.isEmpty }
+    var canRecord: Bool { take == nil && pendingSave == nil && !isStarting && state == .ready && !recordedChannels.isEmpty }
     var canResume: Bool {
         switch state {
         case .paused: true
@@ -277,6 +277,41 @@ final class RecordModel {
     /// Ends the take and makes it a project, then opens it (`finishedProjectID`). Also the Live Activity's Stop.
     func stop() async {
         await finish(notice: nil)
+    }
+
+    /// A take sung over a backing track, waiting for "Vocal only" or "With backing track" (SPEC § 13.6).
+    private(set) var pendingSave: PendingSave?
+
+    struct PendingSave: Equatable {
+        let id: UUID
+        let session: TakeSession
+    }
+
+    /// Saves the pending take as the voice alone, or mixed with its backing track; the vocal take is kept either way.
+    func saveRecording(withBackingTrack: Bool) async {
+        guard let pending = pendingSave, !isFinishing else { return }
+        pendingSave = nil
+        isFinishing = true
+        defer { isFinishing = false }
+        await save(id: pending.id, session: pending.session, editingSource: withBackingTrack ? .mix : .processed, notice: nil)
+    }
+
+    private func save(id: UUID, session: TakeSession, editingSource: RecordingMetadata.Take, notice: TakeEndReason?) async {
+        do {
+            let project = try await builder.buildProject(id: id, title: title(session.startedAt), session: session, editingSource: editingSource)
+            if let notice {
+                stopNotice = notice
+                noticeProjectID = project.id
+            } else {
+                finishedProjectID = project.id
+            }
+        } catch RecordingError.emptyTake {
+            // Stopped before any audio arrived: nothing to keep.
+            try? await projects.delete(id: id)
+        } catch {
+            // The take and its marker stay: the next launch offers to recover it.
+            problem = .cantSave
+        }
     }
 
     func didOpenFinishedProject() {
@@ -541,22 +576,15 @@ final class RecordModel {
         isDimmed = false
         var session = take.session
         do {
-            let recorded = try await engine.finishTake()
-            session.markers = recorded.markers
-            let project = try await builder.buildProject(
-                id: take.id, title: title(session.startedAt), session: session, editingSource: .processed
-            )
-            if let notice {
-                stopNotice = notice
-                noticeProjectID = project.id
+            session.markers = try await engine.finishTake().markers
+            if session.backingTrack != nil, notice == nil {
+                // Sung over a backing track: the person chooses how to save it (SPEC § 13.6).
+                pendingSave = PendingSave(id: take.id, session: session)
             } else {
-                finishedProjectID = project.id
+                // A take the engine ended (low space) is saved as the voice alone.
+                await save(id: take.id, session: session, editingSource: .processed, notice: notice)
             }
-        } catch RecordingError.emptyTake {
-            // Stopped before any audio arrived: nothing to keep.
-            try? await projects.delete(id: take.id)
         } catch {
-            // The take and its marker stay: the next launch offers to recover it.
             problem = .cantSave
         }
         self.take = nil

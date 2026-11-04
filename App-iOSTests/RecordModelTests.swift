@@ -440,6 +440,7 @@ struct RecordModelTests {
             latencySeconds: fixture.devices.latency.roundTripSeconds, volume: 0.6
         ))
         await fixture.model.stop()
+        await fixture.model.saveRecording(withBackingTrack: true)
         let call = try #require(await fixture.builder.calls.first)
         #expect(call.session.backingTrack?.startSeconds == 12.5, "into the project's metadata")
     }
@@ -495,5 +496,45 @@ struct RecordModelTests {
         #expect(fixture.model.suggestedSongKey == nil, "already in that key")
         fixture.model.removeBackingTrack()
         #expect(fixture.model.songKey == nil)
+    }
+
+    // MARK: Finish with a backing track (F12.T06)
+
+    @Test func overABackingTrackStopAsksHowToSave() async throws {
+        let fixture = fixture()
+        fixture.devices.outputKind = .wiredHeadphones
+        await fixture.model.appear()
+        fixture.model.chooseBackingTrack(song)
+        await fixture.model.record()
+        let id = try #require(await fixture.projects.createdFolderIDs.first)
+        await fixture.model.stop()
+        #expect(fixture.model.pendingSave?.id == id, "asks first")
+        #expect(await fixture.builder.calls.isEmpty)
+        #expect(!fixture.model.canRecord, "one thing at a time")
+        #expect(fixture.engine.finishedTakes == 1, "the take itself is finished at once")
+
+        await fixture.model.saveRecording(withBackingTrack: true)
+        #expect(await fixture.builder.calls.first?.editingSource == .mix)
+        #expect(fixture.model.finishedProjectID == id)
+        #expect(fixture.model.pendingSave == nil)
+    }
+
+    @Test func vocalOnlyKeepsTheProcessedTake() async throws {
+        let fixture = fixture()
+        await fixture.model.appear()
+        fixture.model.chooseBackingTrack(song)
+        await fixture.model.record()
+        await fixture.model.stop()
+        await fixture.model.saveRecording(withBackingTrack: false)
+        #expect(await fixture.builder.calls.first?.editingSource == .processed)
+    }
+
+    @Test func withoutABackingTrackNothingIsAsked() async {
+        let fixture = fixture()
+        await fixture.model.appear()
+        await fixture.model.record()
+        await fixture.model.stop()
+        #expect(fixture.model.pendingSave == nil)
+        #expect(await fixture.builder.calls.first?.editingSource == .processed)
     }
 }

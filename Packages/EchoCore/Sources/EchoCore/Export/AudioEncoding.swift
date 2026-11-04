@@ -183,7 +183,8 @@ private final class FLACFileWriter: EncodedFileWriter {
 }
 
 /// Reads a file one second at a time in `outputFormat`'s sample rate (float, non-interleaved), resampling when needed.
-private final class ChunkReader {
+/// Also used to mix backing tracks into recordings (`TakeMixer`).
+final class ChunkReader {
     private let source: AVAudioFile
     private let converter: AVAudioConverter?
     private let outputFormat: AVAudioFormat

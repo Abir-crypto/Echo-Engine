@@ -929,6 +929,9 @@
     "Save as preset…" : {
       "comment" : "Enhance menu: saves the current settings as a new preset."
     },
+    "Save the recording" : {
+      "comment" : "Alert title after a take sung over a backing track."
+    },
     "Save to" : {
       "comment" : "Export sheet section: where the exported file goes."
     },
@@ -1106,6 +1109,9 @@
     "Video preview" : {
       "comment" : "Accessibility label of the editor video preview."
     },
+    "Vocal only" : {
+      "comment" : "Saves the take without the backing track."
+    },
     "Voice Leveler" : {
       "comment" : "AI feature name: evens out speaker levels."
     },
@@ -1117,6 +1123,9 @@
     },
     "While auto-tune is on you hear yourself about 26 ms later. Wired headphones keep the delay lowest." : {
       "comment" : "Auto-tune sheet caption about monitoring delay."
+    },
+    "With backing track" : {
+      "comment" : "Saves the take mixed with the backing track."
     },
     "With High noise reduction you hear yourself about 30 ms later." : {
       "comment" : "Monitor sheet note with High noise reduction."
@@ -1132,6 +1141,9 @@
     },
     "Your presets" : {
       "comment" : "Apply preset: presets the person saved."
+    },
+    "Your voice is always kept on its own as well." : {
+      "comment" : "Message of the Save the recording alert."
     },
     "YouTube" : {
       "comment" : "Loudness target named after a platform; keep the brand name."
