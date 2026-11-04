@@ -470,7 +470,7 @@ Goal: complete Settings screen.
 
 ---
 
-## F14 — Analytics, crash reporting, consent  [IN PROGRESS]
+## F14 — Analytics, crash reporting, consent  [DONE]
 Goal: privacy-respecting telemetry.
 
 - [x] F14.T01 — Ask user for `GoogleService-Info.plist`; add Firebase SPM (Analytics, Crashlytics only), dSYM upload phase, Info.plist flags (§ 16).
@@ -488,13 +488,16 @@ Goal: privacy-respecting telemetry.
   > consent; Continue applies it at once, then counts `onboarding_completed`). Settings toggles already write the store; `TelemetryConsent` follows.
   > Events in Import/Editor/Export/Record models (injected, no-op defaults); crash context: screen (`.crashReportScreen`), ai_stack, recording_state,
   > input_type, media/duration/container. Simulator runs that skip the screen: launch with `-consent.answered YES`.
-- [ ] F14.T04 — `PrivacyInfo.xcprivacy`; document privacy label answers for the user in the checkpoint summary.
+- [x] F14.T04 — `PrivacyInfo.xcprivacy`; document privacy label answers for the user in the checkpoint summary.
+  > Done: `App-iOS/Resources/PrivacyInfo.xcprivacy`: no tracking, no tracking domains; collected (not linked, not tracking) Crash Data, Product
+  > Interaction, Device ID; required-reason APIs UserDefaults CA92.1, disk space E174.1 + 85F4.1, boot time 35F9.1 (`mach_absolute_time`). Firebase's
+  > own manifests ship in its bundles. App tests check the manifest and the Info.plist collection-off flags. Label answers: F14 checkpoint summary.
 
 **Checkpoint test:** consent off → no Firebase traffic (debug view); consent on → events appear in Firebase DebugView; forced test crash reports with readable symbols.
 
 ---
 
-## F15 — Localization & accessibility pass  [TODO]
+## F15 — Localization & accessibility pass  [IN PROGRESS]
 Goal: 11 languages, RTL and accessibility quality.
 
 - [ ] F15.T01 — Translate String Catalog into 10 languages (draft); plural variants; mark "needs review".
