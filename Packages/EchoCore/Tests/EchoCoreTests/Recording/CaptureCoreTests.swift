@@ -5,6 +5,7 @@ import Testing
 struct CaptureCoreTests {
     private func core(inputs: Int, channels: [Int], mixdown: Int, maximumFrames: Int = 512, ringFrames: Int = 48_000) throws -> CaptureCore {
         let core = CaptureCore()
+        core.setParameterForTesting(.monitorGain, 1)   // these tests read the monitor output
         try #require(core.configure(
             sampleRate: 48_000, inputChannelCount: inputs, channels: channels, mixdownChannelCount: mixdown,
             maximumFrames: maximumFrames, ringFrames: ringFrames

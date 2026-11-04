@@ -39,6 +39,12 @@ public final class AVRecordingEngine: RecordingEngine {
     public private(set) var inputGainDB: Double = 0
     public private(set) var monitorVolume: Double = 0
     public private(set) var autoTune = AutoTuneSettings()
+    public private(set) var backingTrack: BackingTrackInfo?
+    public private(set) var backingTrackStart: Double = 0
+    public private(set) var backingTrackVolume: Double = 0.8
+    public private(set) var isPreviewingBackingTrack = false
+    @ObservationIgnored private let backingPlayer = AVAudioPlayerNode()
+    @ObservationIgnored private var backingFile: AVAudioFile?
     @ObservationIgnored private var isVoiceProcessingOn = false
     @ObservationIgnored private var configurationObserver: (any NSObjectProtocol)?
 
@@ -73,6 +79,7 @@ public final class AVRecordingEngine: RecordingEngine {
         self.storageCheckInterval = storageCheckInterval
         self.manualInputFormat = manualInputFormat
         engine.attach(captureNode)
+        engine.attach(backingPlayer)
         // The system stops the engine when the input or output changes (an interface unplugged, a new route).
         configurationObserver = NotificationCenter.default.addObserver(
             forName: .AVAudioEngineConfigurationChange, object: engine, queue: .main
@@ -133,8 +140,8 @@ public final class AVRecordingEngine: RecordingEngine {
         engine.disconnectNodeOutput(captureNode)
         engine.connect(engine.inputNode, to: captureNode, format: format)
         engine.connect(captureNode, to: engine.mainMixerNode, format: monitorFormat)
-        // Silent unless monitoring is on (headphones only; the caller decides).
-        engine.mainMixerNode.outputVolume = Float(monitorVolume)
+        // The monitor's level is the capture unit's (headphones only; the caller decides); the mixer passes all.
+        engine.mainMixerNode.outputVolume = 1
         do {
             engine.prepare()
             try engine.start()
@@ -160,7 +167,7 @@ public final class AVRecordingEngine: RecordingEngine {
 
     public func setMonitorVolume(_ volume: Double) {
         monitorVolume = min(1, max(0, volume))
-        engine.mainMixerNode.outputVolume = Float(monitorVolume)
+        captureUnit.setParameter(.monitorGain, AUValue(monitorVolume))
     }
 
     public func setInputGain(_ db: Double) {
@@ -229,7 +236,7 @@ public final class AVRecordingEngine: RecordingEngine {
         capture.setTakeOpen(true)
         markers = []
         let capturedAtStart = capture.capturedFrames
-        capture.setCapturing(true)
+        startCapturing(atTakeSeconds: 0)
         // High priority whoever starts the take: at a lower one, a busy device delays the drain's timer by seconds.
         let loop = Task(priority: .high) { [weak self, clock, storage, drainInterval, storageCheckInterval, stopBelow = policy.stopBelow] in
             let reason = await writer.run(
@@ -245,6 +252,7 @@ public final class AVRecordingEngine: RecordingEngine {
     public func pause() {
         guard state == .recording, let take else { return }
         capture.setCapturing(false)
+        backingPlayer.stop()
         state = .paused
         flush(take)
     }
@@ -254,6 +262,7 @@ public final class AVRecordingEngine: RecordingEngine {
         case .recording, .paused:
             guard let take else { return }
             capture.setCapturing(false)
+            backingPlayer.stop()
             markers.append(RecordingMetadata.Marker(time: elapsedSeconds, kind: kind))
             state = .pausedByInterruption(kind)
             flush(take)
@@ -279,8 +288,88 @@ public final class AVRecordingEngine: RecordingEngine {
         default:
             throw RecordingError.noTake
         }
-        capture.setCapturing(true)
+        // The backing track carries on from where the take is (SPEC § 13.6).
+        startCapturing(atTakeSeconds: elapsedSeconds)
         state = .recording
+    }
+
+    /// Starts capturing, and the backing track at the matching point of the take on the very same frame: on host time
+    /// live (its player may run at another sample rate), on render sample time offline.
+    private func startCapturing(atTakeSeconds seconds: Double) {
+        guard let backingFile else {
+            capture.setCapturing(true)
+            return
+        }
+        isPreviewingBackingTrack = false
+        backingPlayer.stop()
+        let when: AVAudioTime
+        if manualInputFormat != nil {
+            let sampleTime = capture.nextSampleTime
+            capture.startCapturing(atSampleTime: sampleTime)
+            when = AVAudioTime(sampleTime: sampleTime, atRate: backingFile.processingFormat.sampleRate)
+        } else {
+            // Far enough ahead for both to be scheduled before it comes.
+            let hostTime = mach_absolute_time() + AVAudioTime.hostTime(forSeconds: 0.1)
+            capture.startCapturing(atHostTime: hostTime, hostTicksPerFrame: Double(AVAudioTime.hostTime(forSeconds: 1)) / capture.sampleRate)
+            when = AVAudioTime(hostTime: hostTime)
+        }
+        scheduleBackingTrack(backingFile, from: backingTrackStart + seconds, at: when)
+    }
+
+    private func scheduleBackingTrack(_ file: AVAudioFile, from seconds: Double, at when: AVAudioTime?) {
+        let startFrame = AVAudioFramePosition(seconds * file.processingFormat.sampleRate)
+        // Past its end the take goes on in silence.
+        guard startFrame < file.length else { return }
+        backingPlayer.scheduleSegment(file, startingFrame: startFrame, frameCount: AVAudioFrameCount(file.length - startFrame), at: nil)
+        backingPlayer.play(at: when)
+    }
+
+    // MARK: Backing track (SPEC § 13.6)
+
+    public func loadBackingTrack(_ url: URL) throws {
+        guard take == nil, state != .finishing else { throw RecordingError.takeInProgress }
+        let file: AVAudioFile
+        do {
+            file = try AVAudioFile(forReading: url)
+        } catch {
+            throw RecordingError.cantReadBackingTrack
+        }
+        guard file.length > 0 else { throw RecordingError.cantReadBackingTrack }
+        removeBackingTrack()
+        engine.connect(backingPlayer, to: engine.mainMixerNode, format: file.processingFormat)
+        backingPlayer.volume = Float(backingTrackVolume)
+        backingFile = file
+        backingTrack = BackingTrackInfo(url: url, duration: Double(file.length) / file.processingFormat.sampleRate)
+        backingTrackStart = 0
+    }
+
+    public func removeBackingTrack() {
+        guard take == nil else { return }
+        backingPlayer.stop()
+        isPreviewingBackingTrack = false
+        engine.disconnectNodeOutput(backingPlayer)
+        backingFile = nil
+        backingTrack = nil
+        backingTrackStart = 0
+    }
+
+    public func setBackingTrackStart(_ seconds: Double) {
+        guard take == nil, let backingTrack else { return }
+        backingTrackStart = min(max(0, seconds), backingTrack.duration)
+        if isPreviewingBackingTrack { previewBackingTrack(true) }
+    }
+
+    public func setBackingTrackVolume(_ volume: Double) {
+        backingTrackVolume = min(1, max(0, volume))
+        backingPlayer.volume = Float(backingTrackVolume)
+    }
+
+    public func previewBackingTrack(_ isPlaying: Bool) {
+        backingPlayer.stop()
+        isPreviewingBackingTrack = false
+        guard isPlaying, take == nil, state == .ready, let backingFile else { return }
+        scheduleBackingTrack(backingFile, from: backingTrackStart, at: nil)
+        isPreviewingBackingTrack = true
     }
 
     /// The system stopped the engine for a route change. Internal for tests that simulate it.
@@ -290,7 +379,11 @@ public final class AVRecordingEngine: RecordingEngine {
             guard continuesAfterRouteChange?() == true else { return interrupt(.routeChange) }
             // Only the output changed: continue on the same input; the take has a short gap, marked.
             do {
+                let wasRecording = state == .recording
+                capture.setCapturing(false)
+                backingPlayer.stop()
                 try restart()
+                if wasRecording { startCapturing(atTakeSeconds: elapsedSeconds) }
                 if take != nil { markers.append(RecordingMetadata.Marker(time: elapsedSeconds, kind: .routeChange)) }
             } catch {
                 interrupt(.routeChange)
@@ -361,6 +454,7 @@ public final class AVRecordingEngine: RecordingEngine {
 
     private func close(_ take: OpenTake, isLoopRunning: Bool) async -> RecordedTake {
         capture.setCapturing(false)
+        backingPlayer.stop()
         await waitForLastCapturingCycle()
         if isLoopRunning {
             take.loop.cancel()
@@ -368,6 +462,7 @@ public final class AVRecordingEngine: RecordingEngine {
         }
         var recorded = await take.writer.finish()
         recorded.markers = markers
+        recorded.backingTrackStart = backingFile == nil ? nil : backingTrackStart
         capture.setTakeOpen(false)
         self.take = nil
         return recorded

@@ -52,7 +52,7 @@ public struct RecordedProjectBuilder: RecordedProjectBuilding {
                 sourceInfo: inspection.sourceInfo,
                 recording: RecordingMetadata(
                     channelNames: session.channelNames, editingSource: editingSource, markers: session.markers,
-                    parameterChanges: session.parameterChanges
+                    parameterChanges: session.parameterChanges, backingTrack: session.backingTrack
                 ),
                 createdAt: session.startedAt
             )

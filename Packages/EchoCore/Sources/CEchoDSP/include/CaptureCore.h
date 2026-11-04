@@ -35,7 +35,9 @@ typedef CF_ENUM(uint64_t, EECaptureParameter) {
     EECaptureParameterAutoTuneHumanize = 6,
     /// 0/1.
     EECaptureParameterAutoTuneFormants = 7,
-    EECaptureParameterCount = 8,
+    /// The monitor's level, 0…1 (linear, ramped); 0 by default. The recorded signal and a backing track don't change.
+    EECaptureParameterMonitorGain = 8,
+    EECaptureParameterCount = 9,
 };
 
 typedef struct EECaptureCore EECaptureCore;
@@ -69,6 +71,14 @@ float EECaptureCoreParameter(const EECaptureCore *core, uint64_t address);
 void EECaptureCoreSetTakeOpen(EECaptureCore *core, bool isOpen);
 /// Any thread: while true, rendered audio enters the ring; while false (paused, between takes) only the meters run.
 void EECaptureCoreSetCapturing(EECaptureCore *core, bool isCapturing);
+/// Any thread: starts capturing exactly at render sample time `sampleTime` (the engine's timeline), so a backing track
+/// scheduled at the same sample starts with the take. Capturing counts as off until then.
+void EECaptureCoreStartCapturingAt(EECaptureCore *core, int64_t sampleTime);
+/// Any thread: starts capturing at the frame that plays at `hostTime` (live: a backing track's player starts at the same
+/// host time, whatever its own sample rate).
+void EECaptureCoreStartCapturingAtHostTime(EECaptureCore *core, uint64_t hostTime, double hostTicksPerFrame);
+/// The render sample time the next cycle starts at, as last seen by the render thread.
+int64_t EECaptureCoreNextSampleTime(const EECaptureCore *core);
 /// Render cycles finished so far. A cycle that starts after `EECaptureCoreSetCapturing(false)` returns sees it, so once
 /// this grew by 2 no more audio enters the ring.
 uint64_t EECaptureCoreRenderCycles(const EECaptureCore *core);

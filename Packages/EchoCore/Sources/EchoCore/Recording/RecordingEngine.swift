@@ -32,6 +32,21 @@ public protocol RecordingEngine: AnyObject, Observable {
     /// Live auto-tune (SPEC § 13.5), any time; switching it on or off fades briefly. Kept across `prepare`.
     var autoTune: AutoTuneSettings { get }
     func setAutoTune(_ settings: AutoTuneSettings)
+
+    /// The instrumental heard while recording (SPEC § 13.6), never in the take; nil without one. Kept across `prepare`.
+    var backingTrack: BackingTrackInfo? { get }
+    /// Where in the backing track takes start, in seconds. Locked while a take is open.
+    var backingTrackStart: Double { get }
+    var backingTrackVolume: Double { get }
+    /// Playing from `backingTrackStart` to listen before recording.
+    var isPreviewingBackingTrack: Bool { get }
+    /// Throws `.cantReadBackingTrack`, or `.takeInProgress` during a take.
+    func loadBackingTrack(_ url: URL) throws
+    func removeBackingTrack()
+    func setBackingTrackStart(_ seconds: Double)
+    /// 0…1, any time; the caller keeps it silent through the speaker.
+    func setBackingTrackVolume(_ volume: Double)
+    func previewBackingTrack(_ isPlaying: Bool)
     /// Asked when the system stops the engine for a route change: true when the recorded input is still the session's
     /// current one, so recording continues on it right away with a marker at the gap (user decision, SPEC § 13.7).
     /// Otherwise (or when nil) the take pauses like an interruption.
@@ -97,6 +112,8 @@ public enum RecordingError: Error, Equatable {
     case inputChanged
     /// The take's files couldn't be created.
     case cantCreateFiles
+    /// The chosen backing track can't be read as audio.
+    case cantReadBackingTrack
     /// `prepare` while a take is open.
     case takeInProgress
     /// No take to start, pause or finish in the current state.
@@ -120,6 +137,8 @@ public struct RecordedTake: Equatable, Sendable {
     public let droppedFrames: Int64
     /// Where interruptions and lost inputs paused the take (SPEC § 13.7), for `RecordingMetadata.markers`.
     public var markers: [RecordingMetadata.Marker]
+    /// Where in the backing track the take began (seconds); nil without one. Both started on the same frame.
+    public var backingTrackStart: Double?
 
     public init(
         folder: TakeFolder, duration: Double, mixdownChannelCount: Int, channelFileCount: Int, droppedFrames: Int64,
@@ -131,6 +150,7 @@ public struct RecordedTake: Equatable, Sendable {
         self.channelFileCount = channelFileCount
         self.droppedFrames = droppedFrames
         self.markers = markers
+        self.backingTrackStart = nil
     }
 
     public var channelFiles: [URL] { (0..<channelFileCount).map { folder.channel($0 + 1) } }

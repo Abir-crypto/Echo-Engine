@@ -427,7 +427,11 @@ Goal: live pitch correction and sing-along.
   > note). `RecordModel.setAutoTune` applies live, `commitAutoTune` remembers (`RecordingSettings.autoTune`, lenient) and logs only what changed (six new
   > `ParameterChange` kinds, the take starts with all of them). Auto-tune makes the wired-headphones tip apply. Note names are own keys (`note.*`: Do/Ré/Mi
   > locales). `-debugRecordSheet autoTune`.
-- [ ] F12.T04 — Backing track import + playback during recording; latency compensation stored (§ 13.6).
+- [x] F12.T04 — Backing track import + playback during recording; latency compensation stored (§ 13.6).
+  > Done: engine backing player (load/remove/start/volume/preview); capture core starts on an exact frame (`startCapturing(atHostTime:)` live,
+  > `atSampleTime:` offline) with the player scheduled for the same moment, on take start, resume and route-change restarts, from start + take length.
+  > Monitor volume moved into the capture unit (`monitorGain`) so the mixer stays at 1. `FileBackingTrackStore` (app copy + `takes/backing.<ext>`),
+  > `RecordingMetadata.backingTrack` (start, round-trip latency, volume; lenient), remembered in `RecordingSettings`; monitoring on with a track; speaker silent in takes.
 - [ ] F12.T05 — `ChromaKeyDetector` + "Song key: X. Use it?" suggestion. Tests.
 - [ ] F12.T06 — Finish flow: vocal only vs vocal + backing mix project.
 

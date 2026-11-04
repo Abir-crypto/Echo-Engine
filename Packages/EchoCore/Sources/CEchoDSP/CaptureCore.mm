@@ -42,6 +42,13 @@ struct EECaptureCore {
 
     std::atomic<bool> isTakeOpen{false};
     std::atomic<bool> isCapturing{false};
+    /// A render sample time from which capturing starts exactly (a backing track starts on the same sample); −1: none.
+    std::atomic<int64_t> captureFrom{-1};
+    /// Or a host time (live: players run on other sample timelines), with host ticks per frame; 0: none.
+    std::atomic<uint64_t> captureFromHostTime{0};
+    std::atomic<double> hostTicksPerFrame{1};
+    /// The render sample time of the next cycle (the host's, or counted offline); read by other threads.
+    std::atomic<int64_t> nextSampleTime{0};
     std::atomic<uint64_t> renderCycles{0};
     std::atomic<int64_t> capturedFrames{0};
     std::atomic<int64_t> droppedFrames{0};
@@ -81,7 +88,12 @@ struct EECaptureCore {
         autoTune.setHumanize(value(EECaptureParameterAutoTuneHumanize));
         autoTune.setPreservesFormants(value(EECaptureParameterAutoTuneFormants) >= 0.5f);
         chain.setAutoTuneEnabled(value(EECaptureParameterAutoTune) >= 0.5f);
+        monitorGain.setTarget(std::clamp(value(EECaptureParameterMonitorGain), 0.0f, 1.0f), monitorRampFrames);
     }
+
+    /// The monitor's level, ramped.
+    echo::dsp::SmoothedValue monitorGain;
+    int monitorRampFrames = 1;
 
     /// The input gain as the meters show it.
     float meterGain = 1;
@@ -99,7 +111,7 @@ struct EECaptureCore {
     }
 
     /// One render cycle of at most `maximumFrames` frames. Real-time safe.
-    void render(const float *const *input, float *const *output, int frames) noexcept {
+    void render(const float *const *input, float *const *output, int frames, int64_t sampleTime, uint64_t hostTime = 0) noexcept {
         applyParameters();
         // Meters show each channel as it goes into processing: after the input gain (SPEC § 13.4).
         for (int channel = 0; channel < inputChannelCount; ++channel) {
@@ -124,13 +136,41 @@ struct EECaptureCore {
         float *recorded[kMaxMixdownChannels] = {};
         for (int channel = 0; channel < mixdownChannelCount; ++channel) { recorded[channel] = recordedChannel(channel); }
         chain.process(output, recorded, mixdownChannelCount, frames);
+        // Only the monitor's level changes: the recorded signal went out above.
+        if (monitorGain.isSmoothing() || monitorGain.current() != 1) {
+            for (int frame = 0; frame < frames; ++frame) {
+                const float gain = monitorGain.next();
+                for (int channel = 0; channel < mixdownChannelCount; ++channel) { output[channel][frame] *= gain; }
+            }
+        }
 
-        if (isCapturing.load(std::memory_order_acquire)) {
-            capturedFrames.fetch_add(frames, std::memory_order_relaxed);
+        // A scheduled start begins at its exact sample, part way through this cycle if need be.
+        int offset = 0;
+        const int64_t from = captureFrom.load(std::memory_order_acquire);
+        if (from >= 0 && sampleTime + frames > from) {
+            offset = static_cast<int>(std::max<int64_t>(0, from - sampleTime));
+            captureFrom.store(-1, std::memory_order_relaxed);
+            isCapturing.store(true, std::memory_order_release);
+        }
+        const uint64_t fromHost = captureFromHostTime.load(std::memory_order_acquire);
+        if (fromHost != 0 && hostTime != 0) {
+            const double ahead = fromHost > hostTime
+                ? static_cast<double>(fromHost - hostTime) / hostTicksPerFrame.load(std::memory_order_relaxed) : 0;
+            if (ahead < frames) {
+                offset = static_cast<int>(ahead);
+                captureFromHostTime.store(0, std::memory_order_relaxed);
+                isCapturing.store(true, std::memory_order_release);
+            }
+        }
+        if (isCapturing.load(std::memory_order_acquire) && offset < frames) {
+            const int count = frames - offset;
+            capturedFrames.fetch_add(count, std::memory_order_relaxed);
             const float *planes[kMaxPlanes] = {};
-            for (int index = 0; index < selectedCount; ++index) { planes[index] = input[selected[index]]; }
-            for (int channel = 0; channel < mixdownChannelCount; ++channel) { planes[selectedCount + channel] = recorded[channel]; }
-            push(planes, frames);
+            for (int index = 0; index < selectedCount; ++index) { planes[index] = input[selected[index]] + offset; }
+            for (int channel = 0; channel < mixdownChannelCount; ++channel) {
+                planes[selectedCount + channel] = recorded[channel] + offset;
+            }
+            push(planes, count);
         }
         renderCycles.fetch_add(1, std::memory_order_release);
     }
@@ -220,6 +260,8 @@ bool EECaptureCoreConfigure(EECaptureCore *core, double sampleRate, int32_t inpu
     core->outputScratch.assign(static_cast<size_t>(kMaxMixdownChannels) * static_cast<size_t>(maximumFrames), 0.0f);
     core->recordedScratch.assign(static_cast<size_t>(kMaxMixdownChannels) * static_cast<size_t>(maximumFrames), 0.0f);
     core->chain.prepare(sampleRate, mixdownChannelCount, maximumFrames);
+    core->monitorRampFrames = echo::dsp::rampFrames(sampleRate);
+    core->monitorGain.reset(std::clamp(core->parameters[EECaptureParameterMonitorGain].load(), 0.0f, 1.0f));
     core->hasPending.store(true);
     core->inputListStorage.assign(offsetof(AudioBufferList, mBuffers) + sizeof(AudioBuffer) * static_cast<size_t>(inputChannelCount), 0);
     for (auto &peak : core->peaks) { peak.store(0); }
@@ -253,8 +295,24 @@ float EECaptureCoreParameter(const EECaptureCore *core, uint64_t address) {
 void EECaptureCoreSetTakeOpen(EECaptureCore *core, bool isOpen) { core->isTakeOpen.store(isOpen, std::memory_order_release); }
 
 void EECaptureCoreSetCapturing(EECaptureCore *core, bool isCapturing) {
+    core->captureFrom.store(-1, std::memory_order_relaxed);
+    core->captureFromHostTime.store(0, std::memory_order_relaxed);
     core->isCapturing.store(isCapturing, std::memory_order_release);
 }
+
+void EECaptureCoreStartCapturingAt(EECaptureCore *core, int64_t sampleTime) {
+    core->isCapturing.store(false, std::memory_order_release);
+    core->captureFrom.store(std::max<int64_t>(0, sampleTime), std::memory_order_release);
+}
+
+void EECaptureCoreStartCapturingAtHostTime(EECaptureCore *core, uint64_t hostTime, double hostTicksPerFrame) {
+    core->isCapturing.store(false, std::memory_order_release);
+    core->captureFrom.store(-1, std::memory_order_relaxed);
+    core->hostTicksPerFrame.store(std::max(hostTicksPerFrame, 1e-9), std::memory_order_relaxed);
+    core->captureFromHostTime.store(std::max<uint64_t>(hostTime, 1), std::memory_order_release);
+}
+
+int64_t EECaptureCoreNextSampleTime(const EECaptureCore *core) { return core->nextSampleTime.load(std::memory_order_relaxed); }
 
 uint64_t EECaptureCoreRenderCycles(const EECaptureCore *core) { return core->renderCycles.load(std::memory_order_acquire); }
 int64_t EECaptureCoreCapturedFrames(const EECaptureCore *core) { return core->capturedFrames.load(std::memory_order_relaxed); }
@@ -318,7 +376,9 @@ void EECaptureCoreProcess(EECaptureCore *core, const float *const *input, float 
         for (int channel = 0; channel < core->mixdownChannelCount; ++channel) {
             out[channel] = output != nullptr ? output[channel] + start : core->outputScratchChannel(channel);
         }
-        core->render(in, out, frames);
+        const int64_t sampleTime = core->nextSampleTime.load(std::memory_order_relaxed);
+        core->nextSampleTime.store(sampleTime + frames, std::memory_order_relaxed);
+        core->render(in, out, frames, sampleTime);
     }
 }
 
@@ -358,7 +418,11 @@ AUInternalRenderBlock EECaptureCoreRenderBlock(EECaptureCore *core) {
                 outputs[channel] = core->outputScratchChannel(channel);
             }
         }
-        core->render(channels, outputs, static_cast<int>(frameCount));
+        const int64_t sampleTime = (timestamp->mFlags & kAudioTimeStampSampleTimeValid) != 0
+            ? static_cast<int64_t>(timestamp->mSampleTime) : core->nextSampleTime.load(std::memory_order_relaxed);
+        core->nextSampleTime.store(sampleTime + frameCount, std::memory_order_relaxed);
+        const uint64_t hostTime = (timestamp->mFlags & kAudioTimeStampHostTimeValid) != 0 ? timestamp->mHostTime : 0;
+        core->render(channels, outputs, static_cast<int>(frameCount), sampleTime, hostTime);
         return noErr;
     };
 }

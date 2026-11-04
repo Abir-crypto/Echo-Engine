@@ -9,16 +9,18 @@ public struct TakeSession: Codable, Equatable, Sendable {
     public var channelNames: [String]
     public var markers: [RecordingMetadata.Marker]
     public var parameterChanges: [RecordingMetadata.ParameterChange]
+    public var backingTrack: RecordingMetadata.BackingTrack?
 
     public init(
         startedAt: Date, channelNames: [String], markers: [RecordingMetadata.Marker] = [],
-        parameterChanges: [RecordingMetadata.ParameterChange] = []
+        parameterChanges: [RecordingMetadata.ParameterChange] = [], backingTrack: RecordingMetadata.BackingTrack? = nil
     ) {
         schemaVersion = 1
         self.startedAt = startedAt
         self.channelNames = channelNames
         self.markers = markers
         self.parameterChanges = parameterChanges
+        self.backingTrack = backingTrack
     }
 
     /// Lenient (SPEC § 5.3): only the start time is required.
@@ -29,6 +31,7 @@ public struct TakeSession: Codable, Equatable, Sendable {
         channelNames = try container.decodeIfPresent([String].self, forKey: .channelNames) ?? []
         markers = try container.decodeIfPresent([RecordingMetadata.Marker].self, forKey: .markers) ?? []
         parameterChanges = try container.decodeIfPresent([RecordingMetadata.ParameterChange].self, forKey: .parameterChanges) ?? []
+        backingTrack = try? container.decodeIfPresent(RecordingMetadata.BackingTrack.self, forKey: .backingTrack)
     }
 
     /// Creates the take folder if needed, so the marker exists before any audio does.

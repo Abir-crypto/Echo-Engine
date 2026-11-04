@@ -9,14 +9,18 @@ public struct RecordingMetadata: Codable, Equatable, Sendable {
     public var markers: [Marker]
     /// Live processing settings over the take (SPEC § 13.3), for re-processing later. Added in F11: lenient.
     public var parameterChanges: [ParameterChange]
+    /// The backing track sung over (SPEC § 13.6); nil without one. Added in F12: lenient.
+    public var backingTrack: BackingTrack?
 
     public init(
-        channelNames: [String], editingSource: Take = .processed, markers: [Marker] = [], parameterChanges: [ParameterChange] = []
+        channelNames: [String], editingSource: Take = .processed, markers: [Marker] = [], parameterChanges: [ParameterChange] = [],
+        backingTrack: BackingTrack? = nil
     ) {
         self.channelNames = channelNames
         self.editingSource = editingSource
         self.markers = markers
         self.parameterChanges = parameterChanges
+        self.backingTrack = backingTrack
     }
 
     public init(from decoder: any Decoder) throws {
@@ -25,6 +29,7 @@ public struct RecordingMetadata: Codable, Equatable, Sendable {
         editingSource = try container.decode(Take.self, forKey: .editingSource)
         markers = try container.decode([Marker].self, forKey: .markers)
         parameterChanges = try container.decodeIfPresent([ParameterChange].self, forKey: .parameterChanges) ?? []
+        backingTrack = try container.decodeIfPresent(BackingTrack.self, forKey: .backingTrack)
     }
 }
 
@@ -33,6 +38,29 @@ extension RecordingMetadata {
     public enum Take: String, Codable, Sendable, UnknownCaseDecodable {
         case raw, processed
         case unknown
+    }
+
+    /// The backing track a take was sung over (SPEC § 13.6).
+    public struct BackingTrack: Codable, Equatable, Sendable {
+        /// Its copy in `takes/`, e.g. `backing.m4a`, for mixing.
+        public var fileName: String
+        /// The chosen file's name, shown to the person only.
+        public var displayName: String
+        /// Where in the track the take began, in seconds.
+        public var startSeconds: Double
+        /// How much later the voice arrived than the track it answered: input + output latency + IO buffer (SPEC § 13.6).
+        /// A mix moves the voice this much earlier.
+        public var latencySeconds: Double
+        /// The track's level while recording, 0…1; the mix starts from it.
+        public var volume: Double
+
+        public init(fileName: String, displayName: String, startSeconds: Double, latencySeconds: Double, volume: Double) {
+            self.fileName = fileName
+            self.displayName = displayName
+            self.startSeconds = startSeconds
+            self.latencySeconds = latencySeconds
+            self.volume = volume
+        }
     }
 
     /// A live processing setting from a point of the take on (SPEC § 13.3).

@@ -3,7 +3,7 @@ import SwiftUI
 
 /// The Record screen's sheets.
 enum RecordSheet: String, Identifiable {
-    case input, noiseReduction, autoTune, inputGain, monitor
+    case input, noiseReduction, autoTune, backingTrack, inputGain, monitor
     var id: Self { self }
 }
 
@@ -39,6 +39,12 @@ struct RecordSettingsRows: View {
                     value: model.autoTune.isOn ? Text(model.autoTune.summary) : Text("Off"),
                     isOff: !model.autoTune.isOn
                 ) { open(.autoTune) }
+                RowSeparator()
+                SettingRow(
+                    title: Text("Backing track"),
+                    value: model.backingTrackName.map { Text($0) } ?? Text("None", comment: "Backing track row: none chosen."),
+                    isOff: model.backingTrack == nil
+                ) { open(.backingTrack) }
                 RowSeparator()
                 SettingRow(title: Text("Input gain"), value: Text(DisplayFormat.decibels(Float(model.inputGainDB))),
                            isOff: model.inputGainDB == 0) { open(.inputGain) }
@@ -453,5 +459,131 @@ struct AutoTuneSheet: View {
             }
         }
         .presentationDetents([.medium, .large])
+    }
+}
+
+/// The backing track (SPEC § 13.6): chosen from Files, played in the headphones while recording and never recorded with
+/// the voice. Start position and track are locked during a take; the volume isn't.
+struct BackingTrackSheet: View {
+    let model: RecordModel
+
+    @Environment(\.dismiss) private var dismiss
+    @State private var choosesFile = false
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 8) {
+                    if let track = model.backingTrack {
+                        GroupedRows {
+                            HStack(spacing: 12) {
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(model.backingTrackName ?? "")
+                                        .font(.body.weight(.semibold))
+                                        .foregroundStyle(.token(.textPrimary))
+                                        .lineLimit(2)
+                                    Text(DisplayFormat.duration(track.duration))
+                                        .font(.footnote)
+                                        .monospacedDigit()
+                                        .foregroundStyle(.token(.textSecondary))
+                                }
+                                Spacer(minLength: 8)
+                                if !model.hasTake {
+                                    Button {
+                                        model.previewBackingTrack(!model.isPreviewingBackingTrack)
+                                    } label: {
+                                        Image(systemName: model.isPreviewingBackingTrack ? "stop.fill" : "play.fill")
+                                            .font(.system(size: 16, weight: .semibold))
+                                            .foregroundStyle(.token(.textPrimary))
+                                            .frame(width: 44, height: 44)
+                                            .background(.token(.surfaceSunken), in: .circle)
+                                    }
+                                    .buttonStyle(.plain)
+                                    .accessibilityLabel(model.isPreviewingBackingTrack
+                                        ? Text("Stop listening", comment: "Stops the backing track preview.")
+                                        : Text("Listen", comment: "Plays the backing track from its start position."))
+                                }
+                            }
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 10)
+                            RowSeparator()
+                            ValueSlider(
+                                title: "Start at",
+                                value: Binding(get: { Float(model.backingTrackStart) }, set: { model.setBackingTrackStart(Double($0)) }),
+                                range: 0...Float(max(track.duration, 1)), step: 0.5,
+                                format: { DisplayFormat.duration(Double($0)) },
+                                onEditingEnded: { model.commitBackingTrackStart() }
+                            )
+                            .disabled(model.hasTake)
+                            RowSeparator()
+                            ValueSlider(
+                                title: "Volume",
+                                value: Binding(get: { Float(model.backingTrackVolume) }, set: { model.setBackingTrackVolume(Double($0)) }),
+                                range: 0...1, step: 0.05,
+                                format: { DisplayFormat.percent($0) },
+                                onEditingEnded: {}
+                            )
+                        }
+                        Text(model.hasTake
+                             ? "The track and where it starts stay fixed until this recording ends."
+                             : "Plays in your headphones while you record. It isn’t recorded with your voice.")
+                            .font(.footnote)
+                            .foregroundStyle(.token(.textSecondary))
+                            .padding(.horizontal, 14)
+                        if !model.hasTake {
+                            HStack(spacing: 12) {
+                                Button {
+                                    choosesFile = true
+                                } label: {
+                                    Text("Choose another", comment: "Replaces the backing track with another file.")
+                                }
+                                .buttonStyle(.secondary)
+                                Button(role: .destructive) {
+                                    model.removeBackingTrack()
+                                } label: {
+                                    Text("Remove")
+                                }
+                                .buttonStyle(.secondary)
+                            }
+                            .padding(.top, 8)
+                        }
+                    } else {
+                        Text("Sing along to an instrumental. It plays in your headphones and isn’t recorded with your voice.")
+                            .font(.subheadline)
+                            .foregroundStyle(.token(.textSecondary))
+                            .padding(.horizontal, 14)
+                        Button {
+                            choosesFile = true
+                        } label: {
+                            Text("Choose a file", comment: "Opens Files to pick a backing track.")
+                        }
+                        .buttonStyle(.primary)
+                        .padding(.top, 8)
+                        .disabled(model.hasTake)
+                    }
+                    if model.problem == .cantReadBackingTrack {
+                        Text("That file can’t be played as a backing track. Choose an audio file such as M4A, MP3 or WAV.")
+                            .font(.footnote)
+                            .foregroundStyle(.token(.warning))
+                            .padding(.horizontal, 14)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 12)
+            }
+            .background(Color.token(.ground).ignoresSafeArea())
+            .navigationTitle(Text("Backing track"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Done") { dismiss() }
+                }
+            }
+        }
+        .presentationDetents([.medium, .large])
+        .fileImporter(isPresented: $choosesFile, allowedContentTypes: [.audio]) { result in
+            if case .success(let url) = result { model.chooseBackingTrack(url) }
+        }
+        .onDisappear { model.previewBackingTrack(false) }
     }
 }

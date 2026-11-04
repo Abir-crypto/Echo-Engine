@@ -20,6 +20,7 @@ struct RecordModelTests {
         let activity: FakeRecordingActivity
         let relay: RecordingStopRelay
         let settings: FakeAppSettingsStore
+        let backingTracks: FakeBackingTrackStore
     }
 
     private func fixture(
@@ -28,6 +29,7 @@ struct RecordModelTests {
     ) -> Fixture {
         let settings = FakeAppSettingsStore(tint: .teal)
         settings.recording = recording
+        let backingTracks = FakeBackingTrackStore()
         let devices = FakeAudioDeviceManager(inputs: inputs ?? [builtIn, usb])
         let engine = FakeRecordingEngine(inputChannels: 2, peaks: [0.5, 0.05])
         let projects = FakeProjectRepository()
@@ -36,13 +38,13 @@ struct RecordModelTests {
         let relay = RecordingStopRelay()
         let model = RecordModel(
             engine: engine, devices: devices, interruptions: RecordingInterruptions(devices: devices, engine: engine),
-            projects: projects, builder: builder, idleTimer: idleTimer, activity: activity, stopRelay: relay,
+            projects: projects, builder: builder, backingTracks: backingTracks, idleTimer: idleTimer, activity: activity, stopRelay: relay,
             settings: settings, clock: FakeClock(now: started),
             title: { "Recording at \($0.timeIntervalSince1970)" }
         )
         return Fixture(
             model: model, engine: engine, devices: devices, projects: projects, builder: builder, idleTimer: idleTimer,
-            activity: activity, relay: relay, settings: settings
+            activity: activity, relay: relay, settings: settings, backingTracks: backingTracks
         )
     }
 
@@ -396,5 +398,80 @@ struct RecordModelTests {
         #expect(AutoTuneSettings(isOn: true, key: 9, scale: .minor).summary == "A minor, natural")
         #expect(AutoTuneSettings(isOn: true, style: 1).summary == "Chromatic, robotic")
         #expect(AutoTuneSettings(isOn: true, key: 1).summary == "C♯ major, natural")
+    }
+
+    // MARK: Backing track (F12.T04)
+
+    private let song = URL(filePath: "/Users/someone/Music/My Song.m4a")
+
+    @Test func choosingATrackKeepsACopyAndTurnsMonitoringOn() async {
+        let fixture = fixture()
+        fixture.devices.outputKind = .wiredHeadphones
+        await fixture.model.appear()
+        fixture.model.chooseBackingTrack(song)
+        #expect(fixture.backingTracks.stored == [song])
+        #expect(fixture.engine.backingTrack?.url == fixture.backingTracks.root.appending(path: "stored-1.m4a"))
+        #expect(fixture.model.backingTrackName == "My Song")
+        #expect(fixture.model.isMonitoring, "monitoring turns on with a backing track (user decision)")
+        #expect(fixture.settings.recording.backingTrack == .init(fileName: "stored-1.m4a", displayName: "My Song"))
+
+        fixture.model.chooseBackingTrack(URL(filePath: "/Users/someone/Music/Other.mp3"))
+        #expect(fixture.backingTracks.removed == ["stored-1.m4a"], "the previous copy goes")
+        fixture.model.removeBackingTrack()
+        #expect(fixture.engine.backingTrack == nil)
+        #expect(fixture.settings.recording.backingTrack == nil)
+        #expect(fixture.backingTracks.removed == ["stored-1.m4a", "stored-2.mp3"])
+    }
+
+    @Test func aTakeOverATrackKeepsItAndTheLatencyToMix() async throws {
+        let fixture = fixture()
+        fixture.devices.outputKind = .wiredHeadphones
+        await fixture.model.appear()
+        fixture.model.chooseBackingTrack(song)
+        fixture.model.setBackingTrackStart(12.5)
+        fixture.model.commitBackingTrackStart()
+        fixture.model.setBackingTrackVolume(0.6)
+        await fixture.model.record()
+        let folder = try #require(fixture.engine.takeFolder)
+        #expect(fixture.backingTracks.copiedInto == [folder])
+        #expect(try TakeSession.read(from: folder).backingTrack == RecordingMetadata.BackingTrack(
+            fileName: "backing.m4a", displayName: "My Song", startSeconds: 12.5,
+            latencySeconds: fixture.devices.latency.roundTripSeconds, volume: 0.6
+        ))
+        await fixture.model.stop()
+        let call = try #require(await fixture.builder.calls.first)
+        #expect(call.session.backingTrack?.startSeconds == 12.5, "into the project's metadata")
+    }
+
+    @Test func theSpeakerNeverPlaysTheTrackIntoATake() async {
+        let fixture = fixture()
+        await fixture.model.appear()
+        fixture.model.chooseBackingTrack(song)
+        #expect(fixture.engine.backingTrackVolume == 0.8, "listening before a take works on the speaker")
+        await fixture.model.record()
+        #expect(fixture.engine.backingTrackVolume == 0, "the microphone would pick it up")
+        fixture.devices.outputKind = .wiredHeadphones
+        fixture.model.handle(.availableInputsChanged)
+        #expect(fixture.engine.backingTrackVolume == 0.8)
+    }
+
+    @Test func theLastTrackComesBackNextTime() async {
+        let fixture = fixture(recording: RecordingSettings(
+            backingTrack: .init(fileName: "kept.m4a", displayName: "Kept", startSeconds: 4, volume: 0.5)
+        ))
+        await fixture.model.appear()
+        #expect(fixture.engine.backingTrack?.url == fixture.backingTracks.root.appending(path: "kept.m4a"))
+        #expect(fixture.engine.backingTrackStart == 4)
+        #expect(fixture.model.backingTrackName == "Kept")
+    }
+
+    @Test func anUnplayableFileSaysSo() async {
+        let fixture = fixture()
+        fixture.engine.backingTrackError = .cantReadBackingTrack
+        await fixture.model.appear()
+        fixture.model.chooseBackingTrack(song)
+        #expect(fixture.model.problem == .cantReadBackingTrack)
+        #expect(fixture.backingTracks.removed == ["stored-1.m4a"], "its copy is removed again")
+        #expect(fixture.settings.recording.backingTrack == nil)
     }
 }

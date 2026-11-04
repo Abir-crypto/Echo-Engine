@@ -169,6 +169,7 @@ final class AppContainer {
             interruptions: RecordingInterruptions(devices: devices, engine: engine),
             projects: projects,
             builder: recordedProjects,
+            backingTracks: FileBackingTrackStore(root: .backingTracksDirectory),
             idleTimer: idleTimer,
             activity: recordingActivity,
             stopRelay: recordingStopRelay,

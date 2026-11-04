@@ -22,6 +22,8 @@ final class RecordModel {
         case microphoneBusy
         /// The take couldn't become a project; it stays on disk and is offered again at the next launch.
         case cantSave
+        /// The chosen backing track can't be played.
+        case cantReadBackingTrack
     }
 
     /// One channel of the input as the take records it.
@@ -56,6 +58,7 @@ final class RecordModel {
     @ObservationIgnored private let interruptions: RecordingInterruptions
     @ObservationIgnored private let projects: any ProjectRepository
     @ObservationIgnored private let builder: any RecordedProjectBuilding
+    @ObservationIgnored private let backingTracks: any BackingTrackStoring
     @ObservationIgnored private let idleTimer: any IdleTimerControlling
     @ObservationIgnored private let activity: any RecordingActivityPresenting
     @ObservationIgnored private let stopRelay: RecordingStopRelay
@@ -83,6 +86,7 @@ final class RecordModel {
         interruptions: RecordingInterruptions,
         projects: any ProjectRepository,
         builder: any RecordedProjectBuilding,
+        backingTracks: any BackingTrackStoring,
         idleTimer: any IdleTimerControlling,
         activity: any RecordingActivityPresenting,
         stopRelay: RecordingStopRelay,
@@ -95,6 +99,7 @@ final class RecordModel {
         self.interruptions = interruptions
         self.projects = projects
         self.builder = builder
+        self.backingTracks = backingTracks
         self.idleTimer = idleTimer
         self.activity = activity
         self.stopRelay = stopRelay
@@ -152,6 +157,7 @@ final class RecordModel {
         engine.setSuppression(settings.recording.suppression)
         engine.setInputGain(settings.recording.inputGainDB)
         engine.setAutoTune(settings.recording.autoTune)
+        restoreBackingTrack()
         refreshOutput()
         refreshInputs()
         configure()
@@ -161,6 +167,7 @@ final class RecordModel {
     /// The tab went away: the screen may lock again; without a take the engine stops.
     func disappear() {
         isOnScreen = false
+        engine.previewBackingTrack(false)
         updateIdleTimer()
         guard take == nil else { return }
         stopMeters()
@@ -203,7 +210,7 @@ final class RecordModel {
         problem = nil
         let id = UUID()
         // The processing settings from the start, for re-processing later (SPEC § 13.3).
-        let session = TakeSession(
+        var session = TakeSession(
             startedAt: clock.now, channelNames: recordedChannels.map(channelName),
             parameterChanges: [
                 .init(time: 0, parameter: .inputGain, value: engine.inputGainDB),
@@ -212,6 +219,13 @@ final class RecordModel {
         )
         do {
             let folder = try await projects.createFolder(for: id).takeFolder
+            // The backing track goes with the take, for mixing (SPEC § 13.6).
+            if let track = engine.backingTrack, let stored = settings.recording.backingTrack {
+                session.backingTrack = RecordingMetadata.BackingTrack(
+                    fileName: try backingTracks.copy(track.url, into: folder), displayName: stored.displayName,
+                    startSeconds: engine.backingTrackStart, latencySeconds: devices.latency.roundTripSeconds, volume: stored.volume
+                )
+            }
             // The marker exists before any audio does, so a kill from here on leaves a take to recover.
             try session.write(to: folder)
             if let selectedInputID { interruptions.track(inputID: selectedInputID, builtInMode: builtInMode) }
@@ -229,6 +243,7 @@ final class RecordModel {
         activity.start(tint: settings.tint)
         stopRelay.handler = { [weak self] in await self?.stop() }
         updateIdleTimer()
+        applyBackingTrackVolume()
     }
 
     func pause() {
@@ -337,6 +352,83 @@ final class RecordModel {
         }
     }
 
+    // MARK: Backing track (SPEC § 13.6)
+
+    var backingTrack: BackingTrackInfo? { engine.backingTrack }
+    /// The chosen file's name, shown only here.
+    var backingTrackName: String? { backingTrack == nil ? nil : settings.recording.backingTrack?.displayName }
+    var backingTrackStart: Double { engine.backingTrackStart }
+    var backingTrackVolume: Double { settings.recording.backingTrack?.volume ?? 0.8 }
+    var isPreviewingBackingTrack: Bool { engine.isPreviewingBackingTrack }
+
+    /// Uses a file from Files as the backing track: kept in the app (so it stays if the original moves) and turns
+    /// monitoring on (user decision, SPEC § 13.4).
+    func chooseBackingTrack(_ url: URL) {
+        guard take == nil else { return }
+        let previous = settings.recording.backingTrack
+        do {
+            let copy = try backingTracks.store(url)
+            do {
+                try engine.loadBackingTrack(copy)
+            } catch {
+                backingTracks.remove(fileName: copy.lastPathComponent)
+                throw error
+            }
+            if let previous { backingTracks.remove(fileName: previous.fileName) }
+            settings.recording.backingTrack = RecordingSettings.StoredBackingTrack(
+                fileName: copy.lastPathComponent, displayName: url.deletingPathExtension().lastPathComponent,
+                volume: previous?.volume ?? 0.8
+            )
+            if problem == .cantReadBackingTrack { problem = nil }
+            setMonitoring(true)
+            applyBackingTrackVolume()
+        } catch {
+            problem = .cantReadBackingTrack
+        }
+    }
+
+    func removeBackingTrack() {
+        guard take == nil else { return }
+        engine.removeBackingTrack()
+        if let stored = settings.recording.backingTrack { backingTracks.remove(fileName: stored.fileName) }
+        settings.recording.backingTrack = nil
+    }
+
+    /// While the slider moves; locked during a take.
+    func setBackingTrackStart(_ seconds: Double) {
+        engine.setBackingTrackStart(seconds)
+    }
+
+    func commitBackingTrackStart() {
+        settings.recording.backingTrack?.startSeconds = engine.backingTrackStart
+    }
+
+    func setBackingTrackVolume(_ volume: Double) {
+        settings.recording.backingTrack?.volume = min(1, max(0, volume))
+        applyBackingTrackVolume()
+    }
+
+    func previewBackingTrack(_ isPlaying: Bool) {
+        engine.previewBackingTrack(isPlaying)
+    }
+
+    /// The track chosen last time, if its copy is still there.
+    private func restoreBackingTrack() {
+        guard engine.backingTrack == nil, let stored = settings.recording.backingTrack else { return }
+        do {
+            try engine.loadBackingTrack(backingTracks.root.appending(path: stored.fileName))
+            engine.setBackingTrackStart(stored.startSeconds)
+        } catch {
+            settings.recording.backingTrack = nil
+        }
+    }
+
+    /// Heard through headphones; through the speaker only when listening before a take, never into one.
+    private func applyBackingTrackVolume() {
+        let isSilenced = take != nil && !outputKind.allowsMonitoring
+        engine.setBackingTrackVolume(isSilenced ? 0 : backingTrackVolume)
+    }
+
     // MARK: Monitoring (SPEC § 13.4)
 
     var isMonitoring: Bool { settings.recording.isMonitoring }
@@ -348,7 +440,7 @@ final class RecordModel {
         isMonitoring && needsTightMonitoring && outputKind != .wiredHeadphones && outputKind != .speaker
     }
     /// Auto-tune or a backing track is on: then monitoring delay matters.
-    private var needsTightMonitoring: Bool { autoTune.isOn }
+    private var needsTightMonitoring: Bool { autoTune.isOn || backingTrack != nil }
 
     func setMonitoring(_ isOn: Bool) {
         settings.recording.isMonitoring = isOn
@@ -363,6 +455,7 @@ final class RecordModel {
     private func refreshOutput() {
         outputKind = devices.outputKind
         applyMonitor()
+        applyBackingTrackVolume()
     }
 
     private func applyMonitor() {
@@ -431,6 +524,7 @@ final class RecordModel {
         activity.end()
         stopRelay.handler = nil
         updateIdleTimer()
+        applyBackingTrackVolume()
         if !isOnScreen {
             stopMeters()
             engine.shutDown()

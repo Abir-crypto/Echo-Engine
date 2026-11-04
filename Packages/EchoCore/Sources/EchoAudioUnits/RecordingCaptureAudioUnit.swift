@@ -59,6 +59,7 @@ public final class RecordingCaptureAudioUnit: AUAudioUnit {
             parameter("autoTuneRetune", .autoTuneRetune, 0...100, .milliseconds),
             parameter("autoTuneHumanize", .autoTuneHumanize, 0...1, .generic),
             parameter("autoTuneFormants", .autoTuneFormants, 0...1, .boolean),
+            parameter("monitorGain", .monitorGain, 0...1, .linearGain),
         ]
         let tree = AUParameterTree.createTree(withChildren: [suppression, inputGain] + autoTune)
         tree.implementorValueObserver = { [core] parameter, value in core.setParameter(parameter.address, value) }
@@ -181,6 +182,19 @@ public final class CaptureCore: @unchecked Sendable {
     public func setCapturing(_ isCapturing: Bool) {
         EECaptureCoreSetCapturing(pointer, isCapturing)
     }
+
+    /// Starts capturing exactly at render sample time `sampleTime` (offline: a backing track scheduled on the same sample).
+    public func startCapturing(atSampleTime sampleTime: Int64) {
+        EECaptureCoreStartCapturingAt(pointer, sampleTime)
+    }
+
+    /// Starts capturing at the frame that plays at `hostTime` (live: a backing track's player starts at the same host time).
+    public func startCapturing(atHostTime hostTime: UInt64, hostTicksPerFrame: Double) {
+        EECaptureCoreStartCapturingAtHostTime(pointer, hostTime, hostTicksPerFrame)
+    }
+
+    /// The render sample time the next cycle starts at.
+    public var nextSampleTime: Int64 { EECaptureCoreNextSampleTime(pointer) }
 
     /// Render cycles finished; once it grew by 2 after `setCapturing(false)`, nothing more is queued.
     public var renderCycles: UInt64 { EECaptureCoreRenderCycles(pointer) }

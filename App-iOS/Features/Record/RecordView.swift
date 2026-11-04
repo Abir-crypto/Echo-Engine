@@ -44,6 +44,7 @@ struct RecordView: View {
             case .input: InputSheet(model: model)
             case .noiseReduction: NoiseReductionSheet(model: model)
             case .autoTune: AutoTuneSheet(model: model)
+            case .backingTrack: BackingTrackSheet(model: model)
             case .inputGain: InputGainSheet(model: model)
             case .monitor: MonitorSheet(model: model)
             }
@@ -154,6 +155,8 @@ struct RecordView: View {
             )
         case .microphoneBusy:
             Text("A call or another app is using the microphone. Resume when it’s finished.")
+        case .cantReadBackingTrack:
+            Text("That file can’t be played as a backing track. Choose an audio file such as M4A, MP3 or WAV.")
         case .cantSave:
             Text("This recording couldn’t be saved as a project. It stays on your device, and Echo Engine offers it again the next time it opens.")
         }
@@ -377,7 +380,8 @@ func previewRecordModel(peaks: [Float] = [0.25, 0.12], inputs: [AudioInput] = Pr
     let engine = FakeRecordingEngine(inputChannels: inputs.first?.channelCount ?? 1, peaks: peaks)
     return RecordModel(
         engine: engine, devices: devices, interruptions: RecordingInterruptions(devices: devices, engine: engine),
-        projects: FakeProjectRepository(), builder: FakeRecordedProjectBuilder(), idleTimer: FakeIdleTimer(),
+        projects: FakeProjectRepository(), builder: FakeRecordedProjectBuilder(), backingTracks: FakeBackingTrackStore(),
+        idleTimer: FakeIdleTimer(),
         activity: FakeRecordingActivity(), stopRelay: RecordingStopRelay(), settings: FakeAppSettingsStore(), clock: FakeClock(),
         title: { DisplayFormat.recordingTitle($0) }
     )

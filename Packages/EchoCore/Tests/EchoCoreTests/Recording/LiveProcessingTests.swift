@@ -7,6 +7,7 @@ import Testing
 struct LiveProcessingTests {
     private func core(rate: Double = 48_000) throws -> CaptureCore {
         let core = CaptureCore()
+        core.setParameterForTesting(.monitorGain, 1)   // these tests listen to the monitor
         try #require(core.configure(
             sampleRate: rate, inputChannelCount: 1, channels: [0], mixdownChannelCount: 1, maximumFrames: 512, ringFrames: 1 << 19
         ))

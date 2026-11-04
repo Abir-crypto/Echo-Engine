@@ -307,4 +307,99 @@ struct AVRecordingEngineTests {
         #expect(abs(rms(raw) - rms(Array(noise[48_000...]))) < 1e-4, "the raw take is untouched")
         #expect(20 * log10(rms(Array(processed[..<40_000])) / rms(raw)) < -15)
     }
+
+    // MARK: Backing track (SPEC § 13.6)
+
+    /// A mono 48 kHz backing track whose every frame is distinct: 0.1 + frame × 1e-6.
+    private func backingTrack(seconds: Double = 2) throws -> URL {
+        let url = try temporaryFolder().appending(path: "backing.caf")
+        let format = AVAudioFormat(standardFormatWithSampleRate: 48_000, channels: 1)!
+        let file = try AVAudioFile(forWriting: url, settings: format.settings, commonFormat: .pcmFormatFloat32, interleaved: false)
+        let frames = AVAudioFrameCount(seconds * 48_000)
+        let buffer = AVAudioPCMBuffer(pcmFormat: format, frameCapacity: frames)!
+        buffer.frameLength = frames
+        for frame in 0..<Int(frames) { buffer.floatChannelData![0][frame] = 0.1 + Float(frame) * 1e-6 }
+        try file.write(from: buffer)
+        return url
+    }
+
+    /// Renders `frames` and returns the engine's output (left channel): only the backing track, the monitor is off.
+    private func renderOutput(_ engine: AVRecordingEngine, frames: Int) throws -> [Float] {
+        let buffer = AVAudioPCMBuffer(pcmFormat: engine.engine.manualRenderingFormat, frameCapacity: 4_096)!
+        var output: [Float] = []
+        while output.count < frames {
+            let count = AVAudioFrameCount(min(4_096, frames - output.count))
+            try #require(try engine.engine.renderOffline(count, to: buffer) == .success)
+            output += UnsafeBufferPointer(start: buffer.floatChannelData![0], count: Int(count))
+        }
+        return output
+    }
+
+    @Test func theBackingTrackStartsOnTheTakesFirstFrame() async throws {
+        let (engine, _) = try makeEngine()
+        try engine.loadBackingTrack(try backingTrack())
+        #expect(engine.backingTrack.map { abs($0.duration - 2) < 1e-6 } == true)
+        try engine.prepare(.mono(channels: [0]))
+        let before = try renderOutput(engine, frames: 4_096)
+        #expect(before.allSatisfy { $0 == 0 }, "silent before the take: the monitor is off")
+        let folder = TakeFolder(url: try temporaryFolder())
+        try engine.startTake(in: folder)
+        let during = try renderOutput(engine, frames: 9_600)
+        let take = try await engine.finishTake()
+
+        // The mixer may scale a mono input; the track's frames keep their order and spacing.
+        let scale = during[0] / 0.1
+        #expect(scale > 0.5)
+        for frame in [0, 1, 100, 4_095, 4_096, 9_599] {
+            #expect(abs(during[frame] - scale * (0.1 + Float(frame) * 1e-6)) < 1e-5, "track frame \(frame) plays with take frame \(frame)")
+        }
+        let raw = try readSamples(folder.raw).channels[0]
+        #expect(raw[0] == Self.signal(0, 4_096), "the take starts on the same render frame: 4,096")
+        #expect(take.backingTrackStart == 0)
+        #expect(raw.allSatisfy { $0 < 0.05 }, "the backing track is never in the take")
+    }
+
+    @Test func pausingStopsTheTrackAndResumingPicksItUpWhereTheTakeIs() async throws {
+        let (engine, _) = try makeEngine()
+        try engine.loadBackingTrack(try backingTrack())
+        try engine.prepare(.mono(channels: [0]))
+        engine.setBackingTrackStart(0.5)
+        try engine.startTake(in: TakeFolder(url: try temporaryFolder()))
+        let first = try renderOutput(engine, frames: 4_800)
+        engine.pause()
+        let paused = try renderOutput(engine, frames: 2_000)
+        try engine.resume()
+        let second = try renderOutput(engine, frames: 4_800)
+        let take = try await engine.finishTake()
+
+        let scale = first[0] / (0.1 + 24_000e-6)
+        #expect(abs(first[0] - scale * (0.1 + 24_000e-6)) < 1e-5, "starts half a second in")
+        #expect(paused.allSatisfy { $0 == 0 }, "silent while paused")
+        #expect(abs(second[0] - scale * (0.1 + Float(24_000 + 4_800) * 1e-6)) < 1e-5, "continues where the take is: 0.5 s + 4,800 frames")
+        #expect(take.backingTrackStart == 0.5)
+        #expect(take.duration == 0.2)
+    }
+
+    @Test func theTrackIsLockedDuringATake() throws {
+        let (engine, _) = try makeEngine()
+        let url = try backingTrack()
+        try engine.loadBackingTrack(url)
+        try engine.prepare(.mono(channels: [0]))
+        try engine.startTake(in: TakeFolder(url: try temporaryFolder()))
+        engine.setBackingTrackStart(1)
+        #expect(engine.backingTrackStart == 0)
+        engine.removeBackingTrack()
+        #expect(engine.backingTrack != nil)
+        #expect(throws: RecordingError.takeInProgress) { try engine.loadBackingTrack(url) }
+        engine.setBackingTrackVolume(0.3)
+        #expect(engine.backingTrackVolume == 0.3, "the volume can change any time")
+    }
+
+    @Test func anUnreadableTrackIsRefused() throws {
+        let (engine, _) = try makeEngine()
+        let url = try temporaryFolder().appending(path: "notes.caf")
+        try Data("not audio".utf8).write(to: url)
+        #expect(throws: RecordingError.cantReadBackingTrack) { try engine.loadBackingTrack(url) }
+        #expect(engine.backingTrack == nil)
+    }
 }

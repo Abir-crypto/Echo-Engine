@@ -170,6 +170,9 @@
     "Auto-tune" : {
       "comment" : "Record settings row, switch and sheet title: live pitch correction."
     },
+    "Backing track" : {
+      "comment" : "Record settings row and sheet title: an instrumental to sing along to."
+    },
     "Band %lld, %@" : {
       "comment" : "VoiceOver label of an EQ band. %1$lld = band number, %2$@ = its frequency, e.g. Band 3, 1 kHz."
     },
@@ -226,6 +229,12 @@
     },
     "Choose a channel to record in Input." : {
       "comment" : "Record screen: no interface channel is chosen."
+    },
+    "Choose a file" : {
+      "comment" : "Opens Files to pick a backing track."
+    },
+    "Choose another" : {
+      "comment" : "Replaces the backing track with another file."
     },
     "Choose the channels to record and name them. They’re mixed into one recording, and each is also kept on its own." : {
       "comment" : "Input sheet caption under the channels."
@@ -454,6 +463,9 @@
     "Limiter ceiling" : {
       "comment" : "Gain and dynamics: the limiter's maximum level (slider, dB)."
     },
+    "Listen" : {
+      "comment" : "Plays the backing track from its start position."
+    },
     "Lossless" : {
       "comment" : "Audio quality preset: FLAC 24-bit 48 kHz."
     },
@@ -537,6 +549,9 @@
     },
     "Noise Suppression" : {
       "comment" : "AI feature name: removes background noise."
+    },
+    "None" : {
+      "comment" : "Backing track row: none chosen."
     },
     "Not available in this version" : {
       "comment" : "EQ band type made by a newer app version; the band is bypassed."
@@ -739,6 +754,9 @@
     "Playhead" : {
       "comment" : "Accessibility label of the playhead on the overview strip."
     },
+    "Plays in your headphones while you record. It isn’t recorded with your voice." : {
+      "comment" : "Backing track sheet caption."
+    },
     "Plays the enhancements up to this one." : {
       "comment" : "VoiceOver hint of an Enhance row (per-step A/B)."
     },
@@ -855,7 +873,7 @@
       "comment" : "Gate/compressor: how fast it lets go (slider, milliseconds)."
     },
     "Remove" : {
-      "comment" : "Swipe action / VoiceOver action that removes a step from the AI stack."
+      "comment" : "Removes something: a step from the AI stack (swipe or VoiceOver action), or the backing track."
     },
     "Removes background noise such as fans, traffic and hum." : {
       "comment" : "One-line description of Noise Suppression in Add enhancement."
@@ -932,6 +950,9 @@
     "Share" : {
       "comment" : "Save to: the share sheet."
     },
+    "Sing along to an instrumental. It plays in your headphones and isn’t recorded with your voice." : {
+      "comment" : "Backing track sheet before a track is chosen."
+    },
     "Singing" : {
       "comment" : "Built-in preset: light noise suppression, gentle compression, a little reverb."
     },
@@ -944,8 +965,14 @@
     "Standard" : {
       "comment" : "Audio quality preset: AAC 192 kbps."
     },
+    "Start at" : {
+      "comment" : "Backing track slider: where in the track recordings start."
+    },
     "Stereo" : {
       "comment" : "Built-in mic records left and right."
+    },
+    "Stop listening" : {
+      "comment" : "Stops the backing track preview."
     },
     "Stop recording" : {
       "comment" : "Live Activity button and action: ends the recording."
@@ -961,6 +988,9 @@
     },
     "Target" : {
       "comment" : "Slider for the custom loudness target, in LUFS."
+    },
+    "That file can’t be played as a backing track. Choose an audio file such as M4A, MP3 or WAV." : {
+      "comment" : "The chosen backing track file isn’t playable audio."
     },
     "The export continues if you leave Echo Engine." : {
       "comment" : "Export progress caption when iOS lets the export run in the background."
@@ -994,6 +1024,9 @@
     },
     "The recording couldn’t be written any further. Everything up to then is saved." : {
       "comment" : "Why recording stopped: a file couldn’t be written."
+    },
+    "The track and where it starts stay fixed until this recording ends." : {
+      "comment" : "Backing track sheet caption during a take."
     },
     "The video couldn’t be loaded from Photos. Make sure it’s downloaded from iCloud, then try again." : {
       "comment" : "Import error."

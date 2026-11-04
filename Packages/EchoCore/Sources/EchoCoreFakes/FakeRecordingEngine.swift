@@ -1,4 +1,5 @@
 import EchoCore
+import Foundation
 import Observation
 
 /// Records nothing: moves through the states like the real engine, reports `peaks` and returns a take of
@@ -47,6 +48,40 @@ public final class FakeRecordingEngine: RecordingEngine {
 
     public func setAutoTune(_ settings: AutoTuneSettings) {
         autoTune = settings
+    }
+
+    public private(set) var backingTrack: BackingTrackInfo?
+    public private(set) var backingTrackStart: Double = 0
+    public private(set) var backingTrackVolume: Double = 0.8
+    public private(set) var isPreviewingBackingTrack = false
+    /// The duration `loadBackingTrack` reports.
+    public var backingTrackDuration: Double = 180
+    public var backingTrackError: RecordingError?
+
+    public func loadBackingTrack(_ url: URL) throws {
+        guard takeFolder == nil else { throw RecordingError.takeInProgress }
+        if let backingTrackError { throw backingTrackError }
+        backingTrack = BackingTrackInfo(url: url, duration: backingTrackDuration)
+        backingTrackStart = 0
+    }
+
+    public func removeBackingTrack() {
+        guard takeFolder == nil else { return }
+        backingTrack = nil
+        isPreviewingBackingTrack = false
+    }
+
+    public func setBackingTrackStart(_ seconds: Double) {
+        guard takeFolder == nil, let backingTrack else { return }
+        backingTrackStart = min(max(0, seconds), backingTrack.duration)
+    }
+
+    public func setBackingTrackVolume(_ volume: Double) {
+        backingTrackVolume = min(1, max(0, volume))
+    }
+
+    public func previewBackingTrack(_ isPlaying: Bool) {
+        isPreviewingBackingTrack = isPlaying && backingTrack != nil && takeFolder == nil
     }
 
     public func setMonitorVolume(_ volume: Double) {
@@ -113,11 +148,13 @@ public final class FakeRecordingEngine: RecordingEngine {
             finishedTakes += 1
             state = .ready
             elapsedSeconds = 0
-            return RecordedTake(
+            var take = RecordedTake(
                 folder: takeFolder, duration: takeDuration, mixdownChannelCount: configuration.mixdownChannelCount,
                 channelFileCount: configuration.writesChannelFiles ? configuration.channels.count : 0, droppedFrames: 0,
                 markers: markers
             )
+            take.backingTrackStart = backingTrack == nil ? nil : backingTrackStart
+            return take
         default:
             throw RecordingError.noTake
         }
