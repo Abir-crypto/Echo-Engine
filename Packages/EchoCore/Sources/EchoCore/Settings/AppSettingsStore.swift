@@ -37,12 +37,17 @@ public struct RecordingSettings: Codable, Equatable, Sendable {
     public var isMonitoring: Bool
     /// 0…1.
     public var monitorVolume: Double
+    public var autoTune: AutoTuneSettings
 
-    public init(suppression: SuppressionLevel = .off, inputGainDB: Double = 0, isMonitoring: Bool = false, monitorVolume: Double = 0.8) {
+    public init(
+        suppression: SuppressionLevel = .off, inputGainDB: Double = 0, isMonitoring: Bool = false, monitorVolume: Double = 0.8,
+        autoTune: AutoTuneSettings = AutoTuneSettings()
+    ) {
         self.suppression = suppression
         self.inputGainDB = inputGainDB
         self.isMonitoring = isMonitoring
         self.monitorVolume = monitorVolume
+        self.autoTune = autoTune
     }
 
     /// Lenient: missing or unknown values read as the defaults.
@@ -53,6 +58,7 @@ public struct RecordingSettings: Codable, Equatable, Sendable {
         inputGainDB = (try? container.decodeIfPresent(Double.self, forKey: .inputGainDB)) ?? defaults.inputGainDB
         isMonitoring = (try? container.decodeIfPresent(Bool.self, forKey: .isMonitoring)) ?? defaults.isMonitoring
         monitorVolume = (try? container.decodeIfPresent(Double.self, forKey: .monitorVolume)) ?? defaults.monitorVolume
+        autoTune = (try? container.decodeIfPresent(AutoTuneSettings.self, forKey: .autoTune)) ?? defaults.autoTune
     }
 }
 

@@ -113,6 +113,9 @@ enum DebugRecordTab {
         model.setChannel(1, isOn: true)
         model.renameChannel(0, to: "Host")
         model.renameChannel(1, to: "Guest 1")
+        if UserDefaults.standard.string(forKey: sheetArgument) == RecordSheet.autoTune.rawValue {
+            model.setAutoTune(AutoTuneSettings(isOn: true, key: 9, scale: .minor))
+        }
     }
 }
 

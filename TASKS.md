@@ -422,7 +422,11 @@ Goal: live pitch correction and sing-along.
   > frequency, controlled shift, raw estimate, formants-off resampled grains; defaults unchanged). From G2, 1,225 frames (user, SPEC § 13.5/§ 20). `LiveChain`
   > compensates High + auto-tune for the recorded take (2,737 @ 48 kHz); capture-unit parameters + `AutoTuneSettings`/`setAutoTune`. PSOLA leaves the tuned
   > voice up to one pitch period behind raw (≤ 10 ms). Golden `auto-tune-c-major`.
-- [ ] F12.T03 — Auto-tune UI: on/off, key (Chromatic default), scale, Natural↔Robotic, Advanced.
+- [x] F12.T03 — Auto-tune UI: on/off, key (Chromatic default), scale, Natural↔Robotic, Advanced.
+  > Done: Auto-tune row ("A minor, natural") + `AutoTuneSheet` (switch, key menu, Major/Minor, Style slider, Advanced: Humanize, Keep voice character, delay
+  > note). `RecordModel.setAutoTune` applies live, `commitAutoTune` remembers (`RecordingSettings.autoTune`, lenient) and logs only what changed (six new
+  > `ParameterChange` kinds, the take starts with all of them). Auto-tune makes the wired-headphones tip apply. Note names are own keys (`note.*`: Do/Ré/Mi
+  > locales). `-debugRecordSheet autoTune`.
 - [ ] F12.T04 — Backing track import + playback during recording; latency compensation stored (§ 13.6).
 - [ ] F12.T05 — `ChromaKeyDetector` + "Song key: X. Use it?" suggestion. Tests.
 - [ ] F12.T06 — Finish flow: vocal only vs vocal + backing mix project.

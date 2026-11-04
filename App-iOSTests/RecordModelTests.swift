@@ -147,6 +147,7 @@ struct RecordModelTests {
         #expect(try TakeSession.read(from: folder) == TakeSession(
             startedAt: started, channelNames: ["Host", "Guest 1"],
             parameterChanges: [.init(time: 0, parameter: .inputGain, value: 0), .init(time: 0, parameter: .suppression, value: 0)]
+                + RecordModel.autoTuneChanges(from: nil, to: AutoTuneSettings(), at: 0)
         ))
         #expect(fixture.idleTimer.keepsScreenOn)
         #expect(fixture.activity.isShown)
@@ -290,7 +291,7 @@ struct RecordModelTests {
         ], "one entry per released slider")
         await fixture.model.stop()
         let call = try #require(await fixture.builder.calls.first)
-        #expect(call.session.parameterChanges.count == 4, "the log goes into the project")
+        #expect(call.session.parameterChanges.count == 2 + 6 + 2, "start values, then the two changes, into the project")
     }
 
     @Test func settingsBeforeATakeAreNotLogged() async {
@@ -302,7 +303,7 @@ struct RecordModelTests {
         #expect(fixture.engine.suppression.level == .standard)
         await fixture.model.record()
         let folder = fixture.engine.takeFolder
-        #expect(folder.flatMap { try? TakeSession.read(from: $0).parameterChanges } == [
+        #expect(folder.flatMap { try? Array(TakeSession.read(from: $0).parameterChanges.prefix(2)) } == [
             .init(time: 0, parameter: .inputGain, value: -3), .init(time: 0, parameter: .suppression, value: 1),
         ], "the take starts from them")
     }
@@ -354,5 +355,46 @@ struct RecordModelTests {
         #expect(SuppressionCaption(state: SuppressionState(level: .standard, effective: .standard, usesVoiceProcessing: false)) != nil)
         #expect(SuppressionCaption(state: SuppressionState(level: .standard, effective: .standard, usesVoiceProcessing: true)) == nil)
         #expect(SuppressionCaption(state: .off) == nil)
+    }
+
+    // MARK: Auto-tune (F12.T03)
+
+    @Test func autoTuneCarriesOverAndItsChangesAreLogged() async throws {
+        let fixture = fixture(recording: RecordingSettings(autoTune: AutoTuneSettings(isOn: true, key: 9, scale: .minor)))
+        await fixture.model.appear()
+        #expect(fixture.engine.autoTune == AutoTuneSettings(isOn: true, key: 9, scale: .minor), "the last recording's settings")
+        await fixture.model.record()
+        let folder = try #require(fixture.engine.takeFolder)
+        let start = try TakeSession.read(from: folder).parameterChanges
+        #expect(start.contains(.init(time: 0, parameter: .autoTuneKey, value: 9)))
+        #expect(start.contains(.init(time: 0, parameter: .autoTune, value: 1)))
+
+        fixture.engine.elapsedSeconds = 3
+        var robotic = fixture.model.autoTune
+        robotic.style = 0.9
+        fixture.model.setAutoTune(robotic)
+        robotic.style = 1
+        fixture.model.setAutoTune(robotic)
+        #expect(fixture.engine.autoTune.style == 1, "applies while the slider moves")
+        fixture.model.commitAutoTune()
+        #expect(try TakeSession.read(from: folder).parameterChanges.last == .init(time: 3, parameter: .autoTuneStyle, value: 1),
+                "one entry, for what changed")
+        #expect(fixture.settings.recording.autoTune.style == 1)
+    }
+
+    @Test func autoTuneMakesMonitoringTimingMatter() async {
+        let fixture = fixture()
+        fixture.devices.outputKind = .bluetooth
+        await fixture.model.appear()
+        fixture.model.setMonitoring(true)
+        #expect(!fixture.model.showsWiredHeadphonesTip)
+        fixture.model.setAutoTune(AutoTuneSettings(isOn: true))
+        #expect(fixture.model.showsWiredHeadphonesTip)
+    }
+
+    @Test func theRowSummarisesKeyAndStyle() {
+        #expect(AutoTuneSettings(isOn: true, key: 9, scale: .minor).summary == "A minor, natural")
+        #expect(AutoTuneSettings(isOn: true, style: 1).summary == "Chromatic, robotic")
+        #expect(AutoTuneSettings(isOn: true, key: 1).summary == "C♯ major, natural")
     }
 }

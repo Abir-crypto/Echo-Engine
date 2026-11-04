@@ -43,6 +43,7 @@ struct RecordView: View {
             switch sheet {
             case .input: InputSheet(model: model)
             case .noiseReduction: NoiseReductionSheet(model: model)
+            case .autoTune: AutoTuneSheet(model: model)
             case .inputGain: InputGainSheet(model: model)
             case .monitor: MonitorSheet(model: model)
             }

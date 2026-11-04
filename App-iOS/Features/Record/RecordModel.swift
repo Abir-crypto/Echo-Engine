@@ -151,6 +151,7 @@ final class RecordModel {
         // The settings of the last recording carry over (SPEC § 13.4).
         engine.setSuppression(settings.recording.suppression)
         engine.setInputGain(settings.recording.inputGainDB)
+        engine.setAutoTune(settings.recording.autoTune)
         refreshOutput()
         refreshInputs()
         configure()
@@ -207,7 +208,7 @@ final class RecordModel {
             parameterChanges: [
                 .init(time: 0, parameter: .inputGain, value: engine.inputGainDB),
                 .init(time: 0, parameter: .suppression, value: engine.suppression.level.parameterChangeValue),
-            ]
+            ] + Self.autoTuneChanges(from: nil, to: engine.autoTune, at: 0)
         )
         do {
             let folder = try await projects.createFolder(for: id).takeFolder
@@ -300,6 +301,42 @@ final class RecordModel {
         log(.inputGain, engine.inputGainDB)
     }
 
+    // MARK: Auto-tune (SPEC § 13.5)
+
+    var autoTune: AutoTuneSettings { engine.autoTune }
+
+    /// Applies at once (sliders too, while they move); `commitAutoTune` logs and remembers.
+    func setAutoTune(_ settings: AutoTuneSettings) {
+        engine.setAutoTune(settings)
+    }
+
+    /// A control was released: remembered for the next recording, and logged in the take.
+    func commitAutoTune() {
+        let previous = settings.recording.autoTune
+        settings.recording.autoTune = engine.autoTune
+        for change in Self.autoTuneChanges(from: previous, to: engine.autoTune, at: engine.elapsedSeconds) {
+            log(change.parameter, change.value)
+        }
+    }
+
+    /// The auto-tune settings that differ, as log entries (all of them from `nil`).
+    static func autoTuneChanges(
+        from old: AutoTuneSettings?, to new: AutoTuneSettings, at time: Double
+    ) -> [RecordingMetadata.ParameterChange] {
+        let values: [(RecordingMetadata.ParameterChange.Parameter, (AutoTuneSettings) -> Double)] = [
+            (.autoTune, { $0.isOn ? 1 : 0 }),
+            (.autoTuneKey, { Double($0.key ?? -1) }),
+            (.autoTuneScale, { $0.scale == .minor ? 1 : 0 }),
+            (.autoTuneStyle, { $0.style }),
+            (.autoTuneHumanize, { $0.humanize }),
+            (.autoTuneFormants, { $0.preservesFormants ? 1 : 0 }),
+        ]
+        return values.compactMap { parameter, value in
+            guard old.map({ value($0) != value(new) }) ?? true else { return nil }
+            return .init(time: time, parameter: parameter, value: value(new))
+        }
+    }
+
     // MARK: Monitoring (SPEC § 13.4)
 
     var isMonitoring: Bool { settings.recording.isMonitoring }
@@ -310,8 +347,8 @@ final class RecordModel {
     var showsWiredHeadphonesTip: Bool {
         isMonitoring && needsTightMonitoring && outputKind != .wiredHeadphones && outputKind != .speaker
     }
-    /// Auto-tune or a backing track is on (F12): then monitoring delay matters.
-    private var needsTightMonitoring: Bool { false }
+    /// Auto-tune or a backing track is on: then monitoring delay matters.
+    private var needsTightMonitoring: Bool { autoTune.isOn }
 
     func setMonitoring(_ isOn: Bool) {
         settings.recording.isMonitoring = isOn

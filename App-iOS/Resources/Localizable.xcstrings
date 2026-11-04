@@ -10,6 +10,18 @@
     "%@ LUFS" : {
       "comment" : "A loudness target, e.g. -14 LUFS."
     },
+    "%@ major" : {
+      "comment" : "A key in major, e.g. C major."
+    },
+    "%@ minor" : {
+      "comment" : "A key in minor, e.g. A minor."
+    },
+    "%@, natural" : {
+      "comment" : "Auto-tune row value: key and style, e.g. A minor, natural."
+    },
+    "%@, robotic" : {
+      "comment" : "Auto-tune row value: key and style, e.g. A minor, robotic."
+    },
     "%@ The video gets AAC %@ kbps and is kept exactly as it is." : {
       "comment" : "Export quality caption for Both: the audio file's description (e.g. FLAC 24-bit, 48 kHz.), then the bitrate of the audio inside the video."
     },
@@ -155,6 +167,9 @@
     "Auto Level brings the final mix to the loudness the platform expects." : {
       "comment" : "Explains the Loudness screen."
     },
+    "Auto-tune" : {
+      "comment" : "Record settings row, switch and sheet title: live pitch correction."
+    },
     "Band %lld, %@" : {
       "comment" : "VoiceOver label of an EQ band. %1$lld = band number, %2$@ = its frequency, e.g. Band 3, 1 kHz."
     },
@@ -217,6 +232,9 @@
     },
     "Chooses the microphone and its channels." : {
       "comment" : "VoiceOver hint of the input button."
+    },
+    "Chromatic" : {
+      "comment" : "Auto-tune key: every note is allowed."
     },
     "Clear Voice" : {
       "comment" : "AI feature name: noise removal plus presence EQ and gentle compression."
@@ -379,6 +397,9 @@
     "How much of the enhanced sound is mixed with the original." : {
       "comment" : "Caption under the strength slider."
     },
+    "Humanize" : {
+      "comment" : "Auto-tune slider: how much of a held note's movement stays."
+    },
     "Import a video or audio file, or record something new." : {
       "comment" : "Empty projects screen."
     },
@@ -415,6 +436,12 @@
     "Keep, clear cache" : {
       "comment" : "After export: keep the project but delete its rendered enhancements (rebuilt when opened)."
     },
+    "Keep voice character" : {
+      "comment" : "Auto-tune switch: formant preservation."
+    },
+    "Key" : {
+      "comment" : "Auto-tune picker: the song's key."
+    },
     "Left" : {
       "comment" : "Left channel of the built-in mic in stereo."
     },
@@ -439,11 +466,17 @@
     "Low shelf" : {
       "comment" : "EQ band type shown above its sliders."
     },
+    "Major" : {
+      "comment" : "Auto-tune scale."
+    },
     "Makeup gain" : {
       "comment" : "Compressor: level added after compression (slider, dB)."
     },
     "Measuring…" : {
       "comment" : "Shown while Auto Level measures the loudness of the mix."
+    },
+    "Minor" : {
+      "comment" : "Auto-tune scale."
     },
     "Mix" : {
       "comment" : "Reverb: how much room sound is mixed in (slider, percent)."
@@ -465,6 +498,12 @@
     },
     "Name of %@" : {
       "comment" : "VoiceOver label of a channel's name field, e.g. Name of Channel 2."
+    },
+    "Natural" : {
+      "comment" : "Auto-tune style: glides to the note."
+    },
+    "Natural lets your voice glide to the note; Robotic snaps to it at once." : {
+      "comment" : "Auto-tune sheet caption under the style slider."
     },
     "Need %@ more to edit this project. Free up space on your iPad, then come back. Your import is saved." : {
       "comment" : "Editor blocked by storage on iPad (SPEC § 9). %@ = missing space."
@@ -508,8 +547,143 @@
     "Not now" : {
       "comment" : "Leaves an unfinished recording for the next launch."
     },
+    "note.a" : {
+      "comment" : "Note name A (La).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A"
+          }
+        }
+      }
+    },
+    "note.aSharp" : {
+      "comment" : "Note name A sharp (La dièse).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "A♯"
+          }
+        }
+      }
+    },
+    "note.b" : {
+      "comment" : "Note name B (Si).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "B"
+          }
+        }
+      }
+    },
+    "note.c" : {
+      "comment" : "Note name C (Do).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C"
+          }
+        }
+      }
+    },
+    "note.cSharp" : {
+      "comment" : "Note name C sharp (Do dièse).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "C♯"
+          }
+        }
+      }
+    },
+    "note.d" : {
+      "comment" : "Note name D (Ré).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "D"
+          }
+        }
+      }
+    },
+    "note.dSharp" : {
+      "comment" : "Note name D sharp (Ré dièse).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "D♯"
+          }
+        }
+      }
+    },
+    "note.e" : {
+      "comment" : "Note name E (Mi).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "E"
+          }
+        }
+      }
+    },
+    "note.f" : {
+      "comment" : "Note name F (Fa).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "F"
+          }
+        }
+      }
+    },
+    "note.fSharp" : {
+      "comment" : "Note name F sharp (Fa dièse).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "F♯"
+          }
+        }
+      }
+    },
+    "note.g" : {
+      "comment" : "Note name G (Sol).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "G"
+          }
+        }
+      }
+    },
+    "note.gSharp" : {
+      "comment" : "Note name G sharp (Sol dièse).",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "G♯"
+          }
+        }
+      }
+    },
     "Off" : {
       "comment" : "Value of a row when nothing in it is on (Adjust, Record settings and Monitor); the Loudness option that turns Auto Level off; the noise reduction level Off."
+    },
+    "Off makes the voice brighter or darker as the pitch moves." : {
+      "comment" : "Caption of the Keep voice character switch."
     },
     "OK" : {
       "comment" : "Dismisses an alert."
@@ -597,6 +771,9 @@
     },
     "Projects made with it keep their settings." : {
       "comment" : "Message when deleting a preset."
+    },
+    "Pulls your voice to the nearest note as you sing." : {
+      "comment" : "Caption of the Auto-tune switch."
     },
     "Q" : {
       "comment" : "EQ band width (Q) slider; keep the letter Q if your language uses it."
@@ -716,6 +893,9 @@
     "Right" : {
       "comment" : "Right channel of the built-in mic in stereo."
     },
+    "Robotic" : {
+      "comment" : "Auto-tune style: snaps to the note at once."
+    },
     "Room size" : {
       "comment" : "Reverb: size of the simulated room (slider, percent)."
     },
@@ -739,6 +919,9 @@
     },
     "Saving…" : {
       "comment" : "Export sheet title while the file goes to Photos, Files or the share sheet."
+    },
+    "Scale" : {
+      "comment" : "Auto-tune picker: major or minor."
     },
     "Set it so your loudest parts stay out of the red. It changes the processed recording; the original keeps the microphone’s level." : {
       "comment" : "Input gain sheet caption."
@@ -769,6 +952,9 @@
     },
     "Strength" : {
       "comment" : "Slider and value label: how much of an AI step is applied (wet/dry)."
+    },
+    "Style" : {
+      "comment" : "Auto-tune slider: Natural to Robotic."
     },
     "Tap to return" : {
       "comment" : "Hint at the bottom of the dim recording screen."
@@ -889,6 +1075,9 @@
     },
     "Waveform" : {
       "comment" : "Accessibility label of the editor waveform."
+    },
+    "While auto-tune is on you hear yourself about 26 ms later. Wired headphones keep the delay lowest." : {
+      "comment" : "Auto-tune sheet caption about monitoring delay."
     },
     "With High noise reduction you hear yourself about 30 ms later." : {
       "comment" : "Monitor sheet note with High noise reduction."

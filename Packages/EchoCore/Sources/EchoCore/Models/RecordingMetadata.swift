@@ -42,6 +42,18 @@ extension RecordingMetadata {
             case inputGain
             /// 0 Off, 1 Standard, 2 High.
             case suppression
+            /// Auto-tune (SPEC § 13.5): 0/1.
+            case autoTune
+            /// −1 chromatic, else 0 (C) … 11 (B).
+            case autoTuneKey
+            /// 0 major, 1 minor.
+            case autoTuneScale
+            /// 0 natural … 1 robotic.
+            case autoTuneStyle
+            /// 0…1.
+            case autoTuneHumanize
+            /// 0/1.
+            case autoTuneFormants
             case unknown
         }
 
