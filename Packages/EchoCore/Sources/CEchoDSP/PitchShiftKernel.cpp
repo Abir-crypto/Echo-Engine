@@ -10,12 +10,12 @@ constexpr double kHopSeconds = 0.005;
 /// Unvoiced input is cut into grains of about this length (jittered ±25 % so it doesn't buzz).
 constexpr double kUnvoicedPeriodSeconds = 0.006;
 
-void PitchShiftKernel::prepare(double sampleRate) {
+void PitchShiftKernel::prepare(double sampleRate, float minimumFrequency) {
     detector_.prepare(sampleRate);
     rampFrames_ = rampFrames(sampleRate);
     semitones_.reset(semitones_.target());
     wet_.reset(wet_.target());
-    maxPeriod_ = static_cast<int>(std::ceil(sampleRate / PitchDetector::kMinimumFrequency));
+    maxPeriod_ = static_cast<int>(std::ceil(sampleRate / std::max(minimumFrequency, PitchDetector::kMinimumFrequency)));
     minPeriod_ = static_cast<int>(sampleRate / PitchDetector::kMaximumFrequency);
     baseUnvoicedPeriod_ = static_cast<int>(kUnvoicedPeriodSeconds * sampleRate);
     // A grain reaches one period past its mark, and the next mark is searched up to 1.3 periods ahead.
@@ -63,6 +63,15 @@ void PitchShiftKernel::setSemitones(float semitones) noexcept {
     }
 }
 
+void PitchShiftKernel::setControlledShift(float semitones, int rampFrames) noexcept {
+    semitones_.setTarget(std::clamp(semitones, -12.0f, 12.0f), std::max(1, rampFrames));
+    if (wet_.target() != 1) { wet_.setTarget(1, rampFrames_); }
+    if (!isActive_) {
+        isActive_ = true;
+        needsEngage_ = true;
+    }
+}
+
 void PitchShiftKernel::engage(int64_t now) noexcept {
     std::fill(output_.begin(), output_.end(), 0.0f);
     std::fill(weight_.begin(), weight_.end(), 0.0f);
@@ -74,7 +83,10 @@ void PitchShiftKernel::engage(int64_t now) noexcept {
 }
 
 void PitchShiftKernel::updatePeriod() noexcept {
-    const PitchEstimate estimate = detector_.detect();
+    PitchEstimate estimate = detector_.detect();
+    // Below the lowest pitch this instance follows: treated as unvoiced (its grains wouldn't fit the latency).
+    if (estimate.period > static_cast<float>(maxPeriod_)) { estimate = PitchEstimate(); }
+    lastEstimate_ = estimate;
     const bool wasVoiced = isVoiced_;
     isVoiced_ = estimate.period > 0;
     if (isVoiced_) {
@@ -129,14 +141,32 @@ void PitchShiftKernel::addGrains(int64_t now, double ratio, int channelCount) no
         const int64_t center = std::llround(synthesisMark_);
         if (center - half > now) { return; }
         const int64_t mark = markBefore(center);
-        const float step = static_cast<float>(M_PI) / static_cast<float>(half);
-        for (int64_t offset = std::max<int64_t>(-half, now - center); offset < half; ++offset) {
-            const float window = 0.5f * (1 + std::cos(static_cast<float>(offset) * step));
-            const size_t out = static_cast<size_t>((center + offset) & mask_);
-            for (int channel = 0; channel < channelCount; ++channel) {
-                output_[static_cast<size_t>(channel) * ringSize_ + out] += window * sample(input_, channel, mark + offset);
+        if (preservesFormants_ || ratio == 1) {
+            const float step = static_cast<float>(M_PI) / static_cast<float>(half);
+            for (int64_t offset = std::max<int64_t>(-half, now - center); offset < half; ++offset) {
+                const float window = 0.5f * (1 + std::cos(static_cast<float>(offset) * step));
+                const size_t out = static_cast<size_t>((center + offset) & mask_);
+                for (int channel = 0; channel < channelCount; ++channel) {
+                    output_[static_cast<size_t>(channel) * ringSize_ + out] += window * sample(input_, channel, mark + offset);
+                }
+                weight_[out] += window;
             }
-            weight_[out] += window;
+        } else {
+            // The grain squeezed or stretched by the ratio: its spectral envelope moves with the pitch.
+            const int span = std::max(1, static_cast<int>(static_cast<double>(half) / ratio));
+            const float step = static_cast<float>(M_PI) / static_cast<float>(span);
+            for (int64_t offset = std::max<int64_t>(-span, now - center); offset < span; ++offset) {
+                const float window = 0.5f * (1 + std::cos(static_cast<float>(offset) * step));
+                const size_t out = static_cast<size_t>((center + offset) & mask_);
+                const double source = static_cast<double>(mark) + static_cast<double>(offset) * ratio;
+                const int64_t base = static_cast<int64_t>(std::floor(source));
+                const float fraction = static_cast<float>(source - static_cast<double>(base));
+                for (int channel = 0; channel < channelCount; ++channel) {
+                    const float a = sample(input_, channel, base), b = sample(input_, channel, base + 1);
+                    output_[static_cast<size_t>(channel) * ringSize_ + out] += window * (a + (b - a) * fraction);
+                }
+                weight_[out] += window;
+            }
         }
         synthesisMark_ += static_cast<double>(half) / ratio;
     }

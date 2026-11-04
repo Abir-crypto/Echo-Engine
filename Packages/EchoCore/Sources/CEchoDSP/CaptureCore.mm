@@ -73,6 +73,14 @@ struct EECaptureCore {
         const float gainDB = std::clamp(parameters[EECaptureParameterInputGain].load(std::memory_order_relaxed), -24.0f, 24.0f);
         chain.setInputGainDB(gainDB);
         meterGain = echo::dsp::dbToLinear(gainDB);
+        auto value = [this](uint64_t address) { return parameters[address].load(std::memory_order_relaxed); };
+        echo::dsp::AutoTuneKernel &autoTune = chain.autoTune();
+        autoTune.setKey(std::clamp(static_cast<int>(std::lround(value(EECaptureParameterAutoTuneKey))), -1, 11));
+        autoTune.setMinor(value(EECaptureParameterAutoTuneMinor) >= 0.5f);
+        autoTune.setRetuneMs(value(EECaptureParameterAutoTuneRetune));
+        autoTune.setHumanize(value(EECaptureParameterAutoTuneHumanize));
+        autoTune.setPreservesFormants(value(EECaptureParameterAutoTuneFormants) >= 0.5f);
+        chain.setAutoTuneEnabled(value(EECaptureParameterAutoTune) >= 0.5f);
     }
 
     /// The input gain as the meters show it.
@@ -163,6 +171,11 @@ EECaptureCore *EECaptureCoreCreate(void) {
     auto core = new EECaptureCore();
     for (auto &peak : core->peaks) { peak.store(0); }
     for (auto &parameter : core->parameters) { parameter.store(0); }
+    // Auto-tune's defaults (SPEC § 13.5): chromatic, natural, half humanize, formants kept.
+    core->parameters[EECaptureParameterAutoTuneKey].store(-1);
+    core->parameters[EECaptureParameterAutoTuneRetune].store(100);
+    core->parameters[EECaptureParameterAutoTuneHumanize].store(0.5f);
+    core->parameters[EECaptureParameterAutoTuneFormants].store(1);
     return core;
 }
 

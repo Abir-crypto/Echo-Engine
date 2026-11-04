@@ -19,8 +19,17 @@ namespace echo::dsp {
 /// the chain's latency never jumps. `prepare` allocates; everything else is real-time safe.
 class PitchShiftKernel {
 public:
-    void prepare(double sampleRate);
+    /// `minimumFrequency` sets the lowest pitch it follows, and with it the latency (2.5 of its periods); lower pitch
+    /// counts as unvoiced. Auto-tune uses a higher one than the manual shift (SPEC § 13.5).
+    void prepare(double sampleRate, float minimumFrequency = PitchDetector::kMinimumFrequency);
     void setSemitones(float semitones) noexcept;
+    /// Auto-tune: shifts by `semitones` reached over `rampFrames`, and stays shifting (wet) even at 0 so corrections
+    /// glide without crossfading to the dry input.
+    void setControlledShift(float semitones, int rampFrames) noexcept;
+    /// Off: each grain is resampled by the pitch ratio, so formants move with the pitch.
+    void setPreservesFormants(bool preserves) noexcept { preservesFormants_ = preserves; }
+    /// The latest pitch estimate of the input being analysed (period 0: unvoiced or below the minimum).
+    PitchEstimate lastEstimate() const noexcept { return lastEstimate_; }
     void process(float* const* channels, int channelCount, int frameCount) noexcept;
     /// Clears the signal state (envelopes, delay lines) and finishes parameter ramps; keeps the settings. Real-time safe.
     void reset() noexcept;
@@ -55,6 +64,8 @@ private:
     double synthesisMark_ = 0;
     int64_t analysisMark_ = 0;
     uint32_t noise_ = 0x9E3779B9u;
+    PitchEstimate lastEstimate_;
+    bool preservesFormants_ = true;
 };
 
 } // namespace echo::dsp

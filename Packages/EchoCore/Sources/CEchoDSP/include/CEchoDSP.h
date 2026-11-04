@@ -13,6 +13,7 @@
 #include "LimiterKernel.hpp"
 #include "PitchDetector.hpp"
 #include "PitchShiftKernel.hpp"
+#include "AutoTuneKernel.hpp"
 #include "ReverbKernel.hpp"
 #include "TruePeakDetector.hpp"
 #include "LoudnessMeter.hpp"

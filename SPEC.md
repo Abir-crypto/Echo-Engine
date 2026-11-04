@@ -634,6 +634,8 @@ Show a "Use wired headphones for monitoring" tip when auto-tune or a backing tra
   Formant preservation (on).
 - With a backing track loaded: run `KeyDetecting` (chroma-based, DSP) and offer "Song key: A minor. Use it?".
 - Target added latency ≤ 20 ms; IO buffer ≈ 5 ms when auto-tune is on.
+- Range (user decision): auto-tune corrects from G2 (98 Hz) up, adding about 26 ms (PSOLA needs about 2.5 periods of
+  the lowest note); lower notes pass through uncorrected.
 
 ### 13.6 Backing track
 
@@ -963,6 +965,7 @@ Record new user decisions here (date, decision, section updated).
 - 2026-11-04: Recording Live Activity layout mirrors the Record screen: status, timer, 30-segment meter, round Stop;
   Dynamic Island compact = dot + timer + level bars (§ 13.7).
 - 2026-11-04: The device/channel sheet and dim mode are designed natively from § 18, without Sleek (§ 18.5).
+- 2026-11-04: Auto-tune corrects from G2 (98 Hz) up, about 26 ms added, over the ≤ 20 ms target (§ 13.5).
 - 2026-11-04: Recording's Standard tier stays Apple voice processing with its limits (processed raw take, marked gap
   when switching mid-take, one-channel inputs only); monitoring starts Off behind a Monitor row shown with headphones,
   remembered, on with a backing track (§ 13.4).

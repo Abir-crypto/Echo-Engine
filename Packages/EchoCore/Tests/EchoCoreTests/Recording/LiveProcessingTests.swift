@@ -59,12 +59,13 @@ struct LiveProcessingTests {
         let high = run(core, voice, tier: 2)
         // The lag where processed speech best matches the raw speech.
         let window = 48_000..<144_000
-        let lags = 1_300...1_600
+        let lags = 2_600...2_900
         let best = lags.max { lhs, rhs in
             correlation(high.raw, high.processed, lag: lhs, window: window) < correlation(high.raw, high.processed, lag: rhs, window: window)
         }
         #expect(best == core.processedLatencyFrames)
-        #expect(Array(high.processed[100_000..<100_100]) == Array(high.monitor[100_000..<100_100]), "High's monitor is as late")
+        // With High the monitor waits for RNNoise too; the recorded signal also has auto-tune's share of the delay.
+        #expect(Array(high.processed[100_000..<100_100]) == Array(high.monitor[(100_000 - 1_225)..<(100_100 - 1_225)]))
     }
 
     private func correlation(_ raw: [Float], _ processed: [Float], lag: Int, window: Range<Int>) -> Float {
@@ -106,8 +107,8 @@ struct LiveProcessingTests {
         let loud = targetTone(16_000, rate: 16_000)
         let result = run(core, loud, tier: 2)
         // The gate (no RNNoise at 16 kHz) passes speech-level audio, a limiter look-ahead later.
-        let latency = core.processedLatencyFrames - 1_440
-        #expect(alignment(loud, Array(result.monitor[latency...]), over: 1_600..<14_000) > 0.999)
+        let best = (0...100).map { lag in alignment(loud, Array(result.monitor[lag...]), over: 1_600..<14_000) }.max() ?? 0
+        #expect(best > 0.999)
         #expect(abs(rms(result.monitor[4_000..<15_000]) - rms(loud[4_000..<15_000])) < 0.01)
     }
 
@@ -153,5 +154,35 @@ struct LiveProcessingTests {
         harness.process(512)
         let peak = try #require(core.takePeaks().first)
         #expect(abs(peak - 0.25 * 1.9953) < 1e-3, "+6 dB")
+    }
+
+    // MARK: Auto-tune in the chain (F12.T02)
+
+    @Test func autoTuneSwitchedOnMidTakeKeepsTheTimeline() throws {
+        let core = try core()
+        let note = AutoTuneTests.sung([64], detune: [0], seconds: 3)   // in tune: auto-tune leaves it as it is
+        let harness = CaptureHarness(core: core, frames: 512)
+        core.setCapturing(true)
+        var monitor: [Float] = []
+        var start = 0
+        while start < note.count {
+            if start == 48_128 { core.setParameterForTesting(.autoTune, 1) }
+            let count = min(512, note.count - start)
+            harness.fill(count) { _, frame in note[start + frame] }
+            harness.process(count)
+            monitor += harness.output(count)[0]
+            start += count
+        }
+        let planes = harness.readAll()
+        let silent = monitor[(48_128 + 480)..<(48_128 + 480 + 2_000)]
+        #expect(silent.allSatisfy { $0 == 0 }, "fades out while auto-tune fills")
+        let window = 96_000..<136_000
+        let best = (processedLatency48k - 200...processedLatency48k + 200).max { lhs, rhs in
+            window.reduce(0) { $0 + planes[0][$1] * planes[1][$1 + lhs] } < window.reduce(0) { $0 + planes[0][$1] * planes[1][$1 + rhs] }
+        }
+        // PSOLA lays each grain from the last pitch mark before it, so the tuned voice trails by up to one period (E4: 146).
+        let period = 48_000 / 329.63
+        #expect(best.map { $0 >= processedLatency48k - 2 && Double($0) <= Double(processedLatency48k) + period + 2 } == true,
+                "recorded \(processedLatency48k) behind, up to a period more: \(String(describing: best))")
     }
 }

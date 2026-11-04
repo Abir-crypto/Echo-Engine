@@ -29,6 +29,9 @@ public protocol RecordingEngine: AnyObject, Observable {
     /// How loud the processed signal plays back to the person (SPEC § 13.4), 0…1; 0 is silent. Kept across `prepare`.
     var monitorVolume: Double { get }
     func setMonitorVolume(_ volume: Double)
+    /// Live auto-tune (SPEC § 13.5), any time; switching it on or off fades briefly. Kept across `prepare`.
+    var autoTune: AutoTuneSettings { get }
+    func setAutoTune(_ settings: AutoTuneSettings)
     /// Asked when the system stops the engine for a route change: true when the recorded input is still the session's
     /// current one, so recording continues on it right away with a marker at the gap (user decision, SPEC § 13.7).
     /// Otherwise (or when nil) the take pauses like an interruption.

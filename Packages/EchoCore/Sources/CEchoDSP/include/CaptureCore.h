@@ -23,7 +23,19 @@ typedef CF_ENUM(uint64_t, EECaptureParameter) {
     EECaptureParameterSuppression = 0,
     /// −24…+24 dB, ramped. The meters show it too.
     EECaptureParameterInputGain = 1,
-    EECaptureParameterCount = 2,
+    /// Auto-tune (SPEC § 13.5): 0/1, fading in and out.
+    EECaptureParameterAutoTune = 2,
+    /// −1 chromatic, else 0 (C) … 11 (B).
+    EECaptureParameterAutoTuneKey = 3,
+    /// 0 major, 1 minor.
+    EECaptureParameterAutoTuneMinor = 4,
+    /// 0 (robotic) … 100 ms (natural).
+    EECaptureParameterAutoTuneRetune = 5,
+    /// 0…1.
+    EECaptureParameterAutoTuneHumanize = 6,
+    /// 0/1.
+    EECaptureParameterAutoTuneFormants = 7,
+    EECaptureParameterCount = 8,
 };
 
 typedef struct EECaptureCore EECaptureCore;

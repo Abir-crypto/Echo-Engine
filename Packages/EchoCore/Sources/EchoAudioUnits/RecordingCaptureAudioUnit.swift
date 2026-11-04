@@ -46,7 +46,21 @@ public final class RecordingCaptureAudioUnit: AUAudioUnit {
             min: -24, max: 24, unit: .decibels, unitName: nil, flags: [.flag_IsReadable, .flag_IsWritable, .flag_CanRamp],
             valueStrings: nil, dependentParameters: nil
         )
-        let tree = AUParameterTree.createTree(withChildren: [suppression, inputGain])
+        func parameter(_ identifier: String, _ address: EECaptureParameter, _ range: ClosedRange<AUValue>, _ unit: AudioUnitParameterUnit) -> AUParameter {
+            AUParameterTree.createParameter(
+                withIdentifier: identifier, name: identifier, address: address.rawValue, min: range.lowerBound, max: range.upperBound,
+                unit: unit, unitName: nil, flags: [.flag_IsReadable, .flag_IsWritable], valueStrings: nil, dependentParameters: nil
+            )
+        }
+        let autoTune = [
+            parameter("autoTune", .autoTune, 0...1, .boolean),
+            parameter("autoTuneKey", .autoTuneKey, -1...11, .indexed),
+            parameter("autoTuneMinor", .autoTuneMinor, 0...1, .boolean),
+            parameter("autoTuneRetune", .autoTuneRetune, 0...100, .milliseconds),
+            parameter("autoTuneHumanize", .autoTuneHumanize, 0...1, .generic),
+            parameter("autoTuneFormants", .autoTuneFormants, 0...1, .boolean),
+        ]
+        let tree = AUParameterTree.createTree(withChildren: [suppression, inputGain] + autoTune)
         tree.implementorValueObserver = { [core] parameter, value in core.setParameter(parameter.address, value) }
         tree.implementorValueProvider = { [core] parameter in core.parameter(parameter.address) }
         parameterTree = tree

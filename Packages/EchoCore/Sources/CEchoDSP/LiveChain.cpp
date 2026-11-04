@@ -8,7 +8,7 @@
 namespace echo::dsp {
 
 namespace {
-/// Fade before and after a change to or from High.
+/// Fade before and after a stage with its own delay is switched.
 constexpr double kTransitionFadeSeconds = 0.01;
 }
 
@@ -34,14 +34,14 @@ void LiveChain::prepare(double sampleRate, int channelCount, int maximumFrames) 
     gain_.prepare(sampleRate);
     gate_.prepare(sampleRate);
     leveler_.prepare(sampleRate);
+    autoTune_.prepare(sampleRate);
     limiter_.prepare(sampleRate);
     for (int channel = 0; channel < kMaxChannels; ++channel) {
         if (denoisers_[channel] == nullptr && channel < channelCount_ && supportsHigh_) {
             denoisers_[channel] = EEDenoiserCreate();
         }
-        delay_[channel].assign(kHighLatencyFrames, 0.0f);
+        delay_[channel].assign(static_cast<size_t>(compensationFrames()), 0.0f);
     }
-    scratch_.assign(static_cast<size_t>(kMaxChannels) * static_cast<size_t>(maximumFrames_), 0.0f);
     fadeFrames_ = std::max(1, static_cast<int>(kTransitionFadeSeconds * sampleRate));
     reset();
 }
@@ -50,27 +50,35 @@ void LiveChain::reset() noexcept {
     gain_.reset();
     gate_.reset();
     leveler_.reset();
+    autoTune_.reset();
     limiter_.reset();
     std::memset(frameIn_, 0, sizeof(frameIn_));
     std::memset(frameOut_, 0, sizeof(frameOut_));
     framePosition_ = 0;
     for (auto& line : delay_) { std::fill(line.begin(), line.end(), 0.0f); }
     delayPosition_ = 0;
-    active_ = target_;
+    activeTier_ = targetTier_;
+    isAutoTuneActive_ = wantsAutoTune_;
     phase_ = Phase::steady;
     fade_.reset(1);
 }
 
 void LiveChain::setTier(SuppressionTier tier) noexcept {
     if (tier == SuppressionTier::high && !supportsHigh_) { tier = SuppressionTier::standard; }
-    if (tier == target_) { return; }
-    target_ = tier;
+    if (tier == targetTier_) { return; }
+    targetTier_ = tier;
     gate_.setEnabled(tier == SuppressionTier::standard);
-    if (tier == SuppressionTier::high || active_ == SuppressionTier::high) {
+    if (tier == SuppressionTier::high || activeTier_ == SuppressionTier::high) {
         beginTransition();
     } else {
-        active_ = tier;   // Off ↔ Standard: the gate's own ramp is enough.
+        activeTier_ = tier;   // Off ↔ Standard: the gate's own ramp is enough.
     }
+}
+
+void LiveChain::setAutoTuneEnabled(bool enabled) noexcept {
+    if (enabled == wantsAutoTune_) { return; }
+    wantsAutoTune_ = enabled;
+    beginTransition();
 }
 
 void LiveChain::beginTransition() noexcept {
@@ -81,24 +89,28 @@ void LiveChain::beginTransition() noexcept {
 }
 
 float LiveChain::nextFade() noexcept {
+    // Silent long enough for RNNoise, auto-tune and the delay line to hold only new audio.
+    const int holdFrames = compensationFrames() + 480;
     switch (phase_) {
     case Phase::steady:
         return 1;
     case Phase::fadingOut: {
         const float value = fade_.next();
         if (!fade_.isSmoothing()) {
-            // Silent now: switch, and let RNNoise and the delay line fill before fading in.
-            active_ = target_;
+            activeTier_ = targetTier_;
+            isAutoTuneActive_ = wantsAutoTune_;
+            if (isAutoTuneActive_) { autoTune_.reset(); }
             phase_ = Phase::holding;
-            holdRemaining_ = kHighLatencyFrames + 480;
+            holdRemaining_ = holdFrames;
         }
         return value;
     }
     case Phase::holding:
-        if (active_ != target_) {
-            // The tier changed again while silent: wait for the newest one.
-            active_ = target_;
-            holdRemaining_ = kHighLatencyFrames + 480;
+        if (activeTier_ != targetTier_ || isAutoTuneActive_ != wantsAutoTune_) {
+            // Switched again while silent: wait for the newest settings.
+            activeTier_ = targetTier_;
+            isAutoTuneActive_ = wantsAutoTune_;
+            holdRemaining_ = holdFrames;
         }
         if (--holdRemaining_ <= 0) {
             phase_ = Phase::fadingIn;
@@ -129,7 +141,12 @@ void LiveChain::runHigh(float* samples, int channel, int frameCount) noexcept {
 
 void LiveChain::process(float* const* channels, float* const* recorded, int channelCount, int frameCount) noexcept {
     const int count = std::min(channelCount, channelCount_);
-    const bool isHigh = active_ == SuppressionTier::high;
+    const bool isHigh = activeTier_ == SuppressionTier::high;
+    const bool isAutoTune = isAutoTuneActive_;
+    // The recorded signal adds what the monitor path doesn't have of the full delay; fixed within a block.
+    const int length = compensationFrames();
+    const int extraDelay = length - activeDelayFrames();
+
     gain_.process(channels, count, frameCount);
     if (isHigh) {
         for (int channel = 0; channel < count; ++channel) { runHigh(channels[channel], channel, frameCount); }
@@ -138,6 +155,7 @@ void LiveChain::process(float* const* channels, float* const* recorded, int chan
         gate_.process(channels, count, frameCount);
     }
     leveler_.process(channels, count, frameCount);
+    if (isAutoTune) { autoTune_.process(channels, count, frameCount); }
     limiter_.process(channels, count, frameCount);
     // One fade for every channel; the recorded signal fades with the monitor.
     for (int frame = 0; frame < frameCount; ++frame) {
@@ -151,13 +169,18 @@ void LiveChain::process(float* const* channels, float* const* recorded, int chan
         int position = delayPosition_;
         for (int frame = 0; frame < frameCount; ++frame) {
             const float sample = channels[channel][frame];
-            // High is already this late; the other tiers go through the delay line.
-            recorded[channel][frame] = isHigh ? sample : line[position];
+            if (extraDelay == 0) {
+                recorded[channel][frame] = sample;
+            } else {
+                int read = position - extraDelay;
+                if (read < 0) { read += length; }
+                recorded[channel][frame] = line[read];
+            }
             line[position] = sample;
-            if (++position == kHighLatencyFrames) { position = 0; }
+            if (++position == length) { position = 0; }
         }
     }
-    delayPosition_ = (delayPosition_ + frameCount) % kHighLatencyFrames;
+    delayPosition_ = (delayPosition_ + frameCount) % length;
 }
 
 } // namespace echo::dsp

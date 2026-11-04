@@ -416,7 +416,12 @@ Goal: live pitch correction and sing-along.
 - [x] F12.T01 — YIN pitch detector kernel + tests on synthetic tones.
   > Done: the kernel exists since F05.T02 (`PitchDetector`, YIN on a ~12 kHz copy, 70–1000 Hz, unvoiced below 0.8). Added the precision auto-tune needs:
   > notes E2–A5 within ±5 cents, sawtooth harmonics without octave errors, a 1 semitone/s glide followed within 8 cents.
-- [ ] F12.T02 — Auto-tune kernel: scale snapping, retune smoothing, humanize, PSOLA with formants; AU wrapper (§ 13.5). Golden test on sung scale.
+- [x] F12.T02 — Auto-tune kernel: scale snapping, retune smoothing, humanize, PSOLA with formants; AU wrapper (§ 13.5). Golden test on sung scale.
+  > Done: `AutoTuneKernel` (5 ms hops: YIN → nearest note of key/major/minor or chromatic → correction glides at 0–100 ms retune; humanize keeps up to 35
+  > cents of a held note's movement around its corrected centre; no pitch → crossfade to the delayed dry input) over `PitchShiftKernel` (now: lowest
+  > frequency, controlled shift, raw estimate, formants-off resampled grains; defaults unchanged). From G2, 1,225 frames (user, SPEC § 13.5/§ 20). `LiveChain`
+  > compensates High + auto-tune for the recorded take (2,737 @ 48 kHz); capture-unit parameters + `AutoTuneSettings`/`setAutoTune`. PSOLA leaves the tuned
+  > voice up to one pitch period behind raw (≤ 10 ms). Golden `auto-tune-c-major`.
 - [ ] F12.T03 — Auto-tune UI: on/off, key (Chromatic default), scale, Natural↔Robotic, Advanced.
 - [ ] F12.T04 — Backing track import + playback during recording; latency compensation stored (§ 13.6).
 - [ ] F12.T05 — `ChromaKeyDetector` + "Song key: X. Use it?" suggestion. Tests.

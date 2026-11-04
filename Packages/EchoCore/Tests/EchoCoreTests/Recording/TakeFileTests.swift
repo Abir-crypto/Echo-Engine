@@ -58,7 +58,7 @@ struct TakeWriterTests {
     /// chain when the take ended, is silent.
     private func expectProcessedFollows(_ raw: [Float], _ processed: [Float], sourceLocation: SourceLocation = #_sourceLocation) {
         #expect(processed.count == raw.count, sourceLocation: sourceLocation)
-        #expect(alignment(raw, processed, over: 4_800..<(raw.count - 2_000)) > 0.99, sourceLocation: sourceLocation)
+        #expect(alignment(raw, processed, over: 4_800..<(raw.count - processedLatency48k)) > 0.99, sourceLocation: sourceLocation)
         #expect(processed.suffix(processedLatency48k).allSatisfy { $0 == 0 }, sourceLocation: sourceLocation)
     }
 

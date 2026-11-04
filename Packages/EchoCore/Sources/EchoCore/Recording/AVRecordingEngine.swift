@@ -38,6 +38,7 @@ public final class AVRecordingEngine: RecordingEngine {
     public private(set) var suppression = SuppressionState.off
     public private(set) var inputGainDB: Double = 0
     public private(set) var monitorVolume: Double = 0
+    public private(set) var autoTune = AutoTuneSettings()
     @ObservationIgnored private var isVoiceProcessingOn = false
     @ObservationIgnored private var configurationObserver: (any NSObjectProtocol)?
 
@@ -144,6 +145,17 @@ public final class AVRecordingEngine: RecordingEngine {
         inputChannelCount = Int(format.channelCount)
         state = .ready
         applySuppression()
+    }
+
+    public func setAutoTune(_ settings: AutoTuneSettings) {
+        autoTune = settings
+        let unit = captureUnit
+        unit.setParameter(.autoTuneKey, AUValue(settings.key ?? -1))
+        unit.setParameter(.autoTuneMinor, settings.scale == .minor ? 1 : 0)
+        unit.setParameter(.autoTuneRetune, AUValue(settings.retuneMs))
+        unit.setParameter(.autoTuneHumanize, AUValue(settings.humanize))
+        unit.setParameter(.autoTuneFormants, settings.preservesFormants ? 1 : 0)
+        unit.setParameter(.autoTune, settings.isOn ? 1 : 0)
     }
 
     public func setMonitorVolume(_ volume: Double) {

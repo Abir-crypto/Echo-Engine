@@ -150,8 +150,8 @@ func alignment(_ raw: [Float], _ processed: [Float], over range: Range<Int>) -> 
     return covariance / max(1e-12, (varianceA * varianceB).squareRoot())
 }
 
-/// The live chain's constant delay at 48 kHz: RNNoise's 1,440 frames and the clip limiter's 72.
-let processedLatency48k = 1_512
+/// The live chain's constant delay at 48 kHz: RNNoise's 1,440 frames, auto-tune's 1,225 and the clip limiter's 72.
+let processedLatency48k = 2_737
 
 /// A new empty folder in the temporary directory.
 func temporaryFolder() throws -> URL {
