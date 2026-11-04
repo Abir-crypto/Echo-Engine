@@ -478,7 +478,11 @@ Goal: privacy-respecting telemetry.
   > Firebase 13.1.1 pinned (`exactVersion`), products FirebaseAnalytics + FirebaseCrashlytics only (no `FirebaseAnalyticsIdentitySupport`: no IDFA;
   > checked: no AdSupport/ATT linked). Info.plist: collection off until consent, no ad personalization/ADID. dSYM upload: Release + plist only; app
   > target script sandboxing off and dwarf-with-dsym (Crashlytics needs them).
-- [ ] F14.T02 — `FirebaseAnalyticsTracker`, `CrashlyticsReporter`, no-op versions, `ConsentStore`; typed `AnalyticsEvent`; duration buckets.
+- [x] F14.T02 — `FirebaseAnalyticsTracker`, `CrashlyticsReporter`, no-op versions, `ConsentStore`; typed `AnalyticsEvent`; duration buckets.
+  > Done: EchoCore `Telemetry/`: `AnalyticsTracking`/`CrashReporting` (+ `NoOp…`, fakes), `AnalyticsEvent` (SPEC § 16 list → snake_case name +
+  > kind/count parameters), `DurationBucket`, reason/kind enums, `CrashContextKey`; `TelemetryConsent` applies consent (off until answered) and follows
+  > changes. App `Platform/FirebaseTelemetry.swift` is the only Firebase import: configured only if the plist is bundled; ad consent always denied;
+  > Crashlytics deletes unsent reports when off; `record` sends domain+code only. Container picks Firebase or no-ops; app starts telemetry at launch.
 - [ ] F14.T03 — Onboarding/consent screen; Settings toggles wired; instrument events listed in § 16 across features.
 - [ ] F14.T04 — `PrivacyInfo.xcprivacy`; document privacy label answers for the user in the checkpoint summary.
 

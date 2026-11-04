@@ -27,6 +27,11 @@ final class AppContainer {
     let settings: any AppSettingsStore
     /// Analytics and crash report consent (SPEC § 16).
     let consent: any ConsentStore
+    /// Firebase when its `GoogleService-Info.plist` is in the app, else no-ops (SPEC § 16).
+    let analytics: any AnalyticsTracking
+    let crashReporter: any CrashReporting
+    /// Turns analytics and crash reports on and off with consent; started at launch.
+    let telemetry: TelemetryConsent
     let exportService: any ExportService
     let background: any BackgroundProcessing
     let presets: any PresetRepository
@@ -62,7 +67,9 @@ final class AppContainer {
         recordingActivity: any RecordingActivityPresenting = LiveRecordingActivity(),
         recordedProjects: (any RecordedProjectBuilding)? = nil,
         recovery: (any RecordingRecovering)? = nil,
-        consent: (any ConsentStore)? = nil
+        consent: (any ConsentStore)? = nil,
+        analytics: (any AnalyticsTracking)? = nil,
+        crashReporter: (any CrashReporting)? = nil
     ) {
         self.entitlements = entitlements
         self.capabilities = capabilities
@@ -87,7 +94,14 @@ final class AppContainer {
         self.presets = presets ?? FilePresetRepository(
             root: .presetsDirectory, builtIns: Self.builtInPresetsURL.flatMap { try? BuiltInPresets.load(from: $0) } ?? []
         )
-        self.consent = consent ?? UserDefaultsConsentStore(defaults: .standard)
+        let consent = consent ?? UserDefaultsConsentStore(defaults: .standard)
+        self.consent = consent
+        let firebase = (analytics == nil || crashReporter == nil) && FirebaseSetup.configureIfAvailable()
+        let analytics = analytics ?? (firebase ? FirebaseAnalyticsTracker() : NoOpAnalytics())
+        let crashReporter = crashReporter ?? (firebase ? CrashlyticsReporter() : NoOpCrashReporter())
+        self.analytics = analytics
+        self.crashReporter = crashReporter
+        telemetry = TelemetryConsent(consent: consent, analytics: analytics, crashes: crashReporter)
         self.idleTimer = idleTimer
         self.recordingActivity = recordingActivity
         let recordedProjects = recordedProjects ?? RecordedProjectBuilder(repository: projects, inspector: inspector)

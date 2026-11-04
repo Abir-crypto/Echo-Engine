@@ -14,6 +14,8 @@ struct EchoEngineApp: App {
 
     init() {
         let container = AppContainer()
+        // Analytics and crash reports stay off until the consent screen is answered (SPEC § 16).
+        container.telemetry.start()
         // Temporary files of exports the app never finished (it was quit or killed).
         container.exportWorkspace.removeAll()
         // A recording Live Activity of a take the app didn't finish (it was killed).
