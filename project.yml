@@ -10,6 +10,10 @@ options:
 packages:
   EchoCore:
     path: Packages/EchoCore
+  # Analytics and crash reports behind consent (SPEC § 4.9, § 16): only these two products, no ad-ID support.
+  Firebase:
+    url: https://github.com/firebase/firebase-ios-sdk
+    exactVersion: 13.1.1
 
 settings:
   base:
@@ -33,6 +37,11 @@ targets:
       path: App-iOS/Info.plist
       properties:
         UIBackgroundModes: [audio]
+        # Nothing is collected before consent (SPEC § 16); the app turns collection on per the person's answer.
+        FIREBASE_ANALYTICS_COLLECTION_ENABLED: false
+        FirebaseCrashlyticsCollectionEnabled: false
+        GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS: false
+        GOOGLE_ANALYTICS_ADID_COLLECTION_ENABLED: false
         # Exports continue in the background as BGContinuedProcessingTasks (SPEC § 11.2 step 7).
         BGTaskSchedulerPermittedIdentifiers: [akumatech.Echo-Engine.export.*]
     dependencies:
@@ -45,6 +54,21 @@ targets:
         product: EchoCoreFakes
       # The recording Live Activity (SPEC § 4.2, § 13.7).
       - target: RecordingWidget
+      - package: Firebase
+        product: FirebaseAnalytics
+      - package: Firebase
+        product: FirebaseCrashlytics
+    postBuildScripts:
+      # Readable crash reports (SPEC § 16): Release builds that include GoogleService-Info.plist only.
+      - name: Upload dSYMs to Crashlytics
+        basedOnDependencyAnalysis: false
+        script: |
+          if [ "${CONFIGURATION}" != "Release" ]; then exit 0; fi
+          if [ ! -f "${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleService-Info.plist" ]; then
+            echo "warning: No GoogleService-Info.plist in the app: dSYMs not uploaded (SPEC § 16)."
+            exit 0
+          fi
+          "${BUILD_DIR%/Build/*}/SourcePackages/checkouts/firebase-ios-sdk/Crashlytics/run"
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: akumatech.Echo-Engine
@@ -63,6 +87,9 @@ targets:
           Echo Engine uses the microphone to record audio. Your recordings stay on your device.
         INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription: Echo Engine saves exported videos to your photo library.
         INFOPLIST_KEY_NSSupportsLiveActivities: YES
+        # Crashlytics' upload script reads the SDK checkout and the dSYMs (Firebase requires it off for this target).
+        ENABLE_USER_SCRIPT_SANDBOXING: NO
+        DEBUG_INFORMATION_FORMAT: dwarf-with-dsym
         INFOPLIST_KEY_UIApplicationSceneManifest_Generation: YES
         INFOPLIST_KEY_UILaunchScreen_Generation: YES
         INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone: UIInterfaceOrientationPortrait

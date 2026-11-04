@@ -717,7 +717,9 @@ Estimates (constants in `StorageEstimator`):
     `adPersonalization` always `.denied`. `setAnalyticsCollectionEnabled(consent)`.
   - Crashlytics: `setCrashlyticsCollectionEnabled(consent)`.
 - No IDFA: do not link `AdSupport`; no ATT prompt. Info.plist: `GOOGLE_ANALYTICS_DEFAULT_ALLOW_AD_PERSONALIZATION_SIGNALS = false`.
-- Build phase uploads dSYMs. `GoogleService-Info.plist` provided by the user (ask in F14).
+- Build phase uploads dSYMs. `GoogleService-Info.plist` provided by the user (ask in F14). Until the user adds it to
+  `App-iOS/Resources/` (user decision), Firebase isn't configured: the no-op trackers run, nothing is collected,
+  and the dSYM step skips itself.
 - NEVER send user content: titles, file names, paths, transcripts, audio. Durations as buckets
   (`<1m`, `1-10m`, `10-60m`, `>60m`).
 
@@ -967,6 +969,7 @@ Record new user decisions here (date, decision, section updated).
 - 2026-11-04: Recording Live Activity layout mirrors the Record screen: status, timer, 30-segment meter, round Stop;
   Dynamic Island compact = dot + timer + level bars (§ 13.7).
 - 2026-11-04: The device/channel sheet and dim mode are designed natively from § 18, without Sleek (§ 18.5).
+- 2026-11-04: Firebase is built in now and stays inactive until the user adds `GoogleService-Info.plist` (§ 16).
 - 2026-11-04: Raw vs processed take of a recording: chosen later in the Editor's menu, not at Stop (§ 13.3).
 - 2026-11-04: Auto-tune corrects from G2 (98 Hz) up, about 26 ms added, over the ≤ 20 ms target (§ 13.5).
 - 2026-11-04: Recording's Standard tier stays Apple voice processing with its limits (processed raw take, marked gap

@@ -473,7 +473,11 @@ Goal: complete Settings screen.
 ## F14 — Analytics, crash reporting, consent  [IN PROGRESS]
 Goal: privacy-respecting telemetry.
 
-- [ ] F14.T01 — Ask user for `GoogleService-Info.plist`; add Firebase SPM (Analytics, Crashlytics only), dSYM upload phase, Info.plist flags (§ 16).
+- [x] F14.T01 — Ask user for `GoogleService-Info.plist`; add Firebase SPM (Analytics, Crashlytics only), dSYM upload phase, Info.plist flags (§ 16).
+  > Done: user will add the plist later (SPEC § 16/§ 20): put it at `App-iOS/Resources/GoogleService-Info.plist` (gitignored), then `xcodegen generate`.
+  > Firebase 13.1.1 pinned (`exactVersion`), products FirebaseAnalytics + FirebaseCrashlytics only (no `FirebaseAnalyticsIdentitySupport`: no IDFA;
+  > checked: no AdSupport/ATT linked). Info.plist: collection off until consent, no ad personalization/ADID. dSYM upload: Release + plist only; app
+  > target script sandboxing off and dwarf-with-dsym (Crashlytics needs them).
 - [ ] F14.T02 — `FirebaseAnalyticsTracker`, `CrashlyticsReporter`, no-op versions, `ConsentStore`; typed `AnalyticsEvent`; duration buckets.
 - [ ] F14.T03 — Onboarding/consent screen; Settings toggles wired; instrument events listed in § 16 across features.
 - [ ] F14.T04 — `PrivacyInfo.xcprivacy`; document privacy label answers for the user in the checkpoint summary.

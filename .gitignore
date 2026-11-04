@@ -6,6 +6,8 @@
 *.xcworkspace/
 App-iOS/Info.plist
 RecordingWidget/Info.plist
+# Firebase configuration: the user adds it locally (SPEC § 16); not committed.
+App-iOS/Resources/GoogleService-Info.plist
 
 # Claude Code per-user settings
 .claude/settings.local.json
