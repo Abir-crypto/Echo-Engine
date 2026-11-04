@@ -14,6 +14,44 @@ struct PitchDetectorTests {
         #expect(abs(detected / 150 - 1) < 0.01)
     }
 
+    /// Auto-tune snaps to the nearest note, so the estimate must sit well inside a semitone (100 cents): E2 to A5.
+    @Test(arguments: [82.41, 110, 146.83, 196, 261.63, 329.63, 440, 587.33, 880])
+    func findsNotesWithinFiveCents(_ frequency: Double) throws {
+        let detected = try #require(TestSignal.detectedFrequency(TestSignal.sine(frequency, amplitude: 0.3, frames: 9_600)))
+        #expect(abs(1_200 * log2(detected / frequency)) < 5, "\(detected) Hz for \(frequency) Hz")
+    }
+
+    /// Strong harmonics (a sawtooth) must not be taken for the octave above.
+    @Test(arguments: [98.0, 220, 523.25])
+    func harmonicsDontFoolIt(_ frequency: Double) throws {
+        let sawtooth = (0..<9_600).map { frame in
+            Float(0.3 * (2 * (Double(frame) * frequency / TestSignal.sampleRate).truncatingRemainder(dividingBy: 1) - 1))
+        }
+        let detected = try #require(TestSignal.detectedFrequency(sawtooth))
+        #expect(abs(1_200 * log2(detected / frequency)) < 5, "\(detected) Hz for \(frequency) Hz")
+    }
+
+    /// A slow glide (one semitone a second) is followed window by window.
+    @Test func followsAGlide() throws {
+        var detector = echo.dsp.PitchDetector()
+        detector.prepare(TestSignal.sampleRate)
+        var phase = 0.0
+        var worst = 0.0
+        for frame in 0..<96_000 {
+            let frequency = 220 * pow(2, Double(frame) / TestSignal.sampleRate / 12)
+            phase += 2 * .pi * frequency / TestSignal.sampleRate
+            detector.push(Float(0.3 * sin(phase)))
+            if frame > 9_600, frame % 4_800 == 0 {
+                let estimate = detector.detect()
+                try #require(estimate.period > 0)
+                // The window is centred about half a window back.
+                let expected = 220 * pow(2, (Double(frame) - Double(detector.windowFrames()) / 2) / TestSignal.sampleRate / 12)
+                worst = max(worst, abs(1_200 * log2(TestSignal.sampleRate / Double(estimate.period) / expected)))
+            }
+        }
+        #expect(worst < 8, "worst \(worst) cents")
+    }
+
     @Test func noiseAndSilenceAreUnvoiced() {
         #expect(TestSignal.detectedFrequency(TestSignal.noise(amplitude: 0.5, frames: 4_800)) == nil)
         #expect(TestSignal.detectedFrequency(Array(repeating: 0, count: 4_800)) == nil)

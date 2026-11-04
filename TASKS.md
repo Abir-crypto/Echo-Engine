@@ -413,7 +413,9 @@ Goal: live suppression, gain, leveling, clip protection.
 ## F12 — Auto-tune & backing tracks  [IN PROGRESS]
 Goal: live pitch correction and sing-along.
 
-- [ ] F12.T01 — YIN pitch detector kernel + tests on synthetic tones.
+- [x] F12.T01 — YIN pitch detector kernel + tests on synthetic tones.
+  > Done: the kernel exists since F05.T02 (`PitchDetector`, YIN on a ~12 kHz copy, 70–1000 Hz, unvoiced below 0.8). Added the precision auto-tune needs:
+  > notes E2–A5 within ±5 cents, sawtooth harmonics without octave errors, a 1 semitone/s glide followed within 8 cents.
 - [ ] F12.T02 — Auto-tune kernel: scale snapping, retune smoothing, humanize, PSOLA with formants; AU wrapper (§ 13.5). Golden test on sung scale.
 - [ ] F12.T03 — Auto-tune UI: on/off, key (Chromatic default), scale, Natural↔Robotic, Advanced.
 - [ ] F12.T04 — Backing track import + playback during recording; latency compensation stored (§ 13.6).
