@@ -381,6 +381,7 @@ func previewRecordModel(peaks: [Float] = [0.25, 0.12], inputs: [AudioInput] = Pr
     return RecordModel(
         engine: engine, devices: devices, interruptions: RecordingInterruptions(devices: devices, engine: engine),
         projects: FakeProjectRepository(), builder: FakeRecordedProjectBuilder(), backingTracks: FakeBackingTrackStore(),
+        keyDetector: FakeKeyDetector(key: MusicalKey(tonic: 9, scale: .minor)),
         idleTimer: FakeIdleTimer(),
         activity: FakeRecordingActivity(), stopRelay: RecordingStopRelay(), settings: FakeAppSettingsStore(), clock: FakeClock(),
         title: { DisplayFormat.recordingTitle($0) }

@@ -59,6 +59,9 @@ final class RecordModel {
     @ObservationIgnored private let projects: any ProjectRepository
     @ObservationIgnored private let builder: any RecordedProjectBuilding
     @ObservationIgnored private let backingTracks: any BackingTrackStoring
+    @ObservationIgnored private let keyDetector: any KeyDetecting
+    /// The backing track's key detection in progress (tests wait for it).
+    @ObservationIgnored private(set) var keyDetection: Task<Void, Never>?
     @ObservationIgnored private let idleTimer: any IdleTimerControlling
     @ObservationIgnored private let activity: any RecordingActivityPresenting
     @ObservationIgnored private let stopRelay: RecordingStopRelay
@@ -87,6 +90,7 @@ final class RecordModel {
         projects: any ProjectRepository,
         builder: any RecordedProjectBuilding,
         backingTracks: any BackingTrackStoring,
+        keyDetector: any KeyDetecting,
         idleTimer: any IdleTimerControlling,
         activity: any RecordingActivityPresenting,
         stopRelay: RecordingStopRelay,
@@ -100,6 +104,7 @@ final class RecordModel {
         self.projects = projects
         self.builder = builder
         self.backingTracks = backingTracks
+        self.keyDetector = keyDetector
         self.idleTimer = idleTimer
         self.activity = activity
         self.stopRelay = stopRelay
@@ -382,6 +387,7 @@ final class RecordModel {
             if problem == .cantReadBackingTrack { problem = nil }
             setMonitoring(true)
             applyBackingTrackVolume()
+            detectSongKey()
         } catch {
             problem = .cantReadBackingTrack
         }
@@ -392,6 +398,7 @@ final class RecordModel {
         engine.removeBackingTrack()
         if let stored = settings.recording.backingTrack { backingTracks.remove(fileName: stored.fileName) }
         settings.recording.backingTrack = nil
+        detectSongKey()
     }
 
     /// While the slider moves; locked during a take.
@@ -418,8 +425,40 @@ final class RecordModel {
         do {
             try engine.loadBackingTrack(backingTracks.root.appending(path: stored.fileName))
             engine.setBackingTrackStart(stored.startSeconds)
+            detectSongKey()
         } catch {
             settings.recording.backingTrack = nil
+        }
+    }
+
+    // MARK: Song key (SPEC § 13.5)
+
+    /// The backing track's key, once detected.
+    private(set) var songKey: MusicalKey?
+
+    /// "Song key: A minor. Use it?": while auto-tune is on and set to another key.
+    var suggestedSongKey: MusicalKey? {
+        guard let songKey, autoTune.isOn, autoTune.key != songKey.tonic || autoTune.scale != songKey.scale else { return nil }
+        return songKey
+    }
+
+    func useSongKey() {
+        guard let songKey else { return }
+        var settings = autoTune
+        settings.key = songKey.tonic
+        settings.scale = songKey.scale
+        setAutoTune(settings)
+        commitAutoTune()
+    }
+
+    private func detectSongKey() {
+        keyDetection?.cancel()
+        songKey = nil
+        guard let url = engine.backingTrack?.url else { return }
+        keyDetection = Task { [weak self, keyDetector] in
+            let key = try? await keyDetector.detectKey(of: url)
+            guard !Task.isCancelled else { return }
+            self?.songKey = key ?? nil
         }
     }
 

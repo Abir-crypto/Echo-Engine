@@ -170,6 +170,7 @@ final class AppContainer {
             projects: projects,
             builder: recordedProjects,
             backingTracks: FileBackingTrackStore(root: .backingTracksDirectory),
+            keyDetector: ChromaKeyDetector(),
             idleTimer: idleTimer,
             activity: recordingActivity,
             stopRelay: recordingStopRelay,

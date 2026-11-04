@@ -432,7 +432,10 @@ Goal: live pitch correction and sing-along.
   > `atSampleTime:` offline) with the player scheduled for the same moment, on take start, resume and route-change restarts, from start + take length.
   > Monitor volume moved into the capture unit (`monitorGain`) so the mixer stays at 1. `FileBackingTrackStore` (app copy + `takes/backing.<ext>`),
   > `RecordingMetadata.backingTrack` (start, round-trip latency, volume; lenient), remembered in `RecordingSettings`; monitoring on with a track; speaker silent in takes.
-- [ ] F12.T05 — `ChromaKeyDetector` + "Song key: X. Use it?" suggestion. Tests.
+- [x] F12.T05 — `ChromaKeyDetector` + "Song key: X. Use it?" suggestion. Tests.
+  > Done: `KeyDetecting` → `ChromaKeyDetector` (16k FFT, pitch-class energy 80 Hz–2 kHz over the first 2 min, Krumhansl–Kessler profiles in 12 keys,
+  > nil below 0.6 correlation) + `FakeKeyDetector`; tested on Am/C/E♭ progressions. `RecordModel` detects off the main thread when a track is chosen or
+  > restored; `SongKeySuggestion` in the auto-tune sheet and under the Record rows while auto-tune is on in another key; Use sets key + scale (remembered, logged).
 - [ ] F12.T06 — Finish flow: vocal only vs vocal + backing mix project.
 
 **Checkpoint test (device, wired headphones):** sing over a backing track with auto-tune at Natural and Robotic; check latency feels acceptable; mixed project is in sync.

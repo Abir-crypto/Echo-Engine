@@ -25,7 +25,7 @@ struct RecordModelTests {
 
     private func fixture(
         inputs: [AudioInput]? = nil, builder: FakeRecordedProjectBuilder = FakeRecordedProjectBuilder(),
-        recording: RecordingSettings = RecordingSettings()
+        recording: RecordingSettings = RecordingSettings(), songKey: MusicalKey? = nil
     ) -> Fixture {
         let settings = FakeAppSettingsStore(tint: .teal)
         settings.recording = recording
@@ -38,7 +38,8 @@ struct RecordModelTests {
         let relay = RecordingStopRelay()
         let model = RecordModel(
             engine: engine, devices: devices, interruptions: RecordingInterruptions(devices: devices, engine: engine),
-            projects: projects, builder: builder, backingTracks: backingTracks, idleTimer: idleTimer, activity: activity, stopRelay: relay,
+            projects: projects, builder: builder, backingTracks: backingTracks, keyDetector: FakeKeyDetector(key: songKey),
+            idleTimer: idleTimer, activity: activity, stopRelay: relay,
             settings: settings, clock: FakeClock(now: started),
             title: { "Recording at \($0.timeIntervalSince1970)" }
         )
@@ -473,5 +474,26 @@ struct RecordModelTests {
         #expect(fixture.model.problem == .cantReadBackingTrack)
         #expect(fixture.backingTracks.removed == ["stored-1.m4a"], "its copy is removed again")
         #expect(fixture.settings.recording.backingTrack == nil)
+    }
+
+    // MARK: Song key (F12.T05)
+
+    @Test func theBackingTracksKeyIsOfferedToAutoTune() async {
+        let fixture = fixture(songKey: MusicalKey(tonic: 9, scale: .minor))
+        fixture.devices.outputKind = .wiredHeadphones
+        await fixture.model.appear()
+        fixture.model.chooseBackingTrack(song)
+        await fixture.model.keyDetection?.value
+        #expect(fixture.model.songKey == MusicalKey(tonic: 9, scale: .minor))
+        #expect(fixture.model.suggestedSongKey == nil, "not while auto-tune is off")
+        fixture.model.setAutoTune(AutoTuneSettings(isOn: true))
+        #expect(fixture.model.suggestedSongKey == MusicalKey(tonic: 9, scale: .minor))
+        fixture.model.useSongKey()
+        #expect(fixture.engine.autoTune.key == 9)
+        #expect(fixture.engine.autoTune.scale == .minor)
+        #expect(fixture.settings.recording.autoTune.key == 9, "remembered")
+        #expect(fixture.model.suggestedSongKey == nil, "already in that key")
+        fixture.model.removeBackingTrack()
+        #expect(fixture.model.songKey == nil)
     }
 }

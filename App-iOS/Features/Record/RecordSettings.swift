@@ -63,6 +63,9 @@ struct RecordSettingsRows: View {
                     .foregroundStyle(.token(.textSecondary))
                     .padding(.horizontal, 14)
             }
+            if let key = model.suggestedSongKey {
+                SongKeySuggestion(key: key) { model.useSongKey() }
+            }
             if model.showsWiredHeadphonesTip {
                 Label {
                     Text("Use wired headphones for monitoring")
@@ -375,6 +378,9 @@ struct AutoTuneSheet: View {
                     GroupedRows {
                         ToggleRow(title: "Auto-tune", caption: "Pulls your voice to the nearest note as you sing.", isOn: binding(\.isOn))
                     }
+                    if let key = model.suggestedSongKey {
+                        SongKeySuggestion(key: key) { model.useSongKey() }
+                    }
                     if settings.isOn {
                         GroupedRows {
                             HStack {
@@ -585,5 +591,28 @@ struct BackingTrackSheet: View {
             if case .success(let url) = result { model.chooseBackingTrack(url) }
         }
         .onDisappear { model.previewBackingTrack(false) }
+    }
+}
+
+/// "Song key: A minor. Use it?" (SPEC § 13.5): the backing track's key, one tap away.
+struct SongKeySuggestion: View {
+    let key: MusicalKey
+    let use: () -> Void
+
+    var body: some View {
+        HStack(spacing: 12) {
+            Text("Song key: \(AutoTuneSettings(key: key.tonic, scale: key.scale).keyDescription). Use it?",
+                 comment: "Auto-tune suggestion from the backing track's key, e.g. Song key: A minor. Use it?")
+                .font(.footnote)
+                .foregroundStyle(.token(.textValue))
+            Spacer(minLength: 8)
+            Button(action: use) {
+                Text("Use", comment: "Sets auto-tune to the suggested song key.")
+            }
+            .buttonStyle(.secondary)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 6)
+        .background(.token(.surface), in: .rect(cornerRadius: 12))
     }
 }

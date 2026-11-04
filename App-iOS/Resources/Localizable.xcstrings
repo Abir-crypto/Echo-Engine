@@ -959,6 +959,9 @@
     "Softens harsh “s” sounds." : {
       "comment" : "Gain and dynamics: explanation under the De-esser switch."
     },
+    "Song key: %@. Use it?" : {
+      "comment" : "Auto-tune suggestion from the backing track's key, e.g. Song key: A minor. Use it?"
+    },
     "Spotify" : {
       "comment" : "Loudness target named after a platform; keep the brand name."
     },
@@ -1087,6 +1090,9 @@
     },
     "Update Echo Engine to use it." : {
       "comment" : "Description of a step made by a newer app version."
+    },
+    "Use" : {
+      "comment" : "Sets auto-tune to the suggested song key."
     },
     "Use wired headphones for monitoring" : {
       "comment" : "Tip on the Record screen when monitoring timing matters over Bluetooth."
