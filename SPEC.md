@@ -637,7 +637,10 @@ Show a "Use wired headphones for monitoring" tip when auto-tune or a backing tra
 
 - `UIBackgroundModes: audio`. Recording continues in background and on lock screen.
 - `UIApplication.shared.isIdleTimerDisabled = true` while recording; reset on stop/pause/leaving tab.
-- Live Activity (Lock Screen + Dynamic Island): timer, level, Stop button.
+- Live Activity (Lock Screen + Dynamic Island): timer, level, Stop button. Layout like the Record screen: red dot +
+  "Recording"/"Paused", large timer, the 30-segment meter (the loudest recorded channel, updated about twice a second),
+  round Stop button. Dynamic Island: compact = dot + timer and small level bars; minimal = dot; expanded = status,
+  timer, Stop and the meter. Stop ends the take like the Record screen's Stop. No title or other user content.
 - Interruption `.began`: pause, flush to disk, add interruption marker. `.ended`: state `pausedByInterruption`,
   user taps Resume (never auto-resume) to continue the same take.
 - Route change (selected device disconnected): same as interruption; never silently switch to built-in mic.
@@ -944,3 +947,5 @@ Record new user decisions here (date, decision, section updated).
   200 MB (§ 15).
 - 2026-11-04: A route change that keeps the recorded input (output only) doesn't pause the take: it continues on the
   same input with a marker at the gap; a lost input or a call still pauses until Resume (§ 13.7).
+- 2026-11-04: Recording Live Activity layout mirrors the Record screen: status, timer, 30-segment meter, round Stop;
+  Dynamic Island compact = dot + timer + level bars (§ 13.7).

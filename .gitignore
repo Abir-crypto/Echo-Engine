@@ -5,6 +5,7 @@
 *.xcodeproj/
 *.xcworkspace/
 App-iOS/Info.plist
+RecordingWidget/Info.plist
 
 # Claude Code per-user settings
 .claude/settings.local.json

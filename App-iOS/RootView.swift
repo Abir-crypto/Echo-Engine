@@ -34,6 +34,9 @@ struct RootView: View {
             if let path = UserDefaults.standard.string(forKey: DebugImport.launchArgument) {
                 importModel.importFile(at: URL(filePath: path))
             }
+            if UserDefaults.standard.bool(forKey: DebugLiveActivity.launchArgument) {
+                DebugLiveActivity.run(container)
+            }
         }
         #endif
     }

@@ -28,6 +28,10 @@ final class AppContainer {
     let exportService: any ExportService
     let background: any BackgroundProcessing
     let presets: any PresetRepository
+    let idleTimer: any IdleTimerControlling
+    let recordingActivity: any RecordingActivityPresenting
+    /// The recording Live Activity's Stop reaches the app through this (registered with `AppDependencyManager`).
+    let recordingStopRelay = RecordingStopRelay()
 
     init(
         entitlements: any EntitlementProvider = FreeV1Entitlements(),
@@ -48,7 +52,9 @@ final class AppContainer {
         settings: (any AppSettingsStore)? = nil,
         exportService: (any ExportService)? = nil,
         background: (any BackgroundProcessing)? = nil,
-        presets: (any PresetRepository)? = nil
+        presets: (any PresetRepository)? = nil,
+        idleTimer: any IdleTimerControlling = UIKitIdleTimer(),
+        recordingActivity: any RecordingActivityPresenting = LiveRecordingActivity()
     ) {
         self.entitlements = entitlements
         self.capabilities = capabilities
@@ -73,6 +79,8 @@ final class AppContainer {
         self.presets = presets ?? FilePresetRepository(
             root: .presetsDirectory, builtIns: Self.builtInPresetsURL.flatMap { try? BuiltInPresets.load(from: $0) } ?? []
         )
+        self.idleTimer = idleTimer
+        self.recordingActivity = recordingActivity
         let presenter = DeliveryPresenter()
         deliveryPresenter = presenter
         destinations = [

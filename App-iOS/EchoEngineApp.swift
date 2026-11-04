@@ -1,3 +1,4 @@
+import AppIntents
 import EchoCore
 import SwiftUI
 
@@ -13,6 +14,10 @@ struct EchoEngineApp: App {
         let container = AppContainer()
         // Temporary files of exports the app never finished (it was quit or killed).
         container.exportWorkspace.removeAll()
+        // A recording Live Activity of a take the app didn't finish (it was killed).
+        container.recordingActivity.end()
+        // The Live Activity's Stop runs in this process and finds the recording through the relay.
+        AppDependencyManager.shared.add(dependency: container.recordingStopRelay)
         _container = State(initialValue: container)
         _homeModel = State(initialValue: container.makeHomeModel())
         _importModel = State(initialValue: container.makeImportModel())

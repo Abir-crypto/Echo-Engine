@@ -360,7 +360,11 @@ Goal: reliable capture from any input with recovery.
   > `resume()` restarts a stopped engine only on the same layout (`.inputChanged`). Engine configuration change: continues on the same input with a marker
   > when `continuesAfterRouteChange` agrees (user decision, SPEC § 13.7/§ 20), else pauses. EchoCore `RecordingInterruptions` maps session events,
   > `canResume` (call over + input back), `resume()` re-activates and re-selects the input; `currentInputID` added. T06 runs it. Calls/unplugging: device-only.
-- [ ] F10.T04 — Background audio mode, idle timer, Live Activity widget extension (timer, level, Stop).
+- [x] F10.T04 — Background audio mode, idle timer, Live Activity widget extension (timer, level, Stop).
+  > Done: background audio was already declared (F01). EchoCore `IdleTimerControlling` → app `UIKitIdleTimer`. `RecordingWidget` extension (shares the asset catalog
+  > and its own String Catalog, links no EchoCore) + `Shared/RecordingActivity/` (attributes, `MeterScale` 30 segments −60…0 dB, `StopRecordingIntent` →
+  > `RecordingStopRelay` via `AppDependencyManager`); app `LiveRecordingActivity` (2 updates/s, `StatusUpdateThrottle`; ends leftovers at launch). Layout: user
+  > decision (SPEC § 13.7/§ 20). T06 wires them to the model. `-debugLiveActivity YES`: sim logs show it renders; screenshots miss the island → check on device.
 - [ ] F10.T05 — Crash recovery of unfinished takes on launch.
 - [ ] F10.T06 — Record screen UI per canvas + device/channel sheet + dim mode; Stop creates project and opens Editor.
 - [ ] F10.T06a — Low storage on Record (user decision, SPEC § 15): `RecordingError.notEnoughSpace` message with exact numbers; on

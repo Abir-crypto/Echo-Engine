@@ -568,6 +568,9 @@
     "Standard" : {
       "comment" : "Audio quality preset: AAC 192 kbps."
     },
+    "Stop recording" : {
+      "comment" : "Live Activity button and action: ends the recording."
+    },
     "Strength" : {
       "comment" : "Slider and value label: how much of an AI step is applied (wet/dry)."
     },

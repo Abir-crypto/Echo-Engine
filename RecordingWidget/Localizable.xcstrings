@@ -1,0 +1,21 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Echo Engine" : {
+      "comment" : "App name under the recording Live Activity."
+    },
+    "Level" : {
+      "comment" : "Accessibility label of the recording level meter."
+    },
+    "Paused" : {
+      "comment" : "Live Activity status: the recording is paused."
+    },
+    "Recording" : {
+      "comment" : "Live Activity status: the app is recording."
+    },
+    "Stop recording" : {
+      "comment" : "Live Activity button and action: ends the recording."
+    }
+  },
+  "version" : "1.0"
+}

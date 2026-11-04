@@ -94,6 +94,30 @@ enum DebugImport {
     static let launchArgument = "debugImportPath"
 }
 
+/// `-debugLiveActivity YES` shows the recording Live Activity with a moving level and no recording, to check its
+/// layout (leave the app for the Dynamic Island, lock the device for the Lock Screen). Its Stop ends it.
+enum DebugLiveActivity {
+    static let launchArgument = "debugLiveActivity"
+
+    @MainActor
+    static func run(_ container: AppContainer) {
+        let activity = container.recordingActivity
+        activity.start(tint: container.settings.tint)
+        let demo = Task { @MainActor in
+            let start = ContinuousClock.now
+            var step = 0.0
+            while !Task.isCancelled {
+                let elapsed = start.duration(to: .now) / .seconds(1)
+                activity.update(elapsedSeconds: elapsed, isPaused: false, level: 0.5 + 0.45 * sin(step))
+                step += 0.7
+                try? await Task.sleep(for: .milliseconds(500))
+            }
+            activity.end()
+        }
+        container.recordingStopRelay.handler = { demo.cancel() }
+    }
+}
+
 /// The Home mockup's projects, saved as real (media-less) projects for manual testing.
 enum DebugSampleProjects {
     /// `-seedSampleProjects YES` adds them at launch.
